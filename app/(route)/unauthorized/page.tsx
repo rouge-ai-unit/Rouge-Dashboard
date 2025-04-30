@@ -1,6 +1,6 @@
 export default function UnauthorizedPage() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-black text-white p-8">
+    <div className="flex items-center justify-center min-h-screen text-white p-8">
       <div className="max-w-md text-center">
         <h1 className="text-3xl font-bold mb-4">Access Restricted</h1>
         <p className="text-lg mb-6">

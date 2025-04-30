@@ -27,7 +27,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <main className="p-6 bg-[#222527] min-h-screen">
+    <main className="p-6">
       <div className="max-w-5xl mx-auto">
         <h1 className="text-4xl font-bold mb-8 text-center text-white">
           AI Tools Dashboard
@@ -36,28 +36,28 @@ export default function Dashboard() {
           {tools.map((tool) => (
             <div
               key={tool.name}
-              className="flex flex-col justify-between h-full bg-white p-6 rounded-xl border border-gray-200 shadow-md hover:shadow-lg transition-all"
+              className="flex flex-col justify-between h-full bg-[#1a1a1a] p-6 rounded-xl border border-gray-200/30 shadow-md hover:shadow-lg hover:border-white/50 transition-all"
             >
               <div>
-                <h2 className="text-xl font-semibold mb-2 text-black">
+                <h2 className="text-xl font-semibold mb-2 text-white">
                   {tool.name}
                 </h2>
-                <p className="text-gray-600 text-sm mb-2">{tool.description}</p>
-                <p className="text-gray-500 text-xs italic">{tool.unit}</p>
+                <p className="text-gray-300 text-sm mb-2">{tool.description}</p>
+                <p className="text-gray-400 text-xs italic">{tool.unit}</p>
               </div>
               <div className="mt-6 flex justify-center gap-3">
                 <a
                   href={tool.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-black text-white px-4 py-2 text-sm rounded-md hover:bg-gray-800"
+                  className="bg-white text-black px-4 py-2 text-sm rounded-md hover:bg-gray-300 transition"
                 >
                   Open Tool
                 </a>
                 {tool.statsLink && (
                   <a
                     href={tool.statsLink}
-                    className="border border-black text-black px-4 py-2 text-sm rounded-md hover:bg-black hover:text-white transition"
+                    className="border border-white text-white px-4 py-2 text-sm rounded-md hover:bg-white hover:text-black transition"
                   >
                     View Stats
                   </a>
