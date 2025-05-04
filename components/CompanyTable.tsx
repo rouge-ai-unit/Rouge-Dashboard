@@ -147,7 +147,7 @@ export function CompanyTable({ data, refreshData }: CompanyTableProps) {
         <Button
           onClick={exportToCsv}
           variant="outline"
-          className="border-white text-white hover:bg-white hover:text-black"
+          className="border-white"
         >
           <Download className="mr-2" /> Export CSV
         </Button>

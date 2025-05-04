@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Brain, Home, History, Search, LogIn, LogOut, LayoutDashboard, ChartScatter } from "lucide-react";
+import { Brain, Home, History, Search, LogIn, LogOut, LayoutDashboard, ChartScatter, UserCog2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
@@ -23,6 +23,11 @@ const navItems = [
     title: "Analytics",
     icon: ChartScatter,
     href: "/stats",
+  },
+  {
+    title: "Work Tracker",
+    icon: UserCog2,
+    href: "/work-tracker",
   },
 ];
 

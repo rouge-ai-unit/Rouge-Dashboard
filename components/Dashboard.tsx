@@ -1,28 +1,32 @@
+import Link from "next/link";
+import { Button } from "./ui/button";
+import { ExternalLink } from "lucide-react";
+
 export default function Dashboard() {
   const tools = [
     {
-      name: "BR Unit Automation",
-      url: "https://br-automate.vercel.app/",
+      name: "AgTech Company Automation",
+      url: "/tools/agtech-company-automation",
       description:
-        "A powerful internal automation tool designed to streamline BR Unit's data collection, report generation, and workflow processes. Enables team members to focus on strategy while the tool handles repetitive tasks.",
-      unit: "Developed specifically for BR Unit operations",
-      statsLink: "/stats/br-unit",
+        "A powerful internal automation tool designed to streamline AgTech Company data collection, report generation, and workflow processes. Enables team members to focus on strategy while the tool handles repetitive tasks.",
+      unit: "Developed specifically for AgTech Company Outsourcing",
+      tab: "table",
     },
     {
-      name: "Influencer Content Generator",
-      url: "https://influencer-content-generation-automation.vercel.app/",
+      name: "Linkedin Post Content Idea Automation",
+      url: "/tools/content-idea-automation",
       description:
-        "An AI-driven assistant that helps create engaging LinkedIn content using user prompts and contextual intelligence. Ideal for marketers and personal brand builders who need to post consistently.",
-      unit: "Built for Influencer Unit to scale LinkedIn presence",
-      statsLink: "/stats/content-generator",
+        "An Automation that helps create engaging LinkedIn content related to AgTech Industry using user prompts and contextual intelligence. Ideal for marketers and personal brand builders who need to post consistently.",
+      unit: "Built to scale LinkedIn presence of Lisa & Morgana",
+      tab: "content",
     },
     {
-      name: "Article Summariser",
-      url: "https://influencer-unit-automation-article-h99b.onrender.com/",
+      name: "News Article Summariser Automation",
+      url: "/tools/content-idea-automation",
       description:
         "This tool leverages AI to condense long-form articles into digestible summaries and key takeaways. Useful for creating internal briefs or drafting content for newsletters and social posts.",
-      unit: "Designed for Influencer Unit to speed up content research",
-      statsLink: "/stats/article-summariser",
+      unit: "Designed to enhance team's content research",
+      tab: "summary",
     },
   ];
 
@@ -45,23 +49,18 @@ export default function Dashboard() {
                 <p className="text-gray-300 text-sm mb-2">{tool.description}</p>
                 <p className="text-gray-400 text-xs italic">{tool.unit}</p>
               </div>
-              <div className="mt-6 flex justify-center gap-3">
-                <a
+              <div className="w-full">
+                <Link
                   href={tool.url}
-                  target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-white text-black px-4 py-2 text-sm rounded-md hover:bg-gray-300 transition"
+                  onClick={() => {
+                    localStorage.setItem("defaultTab", tool.tab);
+                  }}
                 >
-                  Open Tool
-                </a>
-                {tool.statsLink && (
-                  <a
-                    href={tool.statsLink}
-                    className="border border-white text-white px-4 py-2 text-sm rounded-md hover:bg-white hover:text-black transition"
-                  >
-                    View Stats
-                  </a>
-                )}
+                  <Button className="w-full bg-white text-black px-4 py-2 text-sm rounded-md hover:bg-gray-300 transition">
+                   <ExternalLink size={24}/> Open Tool
+                  </Button>
+                </Link>
               </div>
             </div>
           ))}

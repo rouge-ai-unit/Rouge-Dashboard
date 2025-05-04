@@ -130,17 +130,23 @@ export default function Home() {
 
       <Tabs defaultValue="table" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="table">Table View</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="analysis">Company Analysis</TabsTrigger>
+          <TabsTrigger value="table" className="cursor-pointer">
+            Table View
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="cursor-pointer">
+            Analytics
+          </TabsTrigger>
+          <TabsTrigger value="analysis" className="cursor-pointer">
+            Company Analysis
+          </TabsTrigger>
         </TabsList>
 
         {/* Table View */}
         <TabsContent value="table" className="space-y-4">
-          <Card>
+          <Card className="bg-[#202222]">
             <CardContent className="mt-5">
               <CompanyTable
-              // @ts-nocheck
+                // @ts-nocheck
                 data={companies}
                 refreshData={() => refreshData()}
               />
@@ -193,7 +199,7 @@ export default function Home() {
                         ) || null
                       )
                     }
-                    className="border rounded-md p-2 w-full bg-white"
+                    className="border rounded-md p-2 w-full"
                   >
                     <option value="">-- Choose a company --</option>
                     {companies.map((company) => (
@@ -220,7 +226,7 @@ export default function Home() {
               )}
 
               {analysis && (
-                <div className="mt-4 p-4 bg-gray-100 rounded-md">
+                <div className="mt-4 p-4 rounded-md">
                   <pre className="whitespace-pre-wrap text-sm">{analysis}</pre>
                 </div>
               )}

@@ -1,4 +1,11 @@
-import { boolean, date, integer, pgTable, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  date,
+  integer,
+  pgTable,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 
 export const Companies = pgTable("companyDetails", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -27,5 +34,17 @@ export const LinkedinContent = pgTable("linkedinContent", {
   generalTheme: varchar("general_theme").notNull(),
   postIdeas: varchar("post_ideas").notNull(),
   caption: varchar("caption").notNull(),
-  hashtags: varchar("hashtags").notNull(), // Assuming the 3 hashtags are stored as a comma-separated string
+  hashtags: varchar("hashtags").notNull(),
+});
+
+export const WorkTracker = pgTable("workTracker", {
+  _id: uuid("id").defaultRandom().primaryKey(),
+  task: varchar("task"),
+  unit: varchar("unit"),
+  status: varchar("status"),
+  deadline: varchar("deadline"),
+  assignedTo: varchar("assignedTo"),
+  lastUpdated: varchar("lastUpdated"),
+  workStart: varchar("workStart"),
+  memberUpdate: varchar("memberUpdate"),
 });
