@@ -58,7 +58,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <main className="p-6 bg-[#222527] min-h-screen">
+    <main className="p-6 min-h-screen">
       <div className="max-w-5xl mx-auto">
         <h1 className="text-4xl font-bold mb-8 text-center text-white">
           AI Tools Dashboard
