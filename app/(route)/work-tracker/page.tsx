@@ -13,6 +13,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { toast } from "sonner";
 import AppSidebar from "@/components/AppSidebar";
+import MobileSidebar from "@/components/MobileSideBar";
 
 type WorkItem = {
   _id?: string;
@@ -140,6 +141,9 @@ export default function WorkTracker() {
       <div className="hidden md:block">
         {/* On mobile it will not be shown  */}
         <AppSidebar onCollapse={setIsSidebarCollapsed} />
+      </div>
+      <div className="md:hidden flex">
+        <MobileSidebar />
       </div>
       <div
         className={`${

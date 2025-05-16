@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import AppSidebar from "../../../components/AppSidebar";
 import Dashboard from "../../../components/Dashboard";
+import MobileSidebar from "@/components/MobileSideBar";
 
 const Page = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -11,6 +12,9 @@ const Page = () => {
       <div className="hidden md:block">
         {/* On mobile it will not be shown  */}
         <AppSidebar onCollapse={setIsSidebarCollapsed} />
+      </div>
+      <div className="md:hidden flex">
+        <MobileSidebar />
       </div>
 
       <div

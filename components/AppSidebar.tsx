@@ -31,7 +31,7 @@ const navItems = [
   },
 ];
 
-export default function AppSidebar({ onCollapse }) {
+export default function AppSidebar({ onCollapse }: any) {
   const { data: session, status } = useSession();
   const [collapsed, setCollapsed] = useState(false);
 
