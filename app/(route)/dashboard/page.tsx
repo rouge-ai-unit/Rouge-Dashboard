@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import AppSidebar from "../../../components/AppSidebar";
 import Dashboard from "../../../components/Dashboard";
-import MobileSidebar from "@/components/MobileSideBar";
+import MobileSidebar from "@/components/MobileSidebar";
 
 const Page = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);

@@ -13,7 +13,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { toast } from "sonner";
 import AppSidebar from "@/components/AppSidebar";
-import MobileSidebar from "@/components/MobileSideBar";
+import MobileSidebar from "@/components/MobileSidebar";
 
 type WorkItem = {
   _id?: string;
