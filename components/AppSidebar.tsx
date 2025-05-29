@@ -30,7 +30,13 @@ const navItems = [
   },
 ];
 
-export default function AppSidebar({ onCollapse }: any) {
+interface AppSidebarProps {
+  onCollapse: (collapsed: boolean) => void;
+}
+
+
+// @ts-except-error to be fixed
+export default function AppSidebar({ onCollapse }: AppSidebarProps) {
   const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
 
