@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Brain, Home, History, Search, LogIn, LogOut, LayoutDashboard, ChartScatter, UserCog2 } from "lucide-react";
+import { LogIn, LogOut, LayoutDashboard, ChartScatter, UserCog2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { Button } from "./ui/button";
 import {
   Tooltip,
   TooltipContent,
@@ -32,7 +31,7 @@ const navItems = [
 ];
 
 export default function AppSidebar({ onCollapse }: any) {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
 
   const handleCollapse = () => {
