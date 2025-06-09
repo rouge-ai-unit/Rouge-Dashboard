@@ -18,6 +18,16 @@ const navItems = [
   { title: "Dashboard", icon: LayoutDashboard, href: "/" },
   { title: "Analytics", icon: ChartScatter, href: "/stats" },
   { title: "Work Tracker", icon: UserCog2, href: "/work-tracker" },
+  {
+    title: "Ai News Daily",
+    icon: Newspaper,
+    href: "/tools/ai-news-daily",
+  },
+  {
+    title: "Contact Us",
+    icon: Mail,
+    href: "/tools/contact",
+  },
 ];
 
 export default function MobileSidebar() {
