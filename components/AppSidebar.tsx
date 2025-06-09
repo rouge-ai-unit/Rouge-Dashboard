@@ -52,7 +52,6 @@ interface AppSidebarProps {
   onCollapse: (collapsed: boolean) => void;
 }
 
-// @ts-expect-error to be fixed
 export default function AppSidebar({ onCollapse }: AppSidebarProps) {
   const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
