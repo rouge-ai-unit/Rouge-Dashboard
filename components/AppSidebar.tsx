@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { LogIn, LogOut, LayoutDashboard, ChartScatter, UserCog2 } from "lucide-react";
+import {
+  LogIn,
+  LogOut,
+  LayoutDashboard,
+  ChartScatter,
+  UserCog2,
+  Newspaper,
+  Mail,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
@@ -28,14 +36,23 @@ const navItems = [
     icon: UserCog2,
     href: "/work-tracker",
   },
+  {
+    title: "Ai News Daily",
+    icon: Newspaper,
+    href: "/tools/ai-news-daily",
+  },
+  {
+    title: "Contact Us",
+    icon: Mail,
+    href: "/tools/contact",
+  },
 ];
 
 interface AppSidebarProps {
   onCollapse: (collapsed: boolean) => void;
 }
 
-
-// @ts-except-error to be fixed
+// @ts-expect-error to be fixed
 export default function AppSidebar({ onCollapse }: AppSidebarProps) {
   const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
