@@ -9,6 +9,7 @@ import {
   UserCog2,
   Newspaper,
   Mail,
+  University,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -45,6 +46,11 @@ const navItems = [
     title: "Contact Us",
     icon: Mail,
     href: "/tools/contact",
+  },
+  {
+    title: "ASEAN University Data Extractor",
+    icon: University,
+    href: "https://rouge-university-list.streamlit.app/",
   },
 ];
 
