@@ -28,6 +28,7 @@ export function isAllowedEmail(email: string): boolean {
 
 const isProd = process.env.NODE_ENV === "production";
 const devBypass = !isProd || process.env.NEXT_PUBLIC_DISABLE_AUTH === "true";
+const enableEmailAuth = process.env.NEXT_PUBLIC_ENABLE_EMAIL_AUTH === "true";
 
 const hasGoogle = !!process.env.GOOGLE_CLIENT_ID && !!process.env.GOOGLE_CLIENT_SECRET;
 const baseProviders = [
@@ -39,7 +40,7 @@ const baseProviders = [
         }),
       ]
     : []),
-  // Keep Credentials only for development/bypass. In production this will always reject to avoid unverified logins.
+  // Credentials: allowed in dev, and optionally in prod if explicitly enabled via env.
   CredentialsProvider({
     credentials: {
       email: { label: "Email", type: "text" },
@@ -48,8 +49,8 @@ const baseProviders = [
     async authorize(credentials) {
       const email = (credentials?.email || "").toString().toLowerCase().trim();
       const password = (credentials?.password || "").toString();
-      // Allow credentials only when dev bypass is enabled
-      if (devBypass) {
+      // Allow credentials in dev bypass, or when explicitly enabled for prod
+      if (devBypass || (isProd && enableEmailAuth)) {
         // For demo: allow any password for rouge emails, or require 'test123' for others
         if (/rouge/.test(email)) {
           return { id: "dev", email } as unknown as User;

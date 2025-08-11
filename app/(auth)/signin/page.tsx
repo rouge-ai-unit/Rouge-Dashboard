@@ -36,6 +36,7 @@ export default function SignIn() {
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const devBypass = typeof window !== "undefined" && (process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_DISABLE_AUTH === "true");
+  const enableEmailAuth = process.env.NEXT_PUBLIC_ENABLE_EMAIL_AUTH === "true";
 
   const handleGoogle = async () => {
     setLoading("google");
@@ -121,7 +122,7 @@ export default function SignIn() {
               )}
             </button>
 
-            {devBypass ? (
+            {devBypass || enableEmailAuth ? (
               <>
                 <div className="my-6 flex items-center gap-3 text-xs text-gray-500">
                   <div className="h-px flex-1 bg-gray-700" />

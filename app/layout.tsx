@@ -3,12 +3,19 @@
 import { SessionProvider } from "next-auth/react";
 import "./globals.css";
 import ChatbotWidget from "../components/ChatbotWidget";
+import { useSession } from "next-auth/react";
 import Script from "next/script";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import GlobalDialogProvider from "@/components/GlobalDialog";
 
 const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
+
+function AuthenticatedChatbot() {
+  const { status } = useSession();
+  if (status !== "authenticated") return null;
+  return <ChatbotWidget />;
+}
 
 export default function RootLayout({
   children,
@@ -55,7 +62,7 @@ export default function RootLayout({
             </GlobalDialogProvider>
           </ThemeProvider>
           <Toaster richColors theme="dark" />
-          <ChatbotWidget />
+          <AuthenticatedChatbot />
         </SessionProvider>
       </body>
     </html>
