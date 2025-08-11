@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LogIn,
   LogOut,
@@ -10,10 +10,12 @@ import {
   Newspaper,
   Mail,
   University,
+  BrainCircuit,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
+import { usePathname } from "next/navigation";
 import {
   Tooltip,
   TooltipContent,
@@ -43,6 +45,11 @@ const navItems = [
     href: "/tools/ai-news-daily",
   },
   {
+    title: "Content Idea Automation",
+    icon: BrainCircuit,
+    href: "/tools/content-idea-automation",
+  },
+  {
     title: "Contact Us",
     icon: Mail,
     href: "/tools/contact",
@@ -55,17 +62,43 @@ const navItems = [
 ];
 
 interface AppSidebarProps {
-  onCollapse: (collapsed: boolean) => void;
+  onCollapseAction?: (collapsed: boolean) => void;
 }
 
-export default function AppSidebar({ onCollapse }: AppSidebarProps) {
+export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
   const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
+  const pathname = usePathname();
+
+  // Persist collapsed state across reloads for better UX
+  useEffect(() => {
+    const saved = localStorage.getItem("sidebar_collapsed");
+    const isCollapsed = saved ? saved === "true" : false;
+    setCollapsed(isCollapsed);
+    try {
+      if (typeof document !== "undefined") {
+        document.documentElement.style.setProperty(
+          "--sidebar-width",
+          isCollapsed ? "5rem" : "15rem"
+        );
+      }
+    } catch {}
+  }, []);
 
   const handleCollapse = () => {
     const newCollapsedState = !collapsed;
     setCollapsed(newCollapsedState);
-    onCollapse(newCollapsedState);
+  onCollapseAction?.(newCollapsedState);
+    try {
+      localStorage.setItem("sidebar_collapsed", String(newCollapsedState));
+      // Sync CSS var for topbar offset
+      if (typeof document !== "undefined") {
+        document.documentElement.style.setProperty(
+          "--sidebar-width",
+          newCollapsedState ? "5rem" : "15rem"
+        );
+      }
+    } catch {}
   };
 
   return (
@@ -73,6 +106,7 @@ export default function AppSidebar({ onCollapse }: AppSidebarProps) {
       className={`fixed top-0 left-0 h-screen bg-[#202222] text-white transition-all duration-300 ${
         collapsed ? "w-[5rem]" : "w-[15rem]"
       }`}
+      style={{ width: collapsed ? "5rem" : "15rem" }}
     >
       {/* Sidebar Header */}
       <div className="flex items-center justify-center px-4 py-4 gap-3">
@@ -83,10 +117,14 @@ export default function AppSidebar({ onCollapse }: AppSidebarProps) {
               alt="Company Logo"
               width={40}
               height={40}
-              className="rounded-md"
+              className="rounded-md select-none"
+              quality={100}
+              priority
             />
           </Link>
-          {!collapsed && <p className="text-xs">Rouge Dashboard</p>}
+          {!collapsed && (
+            <p className="font-bold text-lg subpixel-antialiased tracking-tight">Rouge</p>
+          )}
         </div>
         {!collapsed && (
           <Image
@@ -101,21 +139,23 @@ export default function AppSidebar({ onCollapse }: AppSidebarProps) {
       </div>
 
       {/* Navigation Menu */}
-      <nav className="mt-4">
+      <nav className="mt-4" aria-label="Primary">
         {navItems.map((item, index) => (
-          <Link href={item.href} key={index}>
-            <button
-              className={`flex items-center gap-4 w-full px-4 py-3 text-gray-300 hover:bg-[#2c2e2e] hover:text-white rounded-md transition-all duration-200 cursor-pointer ${
+          <Link href={item.href} key={index} aria-current={pathname === item.href ? "page" : undefined}>
+            <div
+              className={`flex items-center gap-4 w-full px-4 py-3 rounded-md transition-all duration-200 cursor-pointer ${
                 collapsed ? "justify-center" : ""
-              }`}
+              } ${pathname === item.href ? "bg-[#2c2e2e] text-white" : "text-gray-300 hover:bg-[#2c2e2e] hover:text-white"}`}
+              role="link"
+              tabIndex={0}
             >
-              <item.icon size={24} />
+              <item.icon size={22} aria-hidden="true" />
               {!collapsed && (
-                <span className="ml-2 text-[16px] leading-[24px]">
+                <span className="ml-2 text-[15px] leading-[22px]">
                   {item.title}
                 </span>
               )}
-            </button>
+            </div>
           </Link>
         ))}
       </nav>

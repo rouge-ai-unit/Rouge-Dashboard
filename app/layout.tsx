@@ -6,6 +6,7 @@ import ChatbotWidget from "../components/ChatbotWidget";
 import Script from "next/script";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import GlobalDialogProvider from "@/components/GlobalDialog";
 
 const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
 
@@ -40,7 +41,7 @@ export default function RootLayout({
           </>
         )}
       </head>
-      <body>
+  <body suppressHydrationWarning>
         <SessionProvider>
           {/* <Sidebar>{children}</Sidebar> */}
           <ThemeProvider
@@ -49,7 +50,9 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <div className="md:p-3 bg-[#202222]">{children}</div>
+            <GlobalDialogProvider>
+              <div className="bg-[#202222]">{children}</div>
+            </GlobalDialogProvider>
           </ThemeProvider>
           <Toaster richColors theme="dark" />
           <ChatbotWidget />

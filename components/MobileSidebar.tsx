@@ -9,6 +9,9 @@ import {
   LogIn,
   Menu,
   X,
+  Newspaper,
+  Mail,
+  BrainCircuit,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -22,6 +25,11 @@ const navItems = [
     title: "Ai News Daily",
     icon: Newspaper,
     href: "/tools/ai-news-daily",
+  },
+  {
+    title: "Content Idea Automation",
+    icon: BrainCircuit,
+    href: "/tools/content-idea-automation",
   },
   {
     title: "Contact Us",

@@ -1,11 +1,4 @@
-import {
-  boolean,
-  date,
-  integer,
-  pgTable,
-  uuid,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { boolean, date, integer, pgTable, uuid, varchar } from "drizzle-orm/pg-core";
 
 export const Companies = pgTable("companyDetails", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -19,7 +12,7 @@ export const Companies = pgTable("companyDetails", {
   potentialPainPoints: varchar("potentialPainPoints").notNull(),
   contactName: varchar("contactName").notNull(),
   contactPosition: varchar("contactPosition").notNull(),
-  linkedin: varchar("linkedin").notNull(),
+  linkedin: varchar("linkedin"),
   contactEmail: varchar("contactEmail").notNull(),
   isMailed: boolean("isMailed").default(false),
   addedToMailList: boolean("addedToMailList").default(false),
@@ -35,6 +28,7 @@ export const LinkedinContent = pgTable("linkedinContent", {
   postIdeas: varchar("post_ideas").notNull(),
   caption: varchar("caption").notNull(),
   hashtags: varchar("hashtags").notNull(),
+  status: varchar("status").default("Draft"),
 });
 
 export const WorkTracker = pgTable("workTracker", {
@@ -47,4 +41,35 @@ export const WorkTracker = pgTable("workTracker", {
   lastUpdated: varchar("lastUpdated"),
   workStart: varchar("workStart"),
   memberUpdate: varchar("memberUpdate"),
+});
+
+// Dashboard Tools for UI cards and progress
+export const Tools = pgTable("tools", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name").notNull(),
+  href: varchar("href").notNull(),
+  description: varchar("description").notNull(),
+  unit: varchar("unit"),
+  status: varchar("status").notNull(),
+  progress: integer("progress").default(0),
+  criticality: varchar("criticality").default("Medium"),
+});
+
+// Tool Requests (Tickets)
+export const Tickets = pgTable("tickets", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  title: varchar("title").notNull(),
+  description: varchar("description").notNull(),
+  criticality: varchar("criticality").notNull(),
+  requestedBy: varchar("requestedBy").notNull(),
+  status: varchar("status").notNull(),
+  // Structured request criteria (optional)
+  problemStatement: varchar("problemStatement"),
+  expectedOutcome: varchar("expectedOutcome"),
+  dataSources: varchar("dataSources"),
+  constraints: varchar("constraints"),
+  manualSteps: varchar("manualSteps"),
+  agentBreakdown: varchar("agentBreakdown"),
+  dueDate: varchar("dueDate"),
+  impact: varchar("impact"),
 });

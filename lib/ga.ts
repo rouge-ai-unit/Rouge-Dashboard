@@ -2,7 +2,9 @@
 import { google } from 'googleapis';
 import path from 'path';
 
-const keyFilePath = path.join(process.cwd(), 'config', 'google-analytics-service.json'); // Path to your Google Analytics service account key
+const keyFilePath = process.env.GA_SERVICE_ACCOUNT_JSON_PATH
+  ? path.resolve(process.env.GA_SERVICE_ACCOUNT_JSON_PATH)
+  : path.join(process.cwd(), 'config', 'google-analytics-service.json');
 
 export async function getRealtimeUsers(propertyId: string) {
   // Initialize GoogleAuth with the path to your service account JSON key

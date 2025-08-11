@@ -21,15 +21,12 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Download, ExternalLink, Pencil, Trash } from "lucide-react";
-import { db } from "@/utils/dbConfig";
 import { toast } from "sonner";
-import { Companies } from "@/utils/schema";
-import { eq } from "drizzle-orm";
 import Link from "next/link";
 import { FaLinkedin } from "react-icons/fa";
 
 interface Company {
-  id: number;
+  id: string; // uuid
   companyName: string;
   companyWebsite?: string;
   companyLinkedin?: string;
@@ -46,14 +43,16 @@ interface Company {
 
 interface CompanyTableProps {
   data: Company[];
-  refreshData: () => void;
+  refreshDataAction: () => void;
 }
 
-export function CompanyTable({ data, refreshData }: CompanyTableProps) {
+export function CompanyTable({ data, refreshDataAction: refreshData }: CompanyTableProps) {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [editData, setEditData] = useState<Partial<Company>>({});
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const handleEdit = (company: Company) => {
     setSelectedCompany(company);
@@ -68,28 +67,44 @@ export function CompanyTable({ data, refreshData }: CompanyTableProps) {
 
   const confirmDelete = async () => {
     if (!selectedCompany) return;
-    // @ts-expect-error to be fixed
-    await db.delete(Companies).where(eq(Companies.id, selectedCompany.id));
-    refreshData();
-    toast.success("Company deleted successfully.");
-    setIsDeleteOpen(false);
-    setSelectedCompany(null);
+    try {
+      setDeleting(true);
+      const res = await fetch(`/api/companies/${selectedCompany.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete company");
+      refreshData();
+      toast.success("Company deleted successfully.");
+      setIsDeleteOpen(false);
+      setSelectedCompany(null);
+    } catch (e) {
+      console.error(e);
+      toast.error("Delete failed");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleEditCompany = async () => {
     if (!selectedCompany) return;
-    await db
-      .update(Companies)
-      // @ts-expect-error to be fixed
-      .set(editData)
-      // @ts-expect-error to be fixed
-      .where(eq(Companies.id, editData.id!))
-      .returning();
-
-    refreshData();
-    toast.success("Company updated successfully.");
-    setIsEditOpen(false);
-    setSelectedCompany(null);
+    try {
+      setSaving(true);
+      const res = await fetch(`/api/companies/${selectedCompany.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editData),
+      });
+      if (!res.ok) throw new Error("Failed to update company");
+      refreshData();
+      toast.success("Company updated successfully.");
+      setIsEditOpen(false);
+      setSelectedCompany(null);
+    } catch (e) {
+      console.error(e);
+      toast.error("Update failed");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const exportToCsv = () => {
@@ -325,14 +340,16 @@ export function CompanyTable({ data, refreshData }: CompanyTableProps) {
               variant="outline"
               onClick={() => setIsEditOpen(false)}
               className="border-white text-white hover:bg-white hover:text-black"
+              disabled={saving}
             >
               Cancel
             </Button>
             <Button
               onClick={handleEditCompany}
               className="bg-cyan-600 hover:bg-cyan-700 text-white"
+              disabled={saving}
             >
-              Save Changes
+              {saving ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -355,8 +372,9 @@ export function CompanyTable({ data, refreshData }: CompanyTableProps) {
               variant="destructive"
               onClick={confirmDelete}
               className="bg-red-600 hover:bg-red-700"
+              disabled={deleting}
             >
-              Delete
+              {deleting ? "Deleting..." : "Delete"}
             </Button>
             <Button
               variant="outline"

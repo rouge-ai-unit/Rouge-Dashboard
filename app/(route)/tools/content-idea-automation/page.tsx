@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Newspaper, BrainCircuit } from "lucide-react";
 import { toast } from "sonner";
 import { generateContent } from "@/lib/aiGenerate";
-import { db } from "@/utils/dbConfig";
-import { LinkedinContent } from "@/utils/schema";
 import { ContentTable } from "@/components/ContentTable";
 
 interface ContentItem {
-  id: number;
+  id: string; // uuid
   dayOfMonth: number;
   weekOfMonth: number;
   date: string;
@@ -24,146 +26,201 @@ interface ContentItem {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [content, setContent] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("content");
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const [rangeOpen, setRangeOpen] = useState(false);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   useEffect(() => {
-    fetchCompanyList();
-    const storedTab = localStorage.getItem("defaultTab") || "content";
+    fetchContentList();
+    const storedTab = localStorage.getItem("content-idea-tab-v1") || "content";
     setActiveTab(storedTab);
+    const id = setInterval(fetchContentList, 15000);
+    return () => clearInterval(id);
   }, []);
 
+  // Handle deep link ?new=1 from Topbar: ensure correct tab and scroll
+  useEffect(() => {
+    try {
+      if (typeof window === "undefined") return;
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get("new") === "1") {
+        setActiveTab("content");
+        setTimeout(() => headerRef.current?.scrollIntoView({ behavior: "smooth" }), 40);
+        router.replace("/tools/content-idea-automation", { scroll: false });
+      }
+    } catch {}
+  }, [router]);
 
-
-  const fetchCompanyList = async () => {
-    const con_response = await fetch(`/api/contents`);
-    const contents: ContentItem[] = await con_response.json();
-    setContent(contents);
+  const fetchContentList = async () => {
+    try {
+      const con_response = await fetch(`/api/contents`);
+      if (!con_response.ok) throw new Error("Failed to fetch content");
+      const contents: ContentItem[] = await con_response.json();
+      setContent(contents);
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not load content ideas.");
+    }
   };
 
   const refreshData = () => {
-    fetchCompanyList();
+    fetchContentList();
   };
 
-  const handleGenerateData = async () => {
-    const to = content[content.length - 1]?.date;
-
-    const topics = content.map((item) => item.generalTheme);
-    const contentTitles = topics.join(", ");
-
-    const formatDateToHongKong = (date: Date): string => {
-      const utc = date.getTime() + date.getTimezoneOffset() * 60000;
-      const hongKongTime = new Date(utc + 8 * 60 * 60 * 1000);
-
-      const year = hongKongTime.getFullYear();
-      const month = String(hongKongTime.getMonth() + 1).padStart(2, "0");
-      const day = String(hongKongTime.getDate()).padStart(2, "0");
-
-      return `${year}-${month}-${day}`;
-    };
-
-    const toDateInput =
-      typeof to !== "undefined" ? to : formatDateToHongKong(new Date());
-
-    const newFrom = new Date(toDateInput);
-    newFrom.setDate(newFrom.getDate() + (to ? 1 : 0));
-
-    const newTo = new Date(newFrom);
-    newTo.setDate(newTo.getDate() + 5);
-
-    const fromDate = formatDateToHongKong(newFrom);
-    const toDate = formatDateToHongKong(newTo);
-
-    toast.info("Generating data... Please wait!");
+  const handleGenerateData = async (opts?: { from?: string; to?: string }) => {
     setLoading(true);
-
-    const data = await generateContent(fromDate, toDate, contentTitles);
-    console.log("Generated Data:", data);
-
-    for (const item of data) {
-      await db
-        .insert(LinkedinContent)
-        .values({
-          dayOfMonth: item.dayOfMonth,
-          weekOfMonth: item.weekOfMonth,
-          date: item.date,
-          specialOccasion: item.specialOccasion,
-          generalTheme: item.generalTheme,
-          postIdeas: item.postIdeas,
-          caption: item.caption,
-          hashtags: item.hashtags,
-        })
-        .returning();
+    toast.info("Generating new content ideas... Please wait!");
+    try {
+      const lastDate = content[content.length - 1]?.date;
+      const body = opts?.from || opts?.to
+        ? { ...(opts.from ? { from: opts.from } : {}), ...(opts.to ? { to: opts.to } : {}) }
+        : lastDate
+          ? { from: new Date(new Date(lastDate).getTime() + 24*60*60*1000).toISOString().split("T")[0] }
+          : {};
+      const res = await fetch("/api/contents/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error("Failed to generate");
+      await res.json();
+      refreshData();
+      toast.success("New content ideas generated successfully!");
+      if (rangeOpen) setRangeOpen(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to generate data. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    refreshData();
-    setLoading(false);
-    toast.success("Data generated successfully!");
   };
-
 
   return (
-    <div className="p-8">
-      <Tabs
-        value={activeTab}
-        onValueChange={(val) => {
-          setActiveTab(val);
-          localStorage.setItem("defaultTab", val);
-        }}
-        className="space-y-4"
-      >
-        <TabsList>
-          <TabsTrigger value="content" className="cursor-pointer">
-            Content Idea Generator
-          </TabsTrigger>
-          <TabsTrigger value="summary" className="cursor-pointer">
-            Article Summariser
-          </TabsTrigger>
-        </TabsList>
+    <main className="p-6 min-h-screen">
+      <div className="max-w-6xl mx-auto">
+        <Tabs
+          value={activeTab}
+          onValueChange={(val: string) => {
+            setActiveTab(val);
+            localStorage.setItem("content-idea-tab-v1", val);
+          }}
+          className="space-y-4"
+        >
+          <TabsList>
+            <TabsTrigger value="content" className="cursor-pointer">
+              <BrainCircuit className="h-4 w-4 mr-2" />
+              Content Idea Generator
+            </TabsTrigger>
+            <TabsTrigger value="summary" className="cursor-pointer">
+              <Newspaper className="h-4 w-4 mr-2" />
+              Article Summarizer
+            </TabsTrigger>
+          </TabsList>
 
-        {/* LinkedIn Idea Generator */}
-        <TabsContent value="content" className="space-y-4">
-          <div className="flex items-center justify-center mb-8">
-            <h1 className="text-5xl md:text-6xl xl:text-7xl font-bold">
-              LinkedIn Content Ideas
-            </h1>
-          </div>
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-4xl font-bold">
-              Content Ideas ({content.length})
-            </h1>
-            <Button
-              onClick={handleGenerateData}
-              disabled={loading}
-              className="flex items-center gap-2"
+          {/* LinkedIn Idea Generator */}
+          <TabsContent value="content" className="space-y-4">
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="flex items-center justify-between mb-6"
+              ref={headerRef}
             >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              Generate Data
-            </Button>
-          </div>
-          <Card className="bg-transparent">
-            <CardContent className="mt-5">
-              <ContentTable data={content} refreshData={refreshData} />
-            </CardContent>
-          </Card>
-        </TabsContent>
+              <h1 className="text-3xl md:text-4xl font-bold text-white">
+                LinkedIn Content Ideas ({content.length})
+              </h1>
+              <Button
+                onClick={() => handleGenerateData()}
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                Generate Data
+              </Button>
+              <Button
+                variant="outline"
+                disabled={loading}
+                onClick={() => setRangeOpen(true)}
+                className="ml-2 border-gray-400 text-gray-200"
+              >
+                Custom Range
+              </Button>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.05 }}
+            >
+              <Card className="bg-[#202222] border-gray-700">
+                <CardContent className="mt-5">
+                  <ContentTable data={content} refreshDataAction={refreshData} />
+                  {content.length === 0 && (
+                    <div className="text-center text-gray-400 mt-4">
+                      No content found. Click Generate Data to create your first batch.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
 
-        {/* Article Summariser */}
-        <TabsContent value="summary" className="space-y-4">
-          <main className="p-0 m-0 h-screen">
-            <iframe
-              src="https://influencer-unit-automation-article-h99b.onrender.com/"
-              className="w-full h-full border-none rounded-3xl"
-              title="Article Summariser"
-            />
-          </main>
-        </TabsContent>
-      </Tabs>
-    </div>
+          {/* Custom range dialog */}
+          <Dialog open={rangeOpen} onOpenChange={setRangeOpen}>
+            <DialogContent className="bg-[#202222] border-gray-700 text-white">
+              <DialogHeader>
+                <DialogTitle>Generate for date range</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-300">From (YYYY-MM-DD)</label>
+                  <Input value={from} onChange={(e) => setFrom(e.target.value)} placeholder="2025-08-11" className="bg-[#2c2e2e] border-gray-600" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-300">To (optional)</label>
+                  <Input value={to} onChange={(e) => setTo(e.target.value)} placeholder="2025-08-16" className="bg-[#2c2e2e] border-gray-600" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setRangeOpen(false)} className="border-white">Cancel</Button>
+                <Button onClick={() => handleGenerateData({ from, to: to || undefined })} disabled={loading || !from} className="bg-cyan-600 hover:bg-cyan-700">Generate</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Article Summariser */}
+          <TabsContent value="summary" className="space-y-4">
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card className="bg-[#202222] border-gray-700 text-white">
+                <CardHeader>
+                  <CardTitle>Article Summarizer</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="aspect-video rounded-lg overflow-hidden border border-gray-600">
+                    <iframe
+                      src="https://influencer-unit-automation-article-h99b.onrender.com/"
+                      className="w-full h-full border-none"
+                      title="Article Summariser"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </main>
   );
 }

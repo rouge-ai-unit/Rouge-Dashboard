@@ -1,31 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
-import AppSidebar from "../../../components/AppSidebar";
 import LookerEmbed from "@/components/LookerEmbed";
-import MobileSidebar from "@/components/MobileSidebar";
+import { motion } from "framer-motion";
+import { BarChart3 } from "lucide-react";
 
-const Page = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+export default function Page() {
   return (
-    <div className="flex bg-[#202222]">
-      <div className="hidden md:block">
-        {/* On mobile it will not be shown  */}
-        <AppSidebar onCollapse={setIsSidebarCollapsed} />
+    <main className="min-h-screen p-6">
+      <div className="max-w-6xl mx-auto">
+        <motion.h1
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="text-3xl md:text-4xl font-bold mb-6 text-white flex items-center gap-2"
+        >
+          <BarChart3 className="h-7 w-7 text-blue-400" /> Analytics
+        </motion.h1>
+        <motion.section
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.05 }}
+          className="bg-[#232526] rounded-xl p-3 md:p-4 border border-gray-700 shadow-lg"
+        >
+          <LookerEmbed />
+        </motion.section>
       </div>
-      <div className="md:hidden flex">
-        <MobileSidebar />
-      </div>
-
-      <div
-        className={`${
-          isSidebarCollapsed ? "md:ml-[5rem]" : "md:ml-[15rem]"
-        } transition-all duration-300 mt-4 mb-4 mr-4 min-h-[calc(90vh)] w-full bg-[#191A1A] md:rounded-lg border-[0.1px] border-slate-600 overflow-auto p-4 text-white text-justify`}
-      >
-        <LookerEmbed />
-      </div>
-    </div>
+    </main>
   );
-};
-
-export default Page;
+}
