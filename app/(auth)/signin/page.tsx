@@ -1,13 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { LoginError } from "@/components/LoginError";
+import { useSearchParams } from "next/navigation";
+
+function SearchParamsEffect({
+  onError,
+}: {
+  onError: (message: string) => void;
+}) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const err = searchParams?.get("error");
+    if (err) {
+      const map: Record<string, string> = {
+        AccessDenied: "You are not authorized to access this app.",
+        OAuthSignin: "Could not start OAuth sign-in.",
+        OAuthCallback: "OAuth callback failed.",
+        OAuthAccountNotLinked: "Account not linked to the chosen provider.",
+      };
+      onError(map[err] || err);
+    }
+  }, [searchParams, onError]);
+  return null;
+}
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const devBypass = typeof window !== "undefined" && (process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_DISABLE_AUTH === "true");
 
   const handleGoogle = async () => {
@@ -20,7 +47,19 @@ export default function SignIn() {
     e.preventDefault();
     if (!email) return;
     setLoading("email");
-    await signIn("credentials", { email, redirect: true });
+    setError(null);
+    try {
+      const res = await signIn("credentials", { email, password, redirect: false });
+      if (res?.error) {
+        setError(res.error);
+        setDialogOpen(true);
+      } else if (res?.ok && res?.url) {
+        window.location.href = res.url;
+      }
+    } catch (err: any) {
+      setError(err?.message || "Unknown error");
+      setDialogOpen(true);
+    }
     setLoading(null);
   };
 
@@ -90,7 +129,7 @@ export default function SignIn() {
                   <div className="h-px flex-1 bg-gray-700" />
                 </div>
                 <form onSubmit={handleEmail} className="space-y-3">
-                  <label className="block text-sm text-gray-300">Email (dev)</label>
+                  <label className="block text-sm text-gray-300">Email</label>
                   <input
                     type="email"
                     value={email}
@@ -98,14 +137,30 @@ export default function SignIn() {
                     placeholder="you@company.com"
                     className="w-full rounded-lg border border-gray-700 bg-[#121314] px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600"
                   />
+                  <label className="block text-sm text-gray-300">Password</label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Password"
+                    className="w-full rounded-lg border border-gray-700 bg-[#121314] px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
                   <button
                     type="submit"
                     className="w-full rounded-lg bg-blue-600 px-4 py-2 font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
-                    disabled={!email || loading === "email"}
+                    disabled={!email || !password || loading === "email"}
                   >
                     {loading === "email" ? "Signing in…" : "Continue with Email"}
                   </button>
                 </form>
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Sign-in Error</DialogTitle>
+                    </DialogHeader>
+                    <div className="text-red-500 text-sm">{error}</div>
+                  </DialogContent>
+                </Dialog>
               </>
             ) : (
               <p className="mt-6 text-center text-xs text-gray-500">
@@ -113,12 +168,28 @@ export default function SignIn() {
               </p>
             )}
 
-            <p className="mt-6 text-center text-xs text-gray-500">
-              By continuing, you agree to our Terms and Privacy Policy.
-            </p>
+            <p className="mt-6 text-center text-xs text-gray-500">By continuing, you agree to our Terms and Privacy Policy.</p>
+            {/* Global top toast for error (optional) */}
+            {error && (
+              <LoginError
+                message={error}
+                onClose={() => {
+                  setError(null);
+                  setDialogOpen(false);
+                }}
+              />
+            )}
           </div>
         </motion.div>
       </div>
+      <Suspense>
+        <SearchParamsEffect
+          onError={(msg) => {
+            setError(msg);
+            setDialogOpen(true);
+          }}
+        />
+      </Suspense>
     </div>
   );
 }
