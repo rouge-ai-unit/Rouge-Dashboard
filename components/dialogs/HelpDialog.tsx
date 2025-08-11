@@ -8,6 +8,18 @@ import { ExternalLink, Mail, LifeBuoy, Newspaper, FileText, Settings } from "luc
 export type HelpDialogProps = { open: boolean; onOpenChangeAction: (open: boolean) => void };
 
 export default function HelpDialog({ open, onOpenChangeAction }: HelpDialogProps) {
+  // Defensive: ensure no lingering overlay blocks clicks after close
+  if (!open) {
+    try {
+      const tidy = () => {
+        document.querySelectorAll<HTMLElement>('[data-slot="dialog-overlay"], [data-slot="drawer-overlay"], [data-state="closed"][data-slot="dialog-content"], [data-state="closed"][data-slot="drawer-content"]').forEach((el) => {
+          el.style.pointerEvents = "none";
+        });
+      };
+      tidy();
+      setTimeout(tidy, 200);
+    } catch {}
+  }
   return (
     <Dialog open={open} onOpenChange={onOpenChangeAction}>
       <DialogContent className="bg-[#1b1d1e] text-gray-100 border-gray-700 sm:max-w-2xl">

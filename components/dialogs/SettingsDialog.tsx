@@ -27,6 +27,23 @@ export default function SettingsDialog({ open, onOpenChangeAction }: SettingsDia
     } catch {}
   }, [open]);
 
+  // Defensive: ensure no lingering overlay blocks clicks after close
+  useEffect(() => {
+    if (!open) {
+      const tidy = () => {
+        try {
+          document.querySelectorAll<HTMLElement>('[data-slot="dialog-overlay"], [data-slot="drawer-overlay"], [data-state="closed"][data-slot="dialog-content"], [data-state="closed"][data-slot="drawer-content"]').forEach((el) => {
+            el.style.pointerEvents = "none";
+          });
+        } catch {}
+      };
+      // run immediately and after animations
+      tidy();
+      const t = window.setTimeout(tidy, 200);
+      return () => window.clearTimeout(t);
+    }
+  }, [open]);
+
   const save = () => {
     try {
       localStorage.setItem("prefs:notifs:pollMs", String(Math.max(10, pollSec) * 1000));
