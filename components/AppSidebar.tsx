@@ -105,7 +105,7 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
     <aside
       className={`fixed top-0 left-0 h-screen bg-[#202222] text-white transition-all duration-300 ${
         collapsed ? "w-[5rem]" : "w-[15rem]"
-      }`}
+      } flex flex-col`}
       style={{ width: collapsed ? "5rem" : "15rem" }}
     >
       {/* Sidebar Header */}
@@ -139,7 +139,7 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
       </div>
 
       {/* Navigation Menu */}
-      <nav className="mt-4" aria-label="Primary">
+  <nav className="mt-4 flex-1 overflow-y-auto" aria-label="Primary">
         {navItems.map((item, index) => (
           <Link href={item.href} key={index} aria-current={pathname === item.href ? "page" : undefined}>
             <div
@@ -160,8 +160,8 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
         ))}
       </nav>
 
-      {/* Footer */}
-      <div className="mt-auto px-4 py-4 w-full absolute bottom-0 left-0 right-0">
+  {/* Footer */}
+  <div className="mt-auto px-4 py-4 w-full border-t border-[#2c2e2e]">
         {!collapsed ? (
           session ? (
             <div className="flex items-center justify-between">
@@ -178,9 +178,7 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => signOut()}
-                      className={`text-white hover:bg-[#2A2A2A] rounded-md p-2 transition-colors cursor-pointer ${
-                        !collapsed && "w-10 h-10 flex justify-center"
-                      }`}
+                      className={`text-white hover:bg-[#2A2A2A] rounded-md p-2 transition-colors cursor-pointer inline-flex items-center justify-center w-10 h-10`}
                       aria-label="Sign out"
                     >
                       <LogOut />
@@ -235,9 +233,7 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => signOut()}
-                      className={`text-white hover:bg-[#2A2A2A] rounded-md p-2 transition-colors cursor-pointer ${
-                        !collapsed && "w-10 h-10 flex justify-center"
-                      }`}
+                      className="text-white hover:bg-[#2A2A2A] rounded-md p-2 transition-colors cursor-pointer inline-flex items-center justify-center w-10 h-10"
                       aria-label="Sign out"
                     >
                       <LogOut />

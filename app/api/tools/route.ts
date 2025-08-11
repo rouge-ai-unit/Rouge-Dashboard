@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/utils/dbConfig";
 import { Tools } from "@/utils/schema";
 import { z } from "zod";
+// Note: GET is public to allow dashboard to show tools without auth; POST remains protected
 import { requireSession } from "@/lib/apiAuth";
 import { randomUUID } from "crypto";
 import fs from "fs";
@@ -40,7 +41,7 @@ const memTools: Array<{
 
 export async function GET() {
   try {
-  await requireSession();
+  // Public read: do not require session for listing tools
     // Helper: check file/folder existence relative to project
     const exists = (rel: string) => {
       try {
@@ -148,9 +149,7 @@ export async function GET() {
     }
     return NextResponse.json(rows);
   } catch (e) {
-    if (e instanceof Error && e.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  // Any auth error should not occur since GET is public; fall through to 500
     console.error(e);
     return NextResponse.json({ error: "Failed to fetch tools" }, { status: 500 });
   }

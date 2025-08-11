@@ -2,6 +2,13 @@
 
 A production-grade Next.js 15 App Router dashboard for internal operations. It ships with authentication, a Postgres-backed data model (Drizzle ORM + Neon), typed API routes, and polished UI using shadcn/ui and Recharts.
 
+## What’s new
+
+- Fixed: Sidebar sign-out button overflowing/overlapping. Footer is now stable with scrollable nav.
+- Fixed: Settings/Help dialogs blocking clicks after closing. Overlays now disable pointer events while animating out.
+- Fixed: Dashboard showed 0 tools. GET /api/tools is now public and returns discovered defaults (Analytics, Work Tracker, AI News Daily, Content Idea Automation, ASEAN University Data Extractor) even without a DB.
+- Auth: If no allowlist envs are set, any authenticated user is allowed. “rouge” emails are accepted by default. Optional env `NEXT_PUBLIC_ENABLE_EMAIL_AUTH=true` enables credentials auth in production; credentials are always enabled in development.
+
 ## Stack
 
 - Next.js 15 (App Router, Server/Client Components)
@@ -75,6 +82,7 @@ Create `.env.local` with:
  - ALLOWED_EMAILS: comma-separated allowlist, optional
  - ALLOWED_DOMAINS: comma-separated domains, optional
  - ALLOWED_EMAIL_PATTERNS: comma-separated regexes (e.g. ^user@domain\.com$), optional
+ - NEXT_PUBLIC_ENABLE_EMAIL_AUTH: set to "true" to allow credentials auth in production (dev is always enabled)
  - NEXT_PUBLIC_BASE_URL: base URL for server-to-server proxy calls
  - GA_SERVICE_ACCOUNT_JSON_PATH: optional absolute/relative path to GA service JSON
 
@@ -136,11 +144,10 @@ If you see SWC warnings on Windows but build succeeds, ensure 64-bit Node 20+, t
 
 - Providers
 	- Uses Google if GOOGLE_CLIENT_ID/SECRET are present
-	- Falls back to Credentials in development for local logins
+	- Credentials provider is enabled in development; in production set `NEXT_PUBLIC_ENABLE_EMAIL_AUTH=true` to allow it
 - Allowlist
-	- Domains: `rougevc.com`, `rlsclub.com`
-	- Patterns: regex array (see `allowedEmailPatterns`)
-	- Specific emails supported via `allowedEmails`
+	- If ALLOWED_* is not configured, any authenticated user can sign in. “.rouge@gmail.com” emails are explicitly allowed.
+	- Otherwise, allow by specific emails, domains, or patterns (see `lib/auth.ts`).
 - Bypass in dev
 	- `NODE_ENV=development` or `NEXT_PUBLIC_DISABLE_AUTH=true` allows everything
 - Middleware
@@ -162,7 +169,7 @@ All write operations require a session; in development, the bypass allows local 
 	- GET — list tickets
 	- POST — create; optional Slack notification if `SLACK_WEBHOOK_URL` set
 - Tools: `/api/tools`
-	- GET — list tools
+	- GET — list tools (public, returns discovered defaults when DB is empty)
 	- POST — create (persists only columns present in DB schema)
 - Work Tracker: `/api/tracker`
 	- GET — query with filters q, unit, status; sort; pagination page/pageSize (dev memory or DB)
