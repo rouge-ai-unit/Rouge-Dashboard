@@ -433,6 +433,8 @@ export default function Dashboard() {
                   <li><Link href="/tools/ai-news-daily" className="hover:underline">AI News Daily</Link></li>
                   <li><Link href="/tools/content-idea-automation" className="hover:underline">Content Idea Automation</Link></li>
                   <li><a href="https://rouge-university-list.streamlit.app/" target="_blank" rel="noreferrer" className="hover:underline">ASEAN University Data Extractor</a></li>
+                  <li><a href="https://rouge-startupseeker.streamlit.app/" target="_blank" rel="noreferrer" className="hover:underline">Startup Seeker Generator</a></li>
+                  <li><a href="https://rouge-university-list.streamlit.app/" target="_blank" rel="noreferrer" className="hover:underline">Rouge University List Generator</a></li>
                   <li><Link href="/tools/contact" className="hover:underline">Contact Support</Link></li>
                 </ul>
               </CardContent>
