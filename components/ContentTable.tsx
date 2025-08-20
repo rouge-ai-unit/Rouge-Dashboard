@@ -35,7 +35,7 @@ interface ContentItem {
   postIdeas: string;
   caption: string;
   hashtags: string;
-  status?: "Draft" | "Approved" | "Scheduled";
+  status: "Draft" | "Approved" | "Scheduled";
 }
 
 interface ContentTableProps {
@@ -68,19 +68,28 @@ export function ContentTable({ data, refreshDataAction: refreshData }: ContentTa
     if (!selectedContent) return;
     try {
       setSaving(true);
+      // Always send all required fields
+      const payload = {
+        ...selectedContent,
+        ...editData,
+        status: editData.status || selectedContent.status || "Draft",
+      };
       const res = await fetch(`/api/contents/${selectedContent.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editData),
+        body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Failed to update content");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || "Failed to update content");
+      }
       refreshData();
       toast.success("Content updated successfully.");
       setIsEditOpen(false);
       setSelectedContent(null);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error("Update failed");
+      toast.error(e?.message || "Update failed");
     } finally {
       setSaving(false);
     }

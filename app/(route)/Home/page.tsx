@@ -100,27 +100,26 @@ type ViewMode = "grid" | "list";
 export default function Page() {
   const { status } = useSession();
   const router = useRouter();
+
+  // All hooks must be called unconditionally
+  const [tools, setTools] = useState<Tool[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState(false);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [autoRefresh, setAutoRefresh] = useState(true);
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.replace("/signin");
     }
   }, [status, router]);
-  if (status === "loading") return null;
-  // Core State
-  const [tools, setTools] = useState<Tool[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [retrying, setRetrying] = useState(false);
-  
 
-  // Search State
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  // UI State
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [favorites, setFavorites] = useState<string[]>([]);
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [autoRefresh, setAutoRefresh] = useState(true);
+
 
 
 

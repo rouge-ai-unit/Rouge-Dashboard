@@ -23,6 +23,7 @@ interface ContentItem {
   postIdeas: string;
   caption: string;
   hashtags: string;
+  status: "Draft" | "Approved" | "Scheduled";
 }
 
 export default function Home() {
@@ -59,12 +60,15 @@ export default function Home() {
   const fetchContentList = async () => {
     try {
       const con_response = await fetch(`/api/contents`);
-      if (!con_response.ok) throw new Error("Failed to fetch content");
+      if (!con_response.ok) {
+        const err = await con_response.json().catch(() => ({}));
+        throw new Error(err?.error || "Failed to fetch content");
+      }
       const contents: ContentItem[] = await con_response.json();
       setContent(contents);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error("Could not load content ideas.");
+      toast.error(e?.message || "Could not load content ideas.");
     }
   };
 
@@ -87,14 +91,17 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error("Failed to generate");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || "Failed to generate");
+      }
       await res.json();
       refreshData();
       toast.success("New content ideas generated successfully!");
       if (rangeOpen) setRangeOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Failed to generate data. Please try again.");
+      toast.error(error?.message || "Failed to generate data. Please try again.");
     } finally {
       setLoading(false);
     }
