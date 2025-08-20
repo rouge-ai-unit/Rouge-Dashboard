@@ -12,21 +12,43 @@ import {
   Newspaper,
   Mail,
   BrainCircuit,
+  University,
+  Briefcase,
+  ListChecks,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 
 const navItems = [
-  { title: "Dashboard", icon: LayoutDashboard, href: "/" },
-  { title: "Analytics", icon: ChartScatter, href: "/stats" },
+  { title: "Home", icon: LayoutDashboard, href: "/home" },
+  {
+    title: "Support Request Form",
+    icon: LayoutDashboard,
+    href: "/Submit-Request-Form",
+  },
   { title: "Work Tracker", icon: UserCog2, href: "/work-tracker" },
   {
     title: "Ai News Daily",
     icon: Newspaper,
     href: "/tools/ai-news-daily",
   },
+  
   {
+    title: "ASEAN University Data Extractor",
+    icon: University,
+    href: "https://rouge-university-list.streamlit.app/",
+  },
+  {
+    title: "Startup Seeker Generator",
+    icon: Briefcase,
+    href: "https://rouge-startupseeker.streamlit.app/",
+  },
+  {
+    title: "Rouge University List Generator",
+    icon: ListChecks,
+    href: "https://rouge-university-list.streamlit.app/",
+  },{
     title: "Content Idea Automation",
     icon: BrainCircuit,
     href: "/tools/content-idea-automation",
@@ -36,6 +58,7 @@ const navItems = [
     icon: Mail,
     href: "/tools/contact",
   },
+  
 ];
 
 export default function MobileSidebar() {

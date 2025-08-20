@@ -69,7 +69,7 @@ export async function PUT(req: NextRequest) {
 // PATCH: Partial updates, e.g., status only
 export async function PATCH(req: NextRequest) {
   try {
-    await requireSession();
+    // removed requireSession for public access
     const url = new URL(req.url);
     const id = url.pathname.split("/").pop();
     const body = await req.json();
@@ -109,7 +109,7 @@ export async function PATCH(req: NextRequest) {
 // DELETE: Remove a specific work tracker item
 export async function DELETE(req: NextRequest) {
   try {
-  await requireSession();
+    // removed requireSession for public access
     const url = new URL(req.url);
     const id = url.pathname.split("/").pop();
     if (DEV_NO_DB) {

@@ -1,7 +1,7 @@
 import { getDb } from "@/utils/dbConfig";
 import { WorkTracker } from "@/utils/schema";
 import { NextRequest, NextResponse } from "next/server";
-import { requireSession } from "@/lib/apiAuth";
+
 import { randomUUID } from "crypto";
 import { z } from "zod";
 import { and, asc, count, desc, ilike, or, eq } from "drizzle-orm";
@@ -25,9 +25,11 @@ const mem: Item[] = globalAny.__worktracker_mem;
 
 const getFormattedDate = () => new Date().toISOString().split("T")[0];
 
+
+// GET route
 export async function GET(req: NextRequest) {
   try {
-  await requireSession();
+    // removed requireSession for public access
     const url = new URL(req.url);
     const q = (url.searchParams.get("q") || "").trim();
     const unit = url.searchParams.get("unit") || "";
@@ -74,9 +76,9 @@ export async function GET(req: NextRequest) {
     // DB path
     const db = getDb();
 
-  const conds: unknown[] = [];
-  if (unit) conds.push(eq(WorkTracker.unit, unit));
-  if (status) conds.push(eq(WorkTracker.status, status));
+    const conds: unknown[] = [];
+    if (unit) conds.push(eq(WorkTracker.unit, unit));
+    if (status) conds.push(eq(WorkTracker.status, status));
     if (q) {
       const likeExpr = `%${q}%`;
       const ors = or(
@@ -91,7 +93,7 @@ export async function GET(req: NextRequest) {
       );
       conds.push(ors);
     }
-  const whereExpr = conds.length ? and(...(conds.filter(Boolean) as any)) : undefined;
+    const whereExpr = conds.length ? and(...(conds.filter(Boolean) as any)) : undefined;
 
     const sortCol =
       sort === "unit" ? WorkTracker.unit :
@@ -106,12 +108,12 @@ export async function GET(req: NextRequest) {
     const [{ count: total }] = await db
       .select({ count: count() })
       .from(WorkTracker)
-  .where(whereExpr as any);
+      .where(whereExpr as any);
 
     const items = await db
       .select()
       .from(WorkTracker)
-  .where(whereExpr as any)
+      .where(whereExpr as any)
       .orderBy(dir === "asc" ? asc(sortCol) : desc(sortCol))
       .limit(pageSize)
       .offset((page - 1) * pageSize);
@@ -126,9 +128,10 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// POST route
 export async function POST(req: NextRequest) {
   try {
-  await requireSession();
+    // removed requireSession for public access
     const body = await req.json();
     // Validation
     const ItemCreate = z.object({
@@ -140,15 +143,15 @@ export async function POST(req: NextRequest) {
       workStart: z.string().optional().nullable().transform((v) => v || ""),
       memberUpdate: z.string().optional().nullable().transform((v) => v || ""),
     });
-  const parsed = ItemCreate.parse(body);
-  const newItem: Omit<Item, "_id"> = { ...parsed, lastUpdated: getFormattedDate() };
+    const parsed = ItemCreate.parse(body);
+    const newItem: Omit<Item, "_id"> = { ...parsed, lastUpdated: getFormattedDate() };
     if (DEV_NO_DB) {
-  const created: Item = { _id: randomUUID(), ...newItem };
+      const created: Item = { _id: randomUUID(), ...newItem };
       mem.unshift(created);
       return NextResponse.json(created, { status: 201 });
     }
     const db = getDb();
-  const result = await db.insert(WorkTracker).values(newItem as unknown as typeof WorkTracker.$inferInsert).returning();
+    const result = await db.insert(WorkTracker).values(newItem as unknown as typeof WorkTracker.$inferInsert).returning();
     return NextResponse.json(result[0], { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {

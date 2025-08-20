@@ -53,6 +53,7 @@ export const Tools = pgTable("tools", {
   status: varchar("status").notNull(),
   progress: integer("progress").default(0),
   criticality: varchar("criticality").default("Medium"),
+  views: integer("views").default(0), // Usage count
 });
 
 // Tool Requests (Tickets)
@@ -60,9 +61,10 @@ export const Tickets = pgTable("tickets", {
   id: uuid("id").defaultRandom().primaryKey(),
   title: varchar("title").notNull(),
   description: varchar("description").notNull(),
-  criticality: varchar("criticality").notNull(),
   requestedBy: varchar("requestedBy").notNull(),
   status: varchar("status").notNull(),
+  team: varchar("team"),
+  department: varchar("department"),
   // Structured request criteria (optional)
   problemStatement: varchar("problemStatement"),
   expectedOutcome: varchar("expectedOutcome"),
@@ -72,4 +74,6 @@ export const Tickets = pgTable("tickets", {
   agentBreakdown: varchar("agentBreakdown"),
   dueDate: varchar("dueDate"),
   impact: varchar("impact"),
+  businessGoal: varchar("businessGoal"),
+  businessSteps: varchar("businessSteps"),
 });

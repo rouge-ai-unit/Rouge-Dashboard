@@ -24,7 +24,7 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
           {isSidebarOpen && (
-            <Link href="/dashboard">
+            <Link href="/Home">
               <Image
                 src="/logo.jpg"
                 alt="Company Logo"
@@ -51,7 +51,7 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
         <ul className="flex flex-col space-y-2 p-4 flex-1" role="navigation">
           <li>
             <Link
-              href="/dashboard"
+              href="/Home"
               className={`flex items-center text-white hover:bg-[#2A2A2A] rounded-md p-2 transition-colors ${
                 !isSidebarOpen && "justify-center"
               }`}
@@ -73,7 +73,7 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
                 <rect width="7" height="7" x="14" y="14" rx="1" />
                 <rect width="7" height="7" x="3" y="14" rx="1" />
               </svg>
-              {isSidebarOpen && <span>Dashboard</span>}
+              {isSidebarOpen && <span>Home</span>}
             </Link>
           </li>
           <li>

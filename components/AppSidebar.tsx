@@ -10,7 +10,10 @@ import {
   Newspaper,
   Mail,
   University,
+  Briefcase,
+  ListChecks,
   BrainCircuit,
+  FileText, // Use FileText as a replacement for Form
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -23,16 +26,17 @@ import {
   TooltipTrigger,
 } from "./ui/tooltip";
 
-const navItems = [
+
+const publicNavItems = [
   {
-    title: "Dashboard",
+    title: "Home",
     icon: LayoutDashboard,
-    href: "/",
+    href: "/home",
   },
   {
-    title: "Analytics",
-    icon: ChartScatter,
-    href: "/stats",
+    title: "Support Request Form",
+    icon: FileText, // Changed to FileText icon for uniqueness
+    href: "/Submit-Request-Form",
   },
   {
     title: "Work Tracker",
@@ -45,6 +49,21 @@ const navItems = [
     href: "/tools/ai-news-daily",
   },
   {
+    title: "ASEAN University Data Extractor",
+    icon: University,
+    href: "https://rouge-university-list.streamlit.app/",
+  },
+  {
+    title: "Startup Seeker Generator",
+    icon: Briefcase,
+    href: "https://rouge-startupseeker.streamlit.app/",
+  },
+  {
+    title: "Rouge University List Generator",
+    icon: ListChecks,
+    href: "https://rouge-university-list.streamlit.app/",
+  },
+  {
     title: "Content Idea Automation",
     icon: BrainCircuit,
     href: "/tools/content-idea-automation",
@@ -53,11 +72,6 @@ const navItems = [
     title: "Contact Us",
     icon: Mail,
     href: "/tools/contact",
-  },
-  {
-    title: "ASEAN University Data Extractor",
-    icon: University,
-    href: "https://rouge-university-list.streamlit.app/",
   },
 ];
 
@@ -111,7 +125,7 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
       {/* Sidebar Header */}
       <div className="flex items-center justify-center px-4 py-4 gap-3">
         <div className="flex items-center gap-2">
-          <Link href="/dashboard">
+          <Link href="/home">
             <Image
               src="/logo.jpg"
               alt="Company Logo"
@@ -137,25 +151,39 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
           />
         )}
       </div>
-
       {/* Navigation Menu */}
-  <nav className="mt-4 flex-1 overflow-y-auto" aria-label="Primary">
-        {navItems.map((item, index) => (
+      <nav className="mt-4 flex-1 overflow-y-auto" aria-label="Primary">
+        {publicNavItems.map((item, index) => (
           <Link href={item.href} key={index} aria-current={pathname === item.href ? "page" : undefined}>
-            <div
-              className={`flex items-center gap-4 w-full px-4 py-3 rounded-md transition-all duration-200 cursor-pointer ${
-                collapsed ? "justify-center" : ""
-              } ${pathname === item.href ? "bg-[#2c2e2e] text-white" : "text-gray-300 hover:bg-[#2c2e2e] hover:text-white"}`}
-              role="link"
-              tabIndex={0}
-            >
-              <item.icon size={22} aria-hidden="true" />
-              {!collapsed && (
+            {collapsed ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div
+                      className={`flex items-center gap-4 w-full px-4 py-3 rounded-md transition-all duration-200 cursor-pointer justify-center ${pathname === item.href ? "bg-[#2c2e2e] text-white" : "text-gray-300 hover:bg-[#2c2e2e] hover:text-white"}`}
+                      role="link"
+                      tabIndex={0}
+                    >
+                      <item.icon size={22} aria-hidden="true" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    {item.title}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <div
+                className={`flex items-center gap-4 w-full px-4 py-3 rounded-md transition-all duration-200 cursor-pointer ${pathname === item.href ? "bg-[#2c2e2e] text-white" : "text-gray-300 hover:bg-[#2c2e2e] hover:text-white"}`}
+                role="link"
+                tabIndex={0}
+              >
+                <item.icon size={22} aria-hidden="true" />
                 <span className="ml-2 text-[15px] leading-[22px]">
                   {item.title}
                 </span>
-              )}
-            </div>
+              </div>
+            )}
           </Link>
         ))}
       </nav>

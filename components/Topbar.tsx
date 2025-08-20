@@ -117,7 +117,7 @@ export default function Topbar({ title }: Props) {
             return {
               id: `t:${t.id}`,
               title: `New ticket: ${t.title}`,
-              href: "/dashboard",
+              href: "/Submit-Request-Form",
               type: "ticket" as const,
               ts: isNaN(ts) ? Date.now() : ts,
               meta: t.criticality || "",
@@ -186,26 +186,12 @@ export default function Topbar({ title }: Props) {
       <div className="flex w-full items-center gap-3 px-3 sm:px-4 py-2.5">
         {/* Title only (brand/logo removed) */}
         <h1 className="text-sm sm:text-base font-semibold text-white truncate mr-1">
-          {title ?? "Dashboard"}
+          {title ?? "Home"}
         </h1>
         
   {/* Quick actions */}
   <div className="ml-auto flex items-center gap-1 sm:gap-2">
 
-      {/* New */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" className="bg-primary text-white">
-                <Plus className="size-4 mr-1.5" /> New <ChevronDown className="size-3.5 ml-1" />
-              </Button>
-            </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48 bg-[#1b1d1e] text-gray-100 border-gray-700">
-    <DropdownMenuItem title="Create a new work tracker entry" className="data-[highlighted]:bg-[#242728] data-[highlighted]:text-gray-100" onClick={() => router.push("/work-tracker?new=1")}>Work item</DropdownMenuItem>
-    <DropdownMenuItem title="Start a new content idea" className="data-[highlighted]:bg-[#242728] data-[highlighted]:text-gray-100" onClick={() => router.push("/tools/content-idea-automation?new=1")}>Content idea</DropdownMenuItem>
-    <DropdownMenuItem title="Draft an AI news post" className="data-[highlighted]:bg-[#242728] data-[highlighted]:text-gray-100" onClick={() => router.push("/tools/ai-news-daily?new=1")}>AI news post</DropdownMenuItem>
-    <DropdownMenuItem title="Open a support request" className="data-[highlighted]:bg-[#242728] data-[highlighted]:text-gray-100" onClick={() => router.push("/tools/contact?new=1")}>Support request</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
 
           {/* Notifications */}
           <DropdownMenu>

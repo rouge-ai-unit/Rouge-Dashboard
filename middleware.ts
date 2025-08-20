@@ -38,11 +38,10 @@ export default withAuth({
 
 export const config = {
   matcher: [
-    "/dashboard",
-  "/stats",
-  "/help",
-  "/work-tracker",
-  "/settings",
-  "/tools/:path*",
+    "/stats",
+    "/help",
+    "/work-tracker",
+    "/settings",
+    "/tools/:path*",
   ],
 };

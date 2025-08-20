@@ -72,7 +72,7 @@ export async function GET() {
           id: randomUUID(),
           name: "Analytics",
           href: "/stats",
-          description: "KPIs and charts",
+          description: "Visualize KPIs, trends, and business metrics with interactive charts and dashboards for data-driven decisions.",
           unit: "Ops",
           status: "Available",
           progress: 100,
@@ -85,7 +85,7 @@ export async function GET() {
           id: randomUUID(),
           name: "Work Tracker",
           href: "/work-tracker",
-          description: "Track work and team updates",
+          description: "Monitor, assign, and update team tasks and projects. Stay on top of progress and deadlines collaboratively.",
           unit: "Ops",
           status: "Available",
           progress: 100,
@@ -98,7 +98,7 @@ export async function GET() {
           id: randomUUID(),
           name: "AI News Daily",
           href: "/tools/ai-news-daily",
-          description: "Daily AI news highlights",
+          description: "Get the latest AI news, breakthroughs, and industry updates curated daily for your convenience.",
           unit: "AI",
           status: "Available",
           progress: 100,
@@ -111,7 +111,7 @@ export async function GET() {
           id: randomUUID(),
           name: "Content Idea Automation",
           href: "/tools/content-idea-automation",
-          description: "LinkedIn content planner and generator",
+          description: "Plan, generate, and organize LinkedIn content ideas automatically to boost your marketing strategy.",
           unit: "Marketing",
           status: "Available",
           progress: 100,
@@ -123,7 +123,31 @@ export async function GET() {
         id: randomUUID(),
         name: "ASEAN University Data Extractor",
         href: "https://rouge-university-list.streamlit.app/",
-        description: "External tool for ASEAN university data",
+        description: "Extract, search, and analyze comprehensive data on ASEAN universities. Useful for research, benchmarking, and academic outreach.",
+        unit: "Research",
+        status: "Available",
+        progress: 100,
+        criticality: "Low",
+      });
+
+      // Startup Seeker Generator (external)
+      items.push({
+        id: randomUUID(),
+        name: "Startup Seeker Generator",
+        href: "https://rouge-startupseeker.streamlit.app/",
+        description: "Generate and discover startup leads, founders, and company profiles for business development and networking.",
+        unit: "Research",
+        status: "Available",
+        progress: 100,
+        criticality: "Low",
+      });
+
+      // Rouge University List Generator (external)
+      items.push({
+        id: randomUUID(),
+        name: "Rouge University List Generator",
+        href: "https://rouge-university-list.streamlit.app/",
+        description: "Create and export curated lists of universities for outreach, marketing, or academic research in the ASEAN region.",
         unit: "Research",
         status: "Available",
         progress: 100,

@@ -1,102 +1,73 @@
+
 # Rouge Dashboard
 
-A production-grade Next.js 15 App Router dashboard for internal operations. It ships with authentication, a Postgres-backed data model (Drizzle ORM + Neon), typed API routes, and polished UI using shadcn/ui and Recharts.
+Production-grade Next.js 15 dashboard for internal operations, featuring real-time tools, AI-powered automation, robust ticketing, and a modern, responsive UI.
 
-## What’s new
+## Main Features & Pages
 
-- Fixed: Sidebar sign-out button overflowing/overlapping. Footer is now stable with scrollable nav.
-- Fixed: Settings/Help dialogs blocking clicks after closing. Overlays now disable pointer events while animating out.
-- Fixed: Dashboard showed 0 tools. GET /api/tools is now public and returns discovered defaults (Analytics, Work Tracker, AI News Daily, Content Idea Automation, ASEAN University Data Extractor) even without a DB.
-- Auth: If no allowlist envs are set, any authenticated user is allowed. “rouge” emails are accepted by default. Optional env `NEXT_PUBLIC_ENABLE_EMAIL_AUTH=true` enables credentials auth in production; credentials are always enabled in development.
+- **Home Dashboard (`/Home`)**: Central hub with tools list, search, favorites, and floating ChatbotWidget.
+- **Work Tracker (`/work-tracker`)**: Track, create, edit, and manage work items with filters, search, and polling.
+- **Support/Submit Request (`/Submit-Request-Form`)**: Submit support or feature requests, with ticket tracking and notifications.
+- **Tools Suite (`/tools`)**:
+	- **About**: Company/about info.
+	- **Contact**: Support/contact form with ticketing and recent tickets.
+	- **AgTech Company Automation**: Generate and analyze agtech companies using AI.
+	- **AI News Daily**: Fetch, preview, and detail daily AI news.
+	- **Content Idea Automation**: Generate and manage LinkedIn content calendar.
+- **Analytics (`/stats`)**: View analytics via Looker Studio embed.
+- **Settings (`/settings`)**: User notification and polling preferences.
+- **Help (`/help`)**: Quick guides, FAQ, and documentation.
+- **Unauthorized (`/unauthorized`)**: Access denied page.
+- **Sign In (`/signin`)**: Google/email authentication.
 
-## Stack
+## Components & Design
 
-- Next.js 15 (App Router, Server/Client Components)
-- TypeScript, ESLint (Next config)
-- Authentication: NextAuth (Google provider or dev credentials), route guard middleware
-- Database: Drizzle ORM over Neon/Postgres (HTTP serverless driver)
-- UI: Tailwind CSS, shadcn/ui primitives, Lucide icons, Framer Motion
-- Charts: Recharts
-- Forms/Validation: React Hook Form + Zod
-- Notifications: sonner
+- **Sidebar, Topbar, MobileSidebar**: Responsive navigation and quick actions.
+- **ChatbotWidget**: Floating AI assistant on all main pages.
+- **CompanyTable, ContentTable, DataChart, RecentTicketsPanel**: Modular, reusable data displays.
+- **Dialogs**: HelpDialog, SettingsDialog, and more.
+- **UI Primitives**: Full set of shadcn/ui components (buttons, cards, tables, tabs, etc.).
+- **Modern theming**: Tailwind CSS, dark/light mode, Lucide icons, Framer Motion transitions.
 
-## Features
+## API Endpoints
 
-- Auth with allowlist and flexible dev bypass
-	- Allow specific emails, domains, or patterns (see `lib/auth.ts`)
-	- Dev bypass via `NODE_ENV=development` or `NEXT_PUBLIC_DISABLE_AUTH=true`
-	- Middleware guards dashboard/routes
-- Tools dashboard with progress and ticket intake
-- Work Tracker: filter/search/sort/paginate, inline edits and polling refresh
-- Company automation (AgTech): generate and persist company profiles using Gemini
-- Content calendar generator (LinkedIn content): generate/schedule and persist entries
-- AI News Daily: fetches a daily list, previews OG meta, detail page with summary, reader excerpt
-- CRUD APIs (protected) for Companies, Contents, Tools, Tickets, Work Tracker
-- Link Preview and Article extraction APIs with timeouts and basic sanitization
+- `/api/companies`: CRUD for company data.
+- `/api/contents`: CRUD for content calendar.
+- `/api/tickets`: Support/ticketing system.
+- `/api/tools`: Tools metadata and management.
+- `/api/tracker`: Work item tracker.
+- `/api/link-preview`: OG meta extraction for URLs.
+- `/api/article`: Article excerpt and meta extraction.
 
-## Design system
+## Environment Variables
 
-- Layout
-	- `AppSidebar` fixed on the left with collapsible state persisted in `localStorage` and CSS var `--sidebar-width` to offset content.
-	- `Topbar` sticky header (Suspense-wrapped) with global search, filters, theme toggle, quick-create, notifications, and profile menu.
-	- Page containers use dark theme surfaces with rounded corners, subtle borders, and motion transitions via Framer Motion.
-- Components
-	- shadcn/ui primitives: buttons, inputs, selects, dropdowns, dialogs, tables, tabs, tooltips, cards.
-	- Charts via `components/ui/chart.tsx` with custom tooltip/legend integration and Tailwind-driven theming.
-	- Reusable tables (`CompanyTable`, `ContentTable`) and panels (`RecentTicketsPanel`).
-- Theming
-	- `next-themes` to toggle light/dark; Tailwind classes drive color tokens.
-	- Iconography via `lucide-react`.
+See `.env.example` for all required and optional keys. Key variables include:
 
-## Monorepo structure (high-level)
+- `DATABASE_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+- `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `AI_TEAM_EMAIL`, `SLACK_WEBHOOK_URL`
+- `GA4_PROPERTY_ID`, `GA_SERVICE_ACCOUNT_JSON_PATH`, `NEXT_PUBLIC_GOOGLE_ANALYTICS_ID`
+- `NEXT_PUBLIC_GEMINI` (AI features)
+- `ALLOWED_EMAILS`, `ALLOWED_DOMAINS`, `ALLOWED_EMAIL_PATTERNS`, `NEXT_PUBLIC_ENABLE_EMAIL_AUTH`
+- `NEXT_PUBLIC_DISABLE_AUTH` (dev only)
 
-- app/ — routes (App Router)
-	- (auth)/signin — sign-in page
-	- (route)/layout.tsx — shared layout with `Topbar` and `AppSidebar`
-	- (route)/dashboard — main dashboard
-	- (route)/stats — stats page
-	- (route)/tools — tools hub with multiple utilities
-		- agtech-company-automation — generate/analyze companies
-		- ai-news-daily — news list and `[id]` detail
-		- contact — request/ticket form
-		- content-idea-automation — content calendar (WIP)
-	- api/ — route handlers
-		- analytics, article, auth, companies, contents, link-preview, tickets, tools, tracker
-- components/ — UI building blocks (Topbar, charts, tables, etc.)
-- lib/ — auth config, AI helpers, GA
-- utils/ — Drizzle schema and DB config
-- types/ — shared types
+## Getting Started
 
-## Environment variables
+1. Install dependencies: `npm install`
+2. Set up your `.env.local` (see `.env.example`)
+3. Run dev server: `npm run dev`
+4. Set up database: `npm run db`
+5. Build for production: `npm run build` then `npm start`
 
-Create `.env.local` with:
+## Production Checklist
 
-- DATABASE_URL: Postgres connection URI
-- NEXTAUTH_URL: http://localhost:3000 or deployed URL
-- NEXTAUTH_SECRET: long random string
-- GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET: for Google auth
-- NEXT_PUBLIC_GEMINI: Google Generative AI API key (Gemini)
-- SLACK_WEBHOOK_URL: optional, to notify on ticket creation
-- NEXT_PUBLIC_GOOGLE_ANALYTICS_ID: optional analytics ID
-- GA4_PROPERTY_ID: GA4 Property ID for server-side realtime analytics API
- - ALLOWED_EMAILS: comma-separated allowlist, optional
- - ALLOWED_DOMAINS: comma-separated domains, optional
- - ALLOWED_EMAIL_PATTERNS: comma-separated regexes (e.g. ^user@domain\.com$), optional
- - NEXT_PUBLIC_ENABLE_EMAIL_AUTH: set to "true" to allow credentials auth in production (dev is always enabled)
- - NEXT_PUBLIC_BASE_URL: base URL for server-to-server proxy calls
- - GA_SERVICE_ACCOUNT_JSON_PATH: optional absolute/relative path to GA service JSON
+1. Set all required envs (see above).
+2. Run a clean build: `npm run build` and `npm start`.
+3. Test all main pages and APIs.
+4. Confirm ticketing, notifications, and AI features work as expected.
 
-### Production checklist
+## License
 
-1. Set DATABASE_URL to your Postgres/Neon instance.
-2. Set NEXTAUTH_URL (your public domain) and NEXTAUTH_SECRET (long random string).
-3. Configure Google OAuth: GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.
-4. Set ALLOWED_EMAILS/ALLOWED_DOMAINS/ALLOWED_EMAIL_PATTERNS as needed.
-5. Optional: NEXT_PUBLIC_GEMINI for content generation; GA4_PROPERTY_ID if using analytics.
-6. Ensure NEXT_PUBLIC_BASE_URL is your public domain; keep NEXT_PUBLIC_DISABLE_AUTH=false.
-7. Build and start:
-	- npm run build
-	- npm start
+Private/internal. All rights reserved.
 
 ## Getting started
 

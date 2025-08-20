@@ -29,18 +29,29 @@ function SearchParamsEffect({
   return null;
 }
 
+
 export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const devBypass = typeof window !== "undefined" && (process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_DISABLE_AUTH === "true");
-  const enableEmailAuth = process.env.NEXT_PUBLIC_ENABLE_EMAIL_AUTH === "true";
+  const [hydrated, setHydrated] = useState(false);
+  const [devBypass, setDevBypass] = useState(false);
+  const [enableEmailAuth, setEnableEmailAuth] = useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+    // Only run on client
+    setDevBypass(
+      typeof window !== "undefined" && (process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_DISABLE_AUTH === "true")
+    );
+    setEnableEmailAuth(process.env.NEXT_PUBLIC_ENABLE_EMAIL_AUTH === "true");
+  }, []);
 
   const handleGoogle = async () => {
     setLoading("google");
-    await signIn("google");
+    await signIn("google", { callbackUrl: "/home" });
     setLoading(null);
   };
 
@@ -50,12 +61,12 @@ export default function SignIn() {
     setLoading("email");
     setError(null);
     try {
-      const res = await signIn("credentials", { email, password, redirect: false });
+      const res = await signIn("credentials", { email, password, redirect: false, callbackUrl: "/home" });
       if (res?.error) {
         setError(res.error);
         setDialogOpen(true);
       } else if (res?.ok && res?.url) {
-        window.location.href = res.url;
+        window.location.href = "/home";
       }
     } catch (err: any) {
       setError(err?.message || "Unknown error");
@@ -63,6 +74,11 @@ export default function SignIn() {
     }
     setLoading(null);
   };
+
+  if (!hydrated) {
+    // Prevent hydration mismatch by not rendering until after mount
+    return <div className="min-h-screen bg-[#18191A]" />;
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -72,19 +88,19 @@ export default function SignIn() {
         <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full blur-3xl opacity-20 bg-purple-500" />
       </div>
 
-      <div className="mx-auto grid min-h-screen max-w-6xl grid-cols-1 md:grid-cols-2">
+      <div className="mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center px-[5vw] py-[5vh] md:grid md:grid-cols-2 md:px-0 md:py-0">
         {/* Welcome/brand side */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="flex flex-col justify-center p-8 md:p-12"
+          className="flex flex-col justify-center p-4 md:p-12"
         >
           <div className="mb-6 flex items-center gap-3">
             <Image src="/logo.jpg" alt="Logo" width={40} height={40} className="h-10 w-10 rounded-md object-cover" />
             <span className="text-xl font-bold text-white">Rouge Dashboard</span>
           </div>
-          <h1 className="text-4xl font-extrabold text-white">Welcome back</h1>
+          <h1 className="text-3xl md:text-4xl font-extrabold text-white">Welcome back</h1>
           <p className="mt-3 text-base text-gray-300">
             Sign in to access your AI tools, analytics, and work tracker. Modern, fast, and delightful.
           </p>
@@ -92,7 +108,11 @@ export default function SignIn() {
             <ul className="space-y-3 text-gray-300">
               <li>• Real-time dashboards</li>
               <li>• Tool requests and progress tracking</li>
+              <li>• Content Idea Automation & AI News Daily</li>
+              <li>• University & Startup Data Extractors</li>
+              <li>• Integrated support and contact system</li>
               <li>• Beautiful dark theme with smooth transitions</li>
+               
             </ul>
           </div>
         </motion.div>
@@ -102,21 +122,22 @@ export default function SignIn() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="flex items-center justify-center bg-[#141516]/60 p-8 md:p-12"
+          className="flex w-full items-center justify-center bg-[#141516]/60 p-4 md:p-12"
         >
-          <div className="w-full max-w-md rounded-2xl border border-gray-700 bg-[#1b1d1e]/80 p-6 shadow-xl backdrop-blur">
+          <div className="w-full max-w-md rounded-2xl border border-gray-700 bg-[#1b1d1e]/80 p-4 md:p-6 shadow-xl backdrop-blur">
             <h2 className="mb-2 text-2xl font-bold text-white">Sign in</h2>
             <p className="mb-6 text-sm text-gray-400">Choose a method to continue</p>
 
             <button
               onClick={handleGoogle}
-              className="flex w-full items-center justify-center gap-3 rounded-lg bg-white px-4 py-3 font-semibold text-black transition hover:bg-gray-100"
+              className="flex w-full items-center justify-center gap-3 rounded-lg bg-white px-4 py-4 font-semibold text-black transition hover:bg-gray-100 min-h-[48px] text-base"
+              style={{ touchAction: 'manipulation' }}
             >
-        {loading === "google" ? (
+              {loading === "google" ? (
                 <span className="animate-pulse">Redirecting…</span>
               ) : (
                 <>
-          <Image src="/globe.svg" width={20} height={20} className="h-5 w-5" alt="" />
+                  <Image src="/globe.svg" width={20} height={20} className="h-5 w-5" alt="" />
                   Continue with Google
                 </>
               )}
@@ -129,14 +150,16 @@ export default function SignIn() {
                   <span>or</span>
                   <div className="h-px flex-1 bg-gray-700" />
                 </div>
-                <form onSubmit={handleEmail} className="space-y-3">
+                <form onSubmit={handleEmail} className="space-y-4">
                   <label className="block text-sm text-gray-300">Email</label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@company.com"
-                    className="w-full rounded-lg border border-gray-700 bg-[#121314] px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    autoComplete="email"
+                    className="w-full rounded-lg border border-gray-700 bg-[#121314] px-3 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600 min-h-[48px] text-base"
+                    style={{ touchAction: 'manipulation' }}
                   />
                   <label className="block text-sm text-gray-300">Password</label>
                   <input
@@ -144,18 +167,21 @@ export default function SignIn() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Password"
-                    className="w-full rounded-lg border border-gray-700 bg-[#121314] px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    autoComplete="current-password"
+                    className="w-full rounded-lg border border-gray-700 bg-[#121314] px-3 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600 min-h-[48px] text-base"
+                    style={{ touchAction: 'manipulation' }}
                   />
                   <button
                     type="submit"
-                    className="w-full rounded-lg bg-blue-600 px-4 py-2 font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
+                    className="w-full rounded-lg bg-blue-600 px-4 py-3 font-bold text-white transition hover:bg-blue-700 disabled:opacity-60 min-h-[48px] text-base"
                     disabled={!email || !password || loading === "email"}
+                    style={{ touchAction: 'manipulation' }}
                   >
                     {loading === "email" ? "Signing in…" : "Continue with Email"}
                   </button>
                 </form>
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                  <DialogContent>
+                  <DialogContent className="max-w-xs w-full sm:max-w-md">
                     <DialogHeader>
                       <DialogTitle>Sign-in Error</DialogTitle>
                     </DialogHeader>
