@@ -33,6 +33,7 @@ type Props = { title?: string };
 export default function Topbar({ title }: Props) {
   const router = useRouter();
   const { data: session } = useSession();
+  const [signingOut, setSigningOut] = useState(false);
 
   // Notifications state and polling
   type Notif = { id: string; title: string; href: string; type: "ticket" | "work"; ts: number; meta?: string };
@@ -264,8 +265,16 @@ export default function Topbar({ title }: Props) {
                 <HelpCircle className="size-4 mr-2" /> Help
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="data-[highlighted]:bg-[#242728] data-[highlighted]:text-gray-100" title="Sign out of your account" onClick={() => signOut({ callbackUrl: '/signin' })}>
-                <LogOut className="size-4 mr-2" /> Sign out
+              <DropdownMenuItem className="data-[highlighted]:bg-[#242728] data-[highlighted]:text-gray-100" title="Sign out of your account" onClick={async () => {
+                setSigningOut(true);
+                await signOut({ callbackUrl: '/signin', redirect: false });
+                window.location.href = '/signin';
+              }} disabled={signingOut}>
+                {signingOut ? (
+                  <svg className="animate-spin size-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+                ) : (
+                  <LogOut className="size-4 mr-2" />
+                )} Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

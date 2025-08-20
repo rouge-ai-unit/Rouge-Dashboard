@@ -18,6 +18,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
+import { useState as useReactState } from "react";
 import { usePathname } from "next/navigation";
 import {
   Tooltip,
@@ -75,14 +76,19 @@ const publicNavItems = [
   },
 ];
 
+
+
 interface AppSidebarProps {
   onCollapseAction?: (collapsed: boolean) => void;
 }
 
 export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
+
   const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+  const [signingOut, setSigningOut] = useReactState(false);
+  // onCollapseAction is received via props
 
   // Persist collapsed state across reloads for better UX
   useEffect(() => {
@@ -102,7 +108,9 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
   const handleCollapse = () => {
     const newCollapsedState = !collapsed;
     setCollapsed(newCollapsedState);
-  onCollapseAction?.(newCollapsedState);
+    if (typeof onCollapseAction === 'function') {
+      onCollapseAction(newCollapsedState);
+    }
     try {
       localStorage.setItem("sidebar_collapsed", String(newCollapsedState));
       // Sync CSS var for topbar offset
@@ -205,11 +213,20 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
-                      onClick={() => signOut({ callbackUrl: '/signin' })}
+                      onClick={async () => {
+                        setSigningOut(true);
+                        await signOut({ callbackUrl: '/signin', redirect: false });
+                        window.location.href = '/signin';
+                      }}
+                      disabled={signingOut}
                       className={`text-white hover:bg-[#2A2A2A] rounded-md p-2 transition-colors cursor-pointer inline-flex items-center justify-center w-10 h-10`}
                       aria-label="Sign out"
                     >
-                      <LogOut />
+                      {signingOut ? (
+                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+                      ) : (
+                        <LogOut />
+                      )}
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -260,11 +277,20 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
-                      onClick={() => signOut({ callbackUrl: '/signin' })}
+                      onClick={async () => {
+                        setSigningOut(true);
+                        await signOut({ callbackUrl: '/signin', redirect: false });
+                        window.location.href = '/signin';
+                      }}
+                      disabled={signingOut}
                       className="text-white hover:bg-[#2A2A2A] rounded-md p-2 transition-colors cursor-pointer inline-flex items-center justify-center w-10 h-10"
                       aria-label="Sign out"
                     >
-                      <LogOut />
+                      {signingOut ? (
+                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+                      ) : (
+                        <LogOut />
+                      )}
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
