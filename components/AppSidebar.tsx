@@ -205,7 +205,7 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
-                      onClick={() => signOut()}
+                      onClick={() => signOut({ callbackUrl: '/signin' })}
                       className={`text-white hover:bg-[#2A2A2A] rounded-md p-2 transition-colors cursor-pointer inline-flex items-center justify-center w-10 h-10`}
                       aria-label="Sign out"
                     >
@@ -260,7 +260,7 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
-                      onClick={() => signOut()}
+                      onClick={() => signOut({ callbackUrl: '/signin' })}
                       className="text-white hover:bg-[#2A2A2A] rounded-md p-2 transition-colors cursor-pointer inline-flex items-center justify-center w-10 h-10"
                       aria-label="Sign out"
                     >

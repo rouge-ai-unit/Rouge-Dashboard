@@ -131,7 +131,7 @@ export default function MobileSidebar() {
               </p>
               <button
                 onClick={() => {
-                  signOut();
+                  signOut({ callbackUrl: '/signin' });
                   toggleSidebar();
                 }}
                 className="w-full bg-red-600 hover:bg-red-700 text-sm py-2 rounded-md transition"

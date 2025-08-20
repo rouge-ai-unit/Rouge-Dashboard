@@ -264,7 +264,7 @@ export default function Topbar({ title }: Props) {
                 <HelpCircle className="size-4 mr-2" /> Help
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="data-[highlighted]:bg-[#242728] data-[highlighted]:text-gray-100" title="Sign out of your account" onClick={() => signOut()}>
+              <DropdownMenuItem className="data-[highlighted]:bg-[#242728] data-[highlighted]:text-gray-100" title="Sign out of your account" onClick={() => signOut({ callbackUrl: '/signin' })}>
                 <LogOut className="size-4 mr-2" /> Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>
