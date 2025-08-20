@@ -251,21 +251,21 @@ export function ContentTable({ data, refreshDataAction: refreshData }: ContentTa
         </Button>
       </div>
 
-      <div className="rounded-md border border-gray-600 overflow-x-auto bg-[#1a1a1a]">
-        <Table>
+      <div className="rounded-md border border-gray-600 bg-[#1a1a1a]">
+        <Table className="min-w-full text-xs">
           <TableHeader className="bg-[#2c2e2e]">
             <TableRow>
-              <TableHead className="text-gray-300 w-10"></TableHead>
-              <TableHead className="text-gray-300">Actions</TableHead>
-              <TableHead className="text-gray-300">Day</TableHead>
-              <TableHead className="text-gray-300">Week</TableHead>
-              <TableHead className="text-gray-300">Date</TableHead>
-              <TableHead className="text-gray-300">Occasion</TableHead>
-              <TableHead className="text-gray-300">Theme</TableHead>
-              <TableHead className="text-gray-300">Ideas</TableHead>
-              <TableHead className="text-gray-300">Caption</TableHead>
-              <TableHead className="text-gray-300">Hashtags</TableHead>
-              <TableHead className="text-gray-300">Status
+              <TableHead className="text-gray-300 w-8 px-2 py-2"> </TableHead>
+              <TableHead className="text-gray-300 px-2 py-2">Actions</TableHead>
+              <TableHead className="text-gray-300 px-2 py-2">Day</TableHead>
+              <TableHead className="text-gray-300 px-2 py-2">Week</TableHead>
+              <TableHead className="text-gray-300 px-2 py-2">Date</TableHead>
+              <TableHead className="text-gray-300 px-2 py-2">Occasion</TableHead>
+              <TableHead className="text-gray-300 px-2 py-2">Theme</TableHead>
+              <TableHead className="text-gray-300 px-2 py-2">Ideas</TableHead>
+              <TableHead className="text-gray-300 px-2 py-2">Caption</TableHead>
+              <TableHead className="text-gray-300 px-2 py-2">Hashtags</TableHead>
+              <TableHead className="text-gray-300 px-2 py-2">Status
                 <div className="mt-1">
                   <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
                     <SelectTrigger className="h-7 bg-[#1a1a1a] border-gray-600 text-gray-300">
@@ -282,18 +282,18 @@ export function ContentTable({ data, refreshDataAction: refreshData }: ContentTa
               </TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody className="bg-[#1a1a1a] text-white">
+          <TableBody className="bg-[#1a1a1a] text-white text-xs">
             {data.length ? (
               data
                 .filter(row => statusFilter === "All" ? true : (row.status ?? "Draft") === statusFilter)
                 .map((item) => (
                 <TableRow key={item.id} className="hover:bg-[#2a2a2a]">
-                  <TableCell className="w-10">
+                  <TableCell className="w-8 px-2 py-2">
                     <button onClick={() => setSelected(s => ({ ...s, [item.id]: !s[item.id] }))} aria-label="select row">
                       {selected[item.id] ? <CheckSquare className="h-4 w-4 text-cyan-400" /> : <Square className="h-4 w-4 text-gray-400" />}
                     </button>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="px-2 py-2">
                     <div className="flex gap-2">
                       <Button
                         size="icon"
@@ -317,14 +317,14 @@ export function ContentTable({ data, refreshDataAction: refreshData }: ContentTa
                       </Button>
                     </div>
                   </TableCell>
-                  <TableCell>{item.dayOfMonth}</TableCell>
-                  <TableCell>{item.weekOfMonth}</TableCell>
-                  <TableCell>{item.date}</TableCell>
-                  <TableCell>{item.specialOccasion || "N/A"}</TableCell>
-                  <TableCell>{item.generalTheme}</TableCell>
-                  <TableCell>{item.postIdeas}</TableCell>
-                  <TableCell>{item.caption}</TableCell>
-                  <TableCell className="flex flex-wrap gap-2">
+                  <TableCell className="px-2 py-2">{item.dayOfMonth}</TableCell>
+                  <TableCell className="px-2 py-2">{item.weekOfMonth}</TableCell>
+                  <TableCell className="px-2 py-2">{item.date}</TableCell>
+                  <TableCell className="px-2 py-2">{item.specialOccasion || "N/A"}</TableCell>
+                  <TableCell className="px-2 py-2">{item.generalTheme}</TableCell>
+                  <TableCell className="px-2 py-2 max-w-[180px] truncate whitespace-pre-line">{item.postIdeas}</TableCell>
+                  <TableCell className="px-2 py-2 max-w-[180px] truncate whitespace-pre-line">{item.caption}</TableCell>
+                  <TableCell className="flex flex-wrap gap-1 px-2 py-2">
                     {item.hashtags?.split(",").map((tag, i) => (
                       <Badge
                         key={i}
@@ -334,7 +334,7 @@ export function ContentTable({ data, refreshDataAction: refreshData }: ContentTa
                       </Badge>
                     ))}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="px-2 py-2">
                     <Select value={item.status ?? "Draft"} onValueChange={async (v: any) => {
                       try {
                         const res = await fetch(`/api/contents/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: v }) });
@@ -360,7 +360,7 @@ export function ContentTable({ data, refreshDataAction: refreshData }: ContentTa
               <TableRow>
                 <TableCell
                   colSpan={11}
-                  className="text-center text-gray-400 py-4"
+                  className="text-center text-gray-400 py-4 text-xs"
                 >
                   No content found.
                 </TableCell>

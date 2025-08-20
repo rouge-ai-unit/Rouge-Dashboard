@@ -49,6 +49,9 @@ function LastUpdatedFooter({ lastRefresh, autoRefresh, setAutoRefresh }: {
 }
 
 // ...existing code...
+
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
 // Dynamically import ChatbotWidget to avoid SSR issues
@@ -94,7 +97,15 @@ type Tool = {
 type ViewMode = "grid" | "list";
 
 
-export default function LandingPage() {
+export default function Page() {
+  const { status } = useSession();
+  const router = useRouter();
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/signin");
+    }
+  }, [status, router]);
+  if (status === "loading") return null;
   // Core State
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
