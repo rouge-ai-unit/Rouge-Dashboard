@@ -110,7 +110,13 @@ export default function Page() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  // Set lastRefresh to current date on client only to avoid hydration mismatch
+  useEffect(() => {
+    if (lastRefresh === null) {
+      setLastRefresh(new Date());
+    }
+  }, [lastRefresh]);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   useEffect(() => {
@@ -821,7 +827,9 @@ export default function Page() {
               <span>Ctrl+1/2 to switch view</span>
             </div>
             {/* Hydration-safe last updated time */}
-              <LastUpdatedFooter lastRefresh={lastRefresh} autoRefresh={autoRefresh} setAutoRefresh={setAutoRefresh} />
+              {lastRefresh && (
+                <LastUpdatedFooter lastRefresh={lastRefresh} autoRefresh={autoRefresh} setAutoRefresh={setAutoRefresh} />
+              )}
           </motion.div>
 
 

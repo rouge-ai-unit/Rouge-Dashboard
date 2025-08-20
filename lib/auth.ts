@@ -79,8 +79,8 @@ export const authOptions: NextAuthOptions = {
       return isAllowedEmail(email) ? true : "/unauthorized";
     },
     async redirect({ url, baseUrl }) {
-      // Always redirect to /Home after login
-      return baseUrl + "/Home";
+  // Always redirect to /home after login
+  return baseUrl + "/home";
     },
   },
 };

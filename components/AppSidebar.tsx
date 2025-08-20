@@ -30,9 +30,9 @@ import {
 
 const publicNavItems = [
   {
-    title: "Home",
+  title: "Home",
     icon: LayoutDashboard,
-    href: "/home",
+  href: "/home",
   },
   {
     title: "Support Request Form",

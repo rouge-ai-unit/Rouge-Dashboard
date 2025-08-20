@@ -26,7 +26,7 @@ interface ContentItem {
   status: "Draft" | "Approved" | "Scheduled";
 }
 
-export default function Home() {
+export default function ContentIdeaAutomation() {
   const router = useRouter();
   const [content, setContent] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(false);

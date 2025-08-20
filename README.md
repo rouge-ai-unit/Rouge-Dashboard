@@ -5,7 +5,7 @@ Production-grade Next.js 15 dashboard for internal operations, featuring real-ti
 
 ## Main Features & Pages
 
-- **Home Dashboard (`/Home`)**: Central hub with tools list, search, favorites, and floating ChatbotWidget.
+ - **Home Dashboard (`/home`)**: Central hub with tools list, search, favorites, and floating ChatbotWidget.
 - **Work Tracker (`/work-tracker`)**: Track, create, edit, and manage work items with filters, search, and polling.
 - **Support/Submit Request (`/Submit-Request-Form`)**: Submit support or feature requests, with ticket tracking and notifications.
 - **Tools Suite (`/tools`)**:

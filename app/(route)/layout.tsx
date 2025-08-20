@@ -15,7 +15,7 @@ export default function RouteGroupLayout({
   const pathname = usePathname();
 
   const getTitle = (path: string) => {
-    if (path === "/home") return "Home";
+  if (path === "/home") return "Home";
     if (path === "/Submit-Request-Form") return "Support Request";
     const title = path.split("/").pop()?.replace(/-/g, " ") ?? "";
     return title.charAt(0).toUpperCase() + title.slice(1);

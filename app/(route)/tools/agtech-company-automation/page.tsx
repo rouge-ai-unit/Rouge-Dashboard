@@ -19,7 +19,7 @@ import { CompanyTable } from "@/components/CompanyTable";
 import { toast } from "sonner";
 import { Company } from "@/types";
 
-export default function Home() {
+export default function AgtechCompanyAutomation() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [CompanyList, setCompanyList] = useState<string>("");
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(
