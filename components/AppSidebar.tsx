@@ -13,7 +13,9 @@ import {
   Briefcase,
   ListChecks,
   BrainCircuit,
-  FileText, // Use FileText as a replacement for Form
+  FileText,
+  Target,
+  GraduationCap,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -50,19 +52,14 @@ const publicNavItems = [
     href: "/tools/ai-news-daily",
   },
   {
-    title: "ASEAN University Data Extractor",
-    icon: University,
-    href: "https://rouge-university-list.streamlit.app/",
+    title: "Agritech Startup Seeker",
+    icon: Target,
+    href: "/tools/startup-seeker",
   },
   {
-    title: "Startup Seeker Generator",
-    icon: Briefcase,
-    href: "https://rouge-startupseeker.streamlit.app/",
-  },
-  {
-    title: "Rouge University List Generator",
-    icon: ListChecks,
-    href: "https://rouge-university-list.streamlit.app/",
+    title: "Agritech Universities",
+    icon: GraduationCap,
+    href: "/tools/agritech-universities",
   },
   {
     title: "Content Idea Automation",

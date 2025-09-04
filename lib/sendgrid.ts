@@ -5,11 +5,17 @@ const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL;
 const AI_TEAM_EMAIL = process.env.AI_TEAM_EMAIL || 'ai-team@example.com';
 
-if (!SENDGRID_API_KEY) {
-  console.error('[SendGrid] SENDGRID_API_KEY is not set in environment variables.');
-}
-if (!SENDGRID_FROM_EMAIL) {
-  console.error('[SendGrid] SENDGRID_FROM_EMAIL is not set in environment variables.');
+// Only log warnings if SendGrid is intended to be used (has some config)
+const isConfigured = SENDGRID_API_KEY && SENDGRID_FROM_EMAIL;
+const hasPartialConfig = SENDGRID_API_KEY || SENDGRID_FROM_EMAIL;
+
+if (hasPartialConfig && !isConfigured) {
+  if (!SENDGRID_API_KEY) {
+    console.warn('[SendGrid] SENDGRID_API_KEY is not set in environment variables.');
+  }
+  if (!SENDGRID_FROM_EMAIL) {
+    console.warn('[SendGrid] SENDGRID_FROM_EMAIL is not set in environment variables.');
+  }
 }
 
 if (SENDGRID_API_KEY) {
@@ -35,8 +41,8 @@ export async function sendTicketNotification({
   text: string;
   html: string;
 }) {
-  if (!SENDGRID_API_KEY || !SENDGRID_FROM_EMAIL) {
-    console.error('[SendGrid] Not sending email: missing API key or from email.');
+  if (!isConfigured) {
+    console.log('[SendGrid] Email notification skipped: SendGrid not configured.');
     return;
   }
   const recipient = to || AI_TEAM_EMAIL;

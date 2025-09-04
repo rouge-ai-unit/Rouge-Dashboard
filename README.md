@@ -52,11 +52,45 @@ See `.env.example` for all required and optional keys. Key variables include:
 
 ## Getting Started
 
+### Quick Production Setup (Recommended)
+
+1. **Set your API keys** in `.env.local` or `.env`:
+   ```bash
+   DATABASE_URL=your-database-url
+   DEEPSEEK_API_KEY=your-deepseek-api-key
+   OPENAI_API_KEY=your-openai-api-key
+   ```
+
+2. **Run the automated setup**:
+   ```bash
+   npm run setup:prod
+   ```
+
+   This will automatically:
+   - ✅ Check all required environment variables
+   - 🐳 Start Redis Docker container
+   - ⚙️ Start the background worker
+   - 🌐 Start the Next.js application
+   - 📊 Dashboard available at http://localhost:3000
+
+### Manual Setup
+
 1. Install dependencies: `npm install`
 2. Set up your `.env.local` (see `.env.example`)
-3. Run dev server: `npm run dev`
-4. Set up database: `npm run db`
-5. Build for production: `npm run build` then `npm start`
+3. Set up database: `npm run db`
+4. Start Redis: `npm run redis:start`
+5. Start worker: `npm run worker:agritech`
+6. Run dev server: `npm run dev`
+7. Build for production: `npm run build` then `npm start`
+
+### Available Scripts
+
+- `npm run setup:prod` - Complete automated production setup
+- `npm run start:all` - Start all services manually
+- `npm run redis:start` - Start Redis Docker container
+- `npm run worker:agritech` - Start background worker
+- `npm run db` - Push database schema
+- `npm run db:studio` - Open Drizzle Studio
 
 ## Production Checklist
 
