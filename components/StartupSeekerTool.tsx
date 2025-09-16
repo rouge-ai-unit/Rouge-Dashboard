@@ -17,6 +17,16 @@ import { toast } from 'sonner';
 // HybridModeSelector removed - only Market Data Focus mode supported
 import { ValidationResults } from './ValidationResults';
 
+interface ContactInfo {
+  email?: string;
+  phone?: string;
+  linkedin?: string;
+  name?: string;
+  position?: string;
+  company?: string;
+  [key: string]: unknown;
+}
+
 interface Startup {
   id: string;
   name: string;
@@ -29,7 +39,7 @@ interface Startup {
   rougeScore: number;
   justification: string;
   isPriority?: boolean;
-  contactInfo?: any;
+  contactInfo?: ContactInfo | string | null;
   userId?: string;
   createdAt?: Date;
   updatedAt?: Date;
@@ -58,7 +68,7 @@ export default function StartupSeekerTool() {
   const [contactResearching, setContactResearching] = useState<string | null>(null);
 
   // Only Market Data Focus mode supported
-  const [generationMode] = useState<'market-data'>('market-data');
+  const [generationMode, setGenerationMode] = useState<'traditional' | 'ai' | 'hybrid'>('hybrid');
   // Advanced options for Market Data Focus
   const [deepAnalysis, setDeepAnalysis] = useState(false);
   const [realTimeValidation, setRealTimeValidation] = useState(true);
@@ -91,7 +101,8 @@ export default function StartupSeekerTool() {
       const data = await response.json();
 
       if (data.success) {
-        setStartups(data.startups);
+        const startups = data.startups ?? data.data?.startups ?? [];
+        setStartups(startups);
       } else {
         setError(data.error || 'Failed to load startups');
       }
@@ -112,7 +123,11 @@ export default function StartupSeekerTool() {
     setGenerating(true);
     setError(null);
     toast.info('Starting startup generation...', {
-      description: `Generating ${numStartups} startups using ${generationMode} mode`
+      description: `Generating ${numStartups} startups using ${
+        generationMode === 'ai' ? 'AI-powered' : 
+        generationMode === 'hybrid' ? 'Hybrid' : 
+        'Traditional'
+      } mode`
     });
 
     try {
@@ -142,7 +157,11 @@ export default function StartupSeekerTool() {
         } else {
           // Direct response - generation is already complete
           toast.success('Startups generated successfully!', {
-            description: `${data.count || numStartups} startups have been added to your portfolio.`
+            description: `${data.count || numStartups} startups have been added to your portfolio using ${
+              generationMode === 'ai' ? 'AI-powered' : 
+              generationMode === 'hybrid' ? 'Hybrid' : 
+              'Traditional'
+            } mode.`
           });
           setGenerating(false);
           setCurrentJob(null);
@@ -180,7 +199,11 @@ export default function StartupSeekerTool() {
           // Show success notification
           if (type === 'generation') {
             toast.success('Startups generated successfully!', {
-              description: `${numStartups} startups have been added to your portfolio.`
+              description: `${numStartups} startups have been added to your portfolio using ${
+                generationMode === 'ai' ? 'AI-powered' : 
+                generationMode === 'hybrid' ? 'Hybrid' : 
+                'Traditional'
+              } mode.`
             });
             setGenerating(false);
             loadStartups();
@@ -442,6 +465,91 @@ export default function StartupSeekerTool() {
                     {competitorAnalysis ? 'On' : 'Off'}
                   </button>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Scraping Mode Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-blue-600" />
+                Scraping Mode
+              </CardTitle>
+              <CardDescription>
+                Choose how to discover startups - traditional web scraping or AI-powered search
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <Card 
+                  className={`cursor-pointer transition-all border-2 ${
+                    generationMode === 'traditional' 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => setGenerationMode('traditional')}
+                >
+                  <CardContent className="p-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <Search className="w-4 h-4 text-blue-600" />
+                        <p className="font-medium text-sm">Traditional</p>
+                      </div>
+                      <p className="text-xs text-gray-600">Fast & reliable</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card 
+                  className={`cursor-pointer transition-all border-2 ${
+                    generationMode === 'ai' 
+                      ? 'border-purple-500 bg-purple-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => setGenerationMode('ai')}
+                >
+                  <CardContent className="p-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <Zap className="w-4 h-4 text-purple-600" />
+                        <p className="font-medium text-sm">AI Enhanced</p>
+                      </div>
+                      <p className="text-xs text-gray-600">Smart discovery</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card 
+                  className={`cursor-pointer transition-all border-2 ${
+                    generationMode === 'hybrid' 
+                      ? 'border-green-500 bg-green-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => setGenerationMode('hybrid')}
+                >
+                  <CardContent className="p-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <Target className="w-4 h-4 text-green-600" />
+                        <p className="font-medium text-sm">Hybrid ⭐</p>
+                      </div>
+                      <p className="text-xs text-gray-600">Best of both</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md mt-4">
+                <p className="font-medium mb-1">
+                  {generationMode === 'ai' && '🤖 AI Mode:'}
+                  {generationMode === 'traditional' && '🌐 Traditional Mode:'}
+                  {generationMode === 'hybrid' && '⚡ Hybrid Mode (Recommended):'}
+                </p>
+                <p>
+                  {generationMode === 'ai' && 'Uses advanced AI algorithms to discover startups from web search, news, and social media with intelligent pattern recognition.'}
+                  {generationMode === 'traditional' && 'Scrapes real startup data from verified sources like Crunchbase, AngelList, TechCrunch, and AgFunder.'}
+                  {generationMode === 'hybrid' && 'Intelligently combines traditional data sources with AI discovery. Starts with verified databases, then enriches with AI insights for maximum coverage and accuracy.'}
+                </p>
               </div>
             </CardContent>
           </Card>

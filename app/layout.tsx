@@ -8,6 +8,7 @@ import Script from "next/script";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import GlobalDialogProvider from "@/components/GlobalDialog";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
 
@@ -54,7 +55,9 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <GlobalDialogProvider>
-              <div className="bg-[#202222]">{children}</div>
+              <ErrorBoundary>
+                <div className="bg-[#202222]">{children}</div>
+              </ErrorBoundary>
             </GlobalDialogProvider>
           </ThemeProvider>
           <Toaster richColors theme="dark" />

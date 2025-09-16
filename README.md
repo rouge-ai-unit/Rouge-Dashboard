@@ -61,36 +61,32 @@ See `.env.example` for all required and optional keys. Key variables include:
    OPENAI_API_KEY=your-openai-api-key
    ```
 
-2. **Run the automated setup**:
+2. **Install dependencies and start the application**:
    ```bash
-   npm run setup:prod
+   npm install
+   npm run build
+   npm start
    ```
 
-   This will automatically:
-   - ✅ Check all required environment variables
-   - 🐳 Start Redis Docker container
-   - ⚙️ Start the background worker
-   - 🌐 Start the Next.js application
-   - 📊 Dashboard available at http://localhost:3000
+   The application will be available at http://localhost:3000
 
 ### Manual Setup
 
 1. Install dependencies: `npm install`
 2. Set up your `.env.local` (see `.env.example`)
 3. Set up database: `npm run db`
-4. Start Redis: `npm run redis:start`
-5. Start worker: `npm run worker:agritech`
-6. Run dev server: `npm run dev`
-7. Build for production: `npm run build` then `npm start`
+4. Run dev server: `npm run dev`
+5. Build for production: `npm run build` then `npm start`
 
 ### Available Scripts
 
-- `npm run setup:prod` - Complete automated production setup
-- `npm run start:all` - Start all services manually
-- `npm run redis:start` - Start Redis Docker container
-- `npm run worker:agritech` - Start background worker
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
 - `npm run db` - Push database schema
 - `npm run db:studio` - Open Drizzle Studio
+- `npm run scrape:test` - Test the enterprise scraping service
 
 ## Production Checklist
 

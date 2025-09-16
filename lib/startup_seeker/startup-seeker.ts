@@ -4,10 +4,36 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 dotenv.config({ path: '.env' });
 
-import { scrapingService, ScrapedStartupData } from './scraping-service';
-import { getDb } from '../utils/dbConfig';
-import { AgritechStartups } from '../utils/schema';
-import { eq, and } from 'drizzle-orm';
+import { getDb } from '../../utils/dbConfig';
+import { AgritechStartups } from '../../utils/schema';
+import { eq, and, gte, lte, ilike, or, desc, asc } from 'drizzle-orm';
+import { aiStartupScrapingService } from './ai-startup-scraper';
+import { traditionalStartupScrapingService } from './traditional-startup-scraper';
+
+/**
+ * Unified interface for scraped startup data from both AI and traditional sources
+ */
+export interface ScrapedStartupData {
+  name: string;
+  website: string;
+  description: string;
+  city?: string;
+  country?: string;
+  location?: {
+    city: string;
+    country: string;
+  };
+  industry?: string;
+  hasFunding?: boolean;
+  fundingAmount?: string;
+  foundedYear?: number;
+  employeeCount?: string;
+  linkedinUrl?: string;
+  qualityScore?: number;
+  verified?: boolean;
+  sources?: string[];
+  dataSource?: string;
+}
 
 /**
  * Interface for web scraping
@@ -91,9 +117,22 @@ export class StartupGenerationEngine {
 
   async generateStartupData(
     userId: string,
-    count: number = 10
+    count: number = 10,
+    mode: 'traditional' | 'ai' | 'hybrid' = 'hybrid'
   ): Promise<StartupData[]> {
+    const startTime = Date.now();
+    
     try {
+      // Validate inputs
+      if (!userId || count < 1 || count > 100) {
+        throw new Error('Invalid parameters: userId required, count must be 1-100');
+      }
+
+      console.log(`🔍 Starting startup generation for user ${userId}:`);
+      console.log(`   • Count: ${count} startups`);
+      console.log(`   • Mode: ${mode}`);
+      console.log(`   • Timestamp: ${new Date().toISOString()}`);
+
       const db = getDb();
 
       // Get existing startups for this user to avoid duplicates
@@ -103,74 +142,110 @@ export class StartupGenerationEngine {
         .where(eq(AgritechStartups.userId, userId));
 
       const existingNames = existingStartups.map((s: { name: string }) => s.name);
+      console.log(`� Found ${existingNames.length} existing startups for user`);
 
-      // Generate all startups using web scraping (no AI)
-      console.log(`🔍 Generating ${count} startups using pure web scraping`);
+      let scrapedData: any[] = [];
+      const targetCount = Math.min(count * 2, 50); // Get more data for better filtering
 
-      // Get scraping URLs from configuration
-      const scrapingUrls = this.getScrapingUrls();
-
-      // Scrape startups one URL at a time until we have enough
-      const allScrapedStartups: ScrapedStartupData[] = [];
-      
-      for (const url of scrapingUrls) {
-        if (allScrapedStartups.length >= count) {
-          console.log(`✅ Reached target of ${count} startups, stopping scraping`);
-          break;
+      if (mode === 'ai') {
+        console.log(`🤖 Using AI-powered startup discovery (${targetCount} targets)`);
+        const result = await aiStartupScrapingService.extractStartups(targetCount, 'Global', 'ai');
+        if (result.success) {
+          scrapedData = result.data;
+          console.log(`✅ AI extraction: ${scrapedData.length} startups discovered`);
+        } else {
+          console.warn('⚠️ AI extraction failed, falling back to traditional');
+          const fallbackResult = await traditionalStartupScrapingService.extractStartups('Global', targetCount, true);
+          if (fallbackResult.success) scrapedData = fallbackResult.data;
         }
-
-        console.log(`🔍 Scraping from: ${url} (${allScrapedStartups.length}/${count} collected so far)`);
-
-        try {
-          const remaining = count - allScrapedStartups.length;
-          const scrapingResults = await scrapingService.scrapeStartups(
-            [url], // Only scrape from this single URL
-            userId,
-            { validateData: true, storeResults: false, targetCount: remaining }
-          );
-
-          // Extract startups from this URL's results
-          for (const result of scrapingResults) {
-            if (result.success && result.data.length > 0) {
-              allScrapedStartups.push(...result.data);
-              console.log(`📊 Collected ${result.data.length} startups from ${url} (total: ${allScrapedStartups.length})`);
-              
-              // If we now have enough, stop
-              if (allScrapedStartups.length >= count) {
-                break;
-              }
-            }
+      } else if (mode === 'traditional') {
+        console.log(`🌐 Using traditional web scraping (${targetCount} targets)`);
+        const result = await traditionalStartupScrapingService.extractStartups('Global', targetCount, true);
+        if (result.success) {
+          scrapedData = result.data;
+          console.log(`✅ Traditional extraction: ${scrapedData.length} startups discovered`);
+        } else {
+          throw new Error('Traditional scraping failed and no fallback available');
+        }
+      } else {
+        // Hybrid mode: Combine AI and traditional for maximum reliability
+        console.log(`⚡ Using hybrid AI + Traditional processing (${targetCount} targets)`);
+        
+        const aiCount = Math.ceil(targetCount * 0.6); // 60% from AI
+        const traditionalCount = targetCount - aiCount; // 40% from traditional
+        
+        // Phase 1: AI extraction (faster, broader coverage)
+        console.log(`🤖 Phase 1: AI extraction (${aiCount} startups)`);
+        const aiResult = await aiStartupScrapingService.extractStartups(aiCount, 'Global', 'ai');
+        
+        // Phase 2: Traditional extraction (higher accuracy)
+        console.log(`🌐 Phase 2: Traditional extraction (${traditionalCount} startups)`);
+        const traditionalResult = await traditionalStartupScrapingService.extractStartups('Global', traditionalCount, true);
+        
+        // Combine results
+        const aiData = aiResult.success ? aiResult.data : [];
+        const traditionalData = traditionalResult.success ? traditionalResult.data : [];
+        
+        console.log(`📊 AI yielded ${aiData.length} startups, Traditional yielded ${traditionalData.length} startups`);
+        
+        // Convert traditional data to match AI format for compatibility
+        const enhancedTraditionalData = traditionalData.map((traditional: any) => ({
+          ...traditional,
+          confidence: traditional.qualityScore / 100,
+          lastVerified: new Date().toISOString(),
+          processingMethod: 'traditional-enhanced' as const,
+        }));
+        
+        // Deduplicate and merge
+        const combinedData = [...aiData];
+        const existingNamesSet = new Set(aiData.map((s: any) => s.name.toLowerCase()));
+        
+        for (const traditional of enhancedTraditionalData) {
+          if (!existingNamesSet.has(traditional.name.toLowerCase())) {
+            combinedData.push(traditional);
           }
-        } catch (error) {
-          console.warn(`⚠️ Failed to scrape from ${url}:`, error);
-          // Continue to next URL
         }
+        
+        scrapedData = combinedData;
+        console.log(`✅ Hybrid processing: ${aiData.length} AI + ${traditionalData.length} traditional = ${scrapedData.length} total`);
       }
 
       // Convert scraped data to StartupData format and validate agritech focus
-      const convertedStartups = this.convertScrapedToStartupData(allScrapedStartups, existingNames)
+      console.log(`🔄 Processing and validating ${scrapedData.length} discovered startups...`);
+      const convertedStartups = this.convertScrapedToStartupData(scrapedData, existingNames)
         .filter(startup => this.isAgritechStartup(startup));
 
-      // Only use scraped data - no hardcoded fallbacks
-      console.log(`📊 Scraped ${convertedStartups.length} startups from web sources`);
-      
+      console.log(`📊 After conversion and validation: ${convertedStartups.length} agritech startups`);
+
       if (convertedStartups.length === 0) {
-        throw new Error('Failed to find any agritech startups from web scraping');
+        throw new Error(`No valid agritech startups found using ${mode} mode. Try a different mode or check your filters.`);
       }
 
-      console.log(`✅ Generated ${convertedStartups.length} startups total`);
-      return convertedStartups.slice(0, count);
+      // Sort by quality and take the best ones
+      const finalStartups = convertedStartups
+        .sort((a, b) => b.rougeScore - a.rougeScore)
+        .slice(0, count);
+
+      const processingTime = Date.now() - startTime;
+      console.log(`✅ Startup generation completed successfully:`);
+      console.log(`   • Generated: ${finalStartups.length}/${count} requested startups`);
+      console.log(`   • Mode: ${mode}`);
+      console.log(`   • Processing time: ${processingTime}ms`);
+      console.log(`   • Average quality score: ${Math.round(finalStartups.reduce((sum, s) => sum + s.rougeScore, 0) / finalStartups.length)}`);
+
+      return finalStartups;
 
     } catch (error) {
-      console.error('Error generating startup data:', error);
-      throw new Error(`Failed to generate startup data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const processingTime = Date.now() - startTime;
+      console.error(`❌ Startup generation failed after ${processingTime}ms:`, error);
+      throw new Error(`Failed to generate startup data using ${mode} mode: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   /**
    * Convert scraped startup data to StartupData format
    */
-  private convertScrapedToStartupData(scrapedData: ScrapedStartupData[], existingNames: string[]): StartupData[] {
+  private convertScrapedToStartupData(scrapedData: any[], existingNames: string[]): StartupData[] {
     const startups: StartupData[] = [];
     const seenNames = new Set<string>();
     const seenNormalizedNames = new Set<string>();
@@ -230,14 +305,14 @@ export class StartupGenerationEngine {
       try {
         const startup: StartupData = {
           name: scraped.name,
-          city: scraped.city || 'Bangkok',
-          website: scraped.website || `https://${normalizeName(scraped.name).replace(/\s+/g, '').toLowerCase()}.com`,
+          city: scraped.city || scraped.location?.city || 'Bangkok',
+          website: scraped.website,
           description: scraped.description || `${scraped.name} is an agritech startup focused on agricultural innovation.`,
-          locationScore: this.calculateLocationScore(scraped.city, scraped.country),
-          readinessScore: this.calculateReadinessScore(scraped.metadata),
+          locationScore: this.calculateLocationScore(scraped.city || scraped.location?.city, scraped.country),
+          readinessScore: this.calculateReadinessScore(scraped),
           feasibilityScore: this.calculateFeasibilityScore(scraped.description),
-          rougeScore: this.calculateOverallScore(scraped),
-          justification: `Real-world startup from ${scraped.country || 'web scraping'}`,
+          rougeScore: scraped.qualityScore || this.calculateOverallScore(scraped),
+          justification: `Real-world startup from ${scraped.country || 'web scraping'} (${scraped.dataSource || 'scraped'})`,
           isPriority: false,
           userId: '', // Will be set when saving
         };
@@ -322,7 +397,7 @@ export class StartupGenerationEngine {
    * Calculate overall Rouge score
    */
   private calculateOverallScore(scraped: ScrapedStartupData): number {
-    const qualityScore = scraped.metadata?.qualityScore || 70;
+    const qualityScore = scraped.qualityScore || 70;
     const descriptionLength = (scraped.description || '').length;
 
     let score = qualityScore;
@@ -396,8 +471,14 @@ export class StartupGenerationEngine {
     userId: string,
     filters?: {
       minScore?: number;
+      maxScore?: number;
       isPriority?: boolean;
       limit?: number;
+      offset?: number;
+      sortBy?: 'score' | 'date' | 'name' | 'city';
+      order?: 'asc' | 'desc';
+      search?: string;
+      city?: string;
     }
   ): Promise<StartupData[]> {
     try {
@@ -409,19 +490,66 @@ export class StartupGenerationEngine {
         conditions.push(eq(AgritechStartups.isPriority, filters.isPriority));
       }
 
-      if (filters?.minScore) {
-        conditions.push(eq(AgritechStartups.rougeScore, filters.minScore));
+      if (typeof filters?.minScore === 'number') {
+        conditions.push(gte(AgritechStartups.rougeScore, filters.minScore));
       }
 
-      const whereConditions = conditions.length > 1 ? and(...conditions) : conditions[0];
+      if (typeof filters?.maxScore === 'number') {
+        conditions.push(lte(AgritechStartups.rougeScore, filters.maxScore));
+      }
+
+      if (filters?.city) {
+        conditions.push(eq(AgritechStartups.city, filters.city));
+      }
+
+      if (filters?.search) {
+        const likeTerm = `%${filters.search}%`;
+        const searchCondition = or(
+          ilike(AgritechStartups.name, likeTerm),
+          ilike(AgritechStartups.description, likeTerm)
+        );
+        if (searchCondition) {
+          conditions.push(searchCondition as any);
+        }
+      }
+
+      const whereExpr = conditions.length ? and(...(conditions.filter(Boolean) as any)) : undefined;
 
       let query = db
         .select()
-        .from(AgritechStartups)
-        .where(whereConditions);
+        .from(AgritechStartups);
+      if (whereExpr) {
+        // @ts-expect-error drizzle typing for where
+        query = query.where(whereExpr as any);
+      }
+
+      // Sorting
+      if (filters?.sortBy) {
+        const sortCol = (() => {
+          switch (filters.sortBy) {
+            case 'score':
+              return AgritechStartups.rougeScore;
+            case 'date':
+              return AgritechStartups.createdAt;
+            case 'name':
+              return AgritechStartups.name;
+            case 'city':
+              return AgritechStartups.city;
+            default:
+              return AgritechStartups.createdAt;
+          }
+        })();
+        // @ts-expect-error drizzle typing on orderBy union
+        query = query.orderBy(filters.order === 'asc' ? asc(sortCol) : desc(sortCol));
+      }
 
       if (filters?.limit) {
         query = query.limit(filters.limit) as any;
+      }
+
+      if (typeof filters?.offset === 'number' && filters.offset > 0) {
+        // @ts-expect-error drizzle typing for offset
+        query = query.offset(filters.offset);
       }
 
       const results = await query;

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { useSession } from "next-auth/react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,10 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Loader2,
   Download,
@@ -24,834 +28,1051 @@ import {
   CheckCircle,
   Clock,
   RefreshCw,
-  Info
+  Info,
+  BarChart3,
+  TrendingUp,
+  Building,
+  MapPin,
+  Star,
+  ExternalLink,
+  Filter,
+  SortAsc,
+  SortDesc,
+  Eye,
+  Settings,
+  Play,
+  School,
+  BookOpen,
+  Activity,
+  History,
+  Zap
 } from "lucide-react";
 import { toast } from "sonner";
 
-interface UniversityData {
-  University: string;
-  Country: string;
-  Region: string;
-  Website: string;
-  "Has TTO?": string;
-  "TTO Page URL": string;
-  "Incubation Record": string;
-  "Apollo/LinkedIn Search URL": string;
+// ============================================================================
+// INTERFACES & TYPES
+// ============================================================================
+
+interface EnhancedUniversityData {
+  id: string;
+  name: string;
+  location?: {
+    country: string;
+    city: string;
+    address?: string;
+  };
+  contactInfo?: {
+    website?: string;
+    email?: string;
+    phone?: string;
+  };
+  academicInfo?: {
+    primarySpecialization?: string;
+    departments?: string[];
+    researchAreas?: string[];
+  };
+  qualityScore?: number;
+  university: string;
+  country: string;
+  region: string;
+  website: string | null;
+  hasAgriculture: boolean;
+  hasTto: boolean;
+  ttoPageUrl: string | null;
+  incubationRecord: string | null;
+  linkedinSearchUrl: string;
+  lastVerified: string;
+  analysisNotes?: string;
 }
 
-interface JobStatus {
-  jobId: string;
-  state: 'waiting' | 'active' | 'completed' | 'failed' | 'cancelled';
-  progress: number;
-  result?: string;
-  failedReason?: string;
-  createdAt: number;
-  processedAt?: number;
-  finishedAt?: number;
+interface ProcessingMetadata {
+  totalExtracted: number;
+  successfulInserts: number;
+  failedInserts: number;
+  averageQualityScore: number;
+  processingTime: number; // Keep this to match component usage
+  processingTimeMs: number;
+  requestedLimit: number;
+  actualLimit: number;
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  successfulCount: number;
+  successRate: number;
+  qualityScore?: number;
+  totalProcessed: number;
+}
+
+interface ExtractionResponse {
+  success: boolean;
+  data: EnhancedUniversityData[];
+  metadata: ProcessingMetadata;
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    hasMore: boolean;
+  };
+  timestamp: string;
+  version: string;
+}
+
+interface ErrorResponse {
+  error: string;
+  code: string;
+  retryAfter?: number;
+  timestamp: string;
+}
+
+interface Statistics {
+  totalUniversities: number;
+  averageQualityScore: number;
+  countryCounts: Record<string, number>;
+  topCategories: Record<string, number>;
+}
+
+interface HistoricalResult {
+  id: string;
+  createdAt: string;
+  metadata: ProcessingMetadata;
+  dataCount: number;
 }
 
 export default function AgritechUniversitiesPage() {
   const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
 
-  // State management
-  const [isLoading, setIsLoading] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true);
+  // ============================================================================
+  // STATE MANAGEMENT - Updated for enterprise scraping
+  // ============================================================================
+  
+  // Processing state
+  const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [universityLimit, setUniversityLimit] = useState(10);
-  const [results, setResults] = useState<UniversityData[]>([]);
-  const [error, setError] = useState<{
-    message: string;
-    code?: string;
-    retryAfter?: number;
-  } | null>(null);
-
-  // Job management
-  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
-  const [jobStatus, setJobStatus] = useState<JobStatus | null>(null);
-  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
-
-  // Stop polling helper (declare before startJobPolling to avoid TDZ errors)
-  const stopJobPolling = useCallback(() => {
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-      setPollingInterval(null);
-    }
-  }, [pollingInterval]);
-
+  
+  // Configuration state
+  const [universityLimit, setUniversityLimit] = useState(50);
+  const [selectedCountry, setSelectedCountry] = useState("all");
+  const [includeAnalysis, setIncludeAnalysis] = useState(true);
+  const [scrapingMode, setScrapingMode] = useState<'traditional' | 'ai' | 'hybrid'>('hybrid');
+  
+  // Data state
+  const [results, setResults] = useState<EnhancedUniversityData[]>([]);
+  const [historicalResults, setHistoricalResults] = useState<HistoricalResult[]>([]);
+  const [processingMetadata, setProcessingMetadata] = useState<ProcessingMetadata | null>(null);
+  
   // UI state
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  // Animated displayed progress for smooth UI updates
-  const [displayedProgress, setDisplayedProgress] = useState<number>(0);
-  const animRef = React.useRef<number | null>(null);
-  // Persist last successful job summary
-  const [lastJobSummary, setLastJobSummary] = useState<{ processedCount: number; finishedAt: string; summary?: string } | null>(null);
+  const [error, setError] = useState<ErrorResponse | null>(null);
+  const [selectedUniversity, setSelectedUniversity] = useState<EnhancedUniversityData | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("configure");
+  
+  // Search and filtering
+  const [searchQuery, setSearchQuery] = useState("");
+  const [countryFilter, setCountryFilter] = useState("all");
+  const [sortBy, setSortBy] = useState<string>("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  
+  // Loading states
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  
+  // Statistics
+  const [statistics, setStatistics] = useState<Statistics | null>(null);
 
-  // Redirect if not authenticated
+  // ============================================================================
+  // AUTHENTICATION & INITIALIZATION
+  // ============================================================================
+
   useEffect(() => {
     if (sessionStatus === "unauthenticated") {
       router.push("/signin");
     } else if (sessionStatus === "authenticated") {
-      setIsInitializing(false);
+      loadHistoricalResults();
     }
   }, [sessionStatus, router]);
 
-  // Load existing results on mount
-  useEffect(() => {
-    if (session?.user) {
-      loadExistingResults();
+  // ============================================================================
+  // DATA LOADING FUNCTIONS
+  // ============================================================================
+
+  const loadHistoricalResults = useCallback(async () => {
+    if (!session?.user) return;
+
+    try {
+      setIsLoadingHistory(true);
+      const response = await fetch("/api/tools/agritech-universities?page=1&limit=50");
+      
+      if (response.ok) {
+        const data = await response.json();
+        setHistoricalResults(data.data || []);
+      }
+    } catch (error) {
+      console.error("Failed to load historical results:", error);
+    } finally {
+      setIsLoadingHistory(false);
     }
   }, [session]);
 
-  
+  // ============================================================================
+  // PROCESSING FUNCTIONS
+  // ============================================================================
 
-  const handleExtract = useCallback(async () => {
-    if (!session?.user) {
-      toast.error("Authentication required");
-      return;
-    }
+  const handleExtraction = useCallback(async () => {
+    if (!session?.user || isProcessing) return;
 
-    if (isLoading) return; // Prevent multiple submissions
-
-    setIsLoading(true);
+    setIsProcessing(true);
     setProgress(0);
     setError(null);
     setResults([]);
-    setCurrentJobId(null);
-    setJobStatus(null);
+    setProcessingMetadata(null);
 
     try {
-      toast.loading("Enqueueing extraction job...", { id: "extract-job" });
+      const loadingModeEmoji = scrapingMode === 'ai' ? '🤖' : scrapingMode === 'hybrid' ? '⚡' : '🌐';
+      const loadingModeName = scrapingMode === 'ai' ? 'AI-powered' : scrapingMode === 'hybrid' ? 'Hybrid' : 'Traditional';
+      toast.loading(`${loadingModeEmoji} Starting ${loadingModeName} extraction...`, { id: "extract-process" });
 
-      const response = await fetch("/api/tools/agritech-universities/enqueue", {
+      const response = await fetch("/api/tools/agritech-universities", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ limit: universityLimit }),
+        body: JSON.stringify({
+          limit: universityLimit,
+          country: selectedCountry,
+          includeAnalysis,
+          mode: scrapingMode
+        }),
       });
 
-      const data = await response.json();
+      const data: ExtractionResponse | ErrorResponse = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
+        const errorData = data as ErrorResponse;
+        setError(errorData);
+        toast.error(errorData.error, { id: "extract-process" });
+        return;
       }
 
-      setCurrentJobId(data.jobId);
-      toast.success(data.message, { id: "extract-job" });
+      const successData = data as ExtractionResponse;
+      setResults(successData.data);
+      setProcessingMetadata(successData.metadata);
+      calculateStats(successData.data);
+      
+      const successModeEmoji = scrapingMode === 'ai' ? '🤖' : scrapingMode === 'hybrid' ? '⚡' : '🌐';
+      const successModeName = scrapingMode === 'ai' ? 'AI-powered' : scrapingMode === 'hybrid' ? 'Hybrid' : 'Traditional';
+      toast.success(`${successModeEmoji} ${successModeName} extraction completed! Found ${successData.data.length} universities`, { 
+        id: "extract-process" 
+      });
 
-      // Start polling for job status
-      startJobPolling(data.jobId);
+      // Switch to results tab
+      setActiveTab("results");
+      
+      // Reload historical results to include new data
+      await loadHistoricalResults();
 
-    } catch (err) {
-      const error = err as Error;
-      console.error("Extraction error:", error);
-
-      const errorInfo = {
-        message: error.message || "Failed to start extraction",
-        code: "EXTRACTION_FAILED"
-      };
-
-      setError(errorInfo);
-      toast.error(errorInfo.message, { id: "extract-job" });
-      setIsLoading(false);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      setError({
+        error: errorMessage,
+        code: "NETWORK_ERROR",
+        timestamp: new Date().toISOString()
+      });
+      toast.error(errorMessage, { id: "extract-process" });
+    } finally {
+      setIsProcessing(false);
+      setProgress(100);
     }
-  }, [session, universityLimit, isLoading]);
+  }, [session, universityLimit, selectedCountry, includeAnalysis, scrapingMode, isProcessing, loadHistoricalResults]);
 
-  const startJobPolling = useCallback((jobId: string) => {
-    let pollCount = 0;
-    const maxPolls = 120; // 10 minutes max (120 * 5 seconds)
+  // ============================================================================
+  // UTILITY FUNCTIONS
+  // ============================================================================
 
-    const pollStatus = async () => {
-      try {
-        pollCount++;
-
-        if (!jobId) {
-          console.error("No jobId provided to pollStatus");
-          throw new Error("No job ID available");
-        }
-
-        console.log(`Polling job status for jobId: ${jobId}`);
-
-        const response = await fetch("/api/tools/agritech-universities/status", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ jobId }),
-        });
-
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Job not found");
-          }
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const status: JobStatus = await response.json();
-        setJobStatus(status);
-        setProgress(status.progress || 0);
-
-        switch (status.state) {
-          case "completed":
-            if (status.result) {
-              try {
-                // Handle both string and object results
-                let result;
-                if (typeof status.result === 'string') {
-                  result = JSON.parse(status.result);
-                } else {
-                  result = status.result;
-                }
-                setResults(result.results || []);
-                  setLastUpdated(new Date());
-                  // persist a small summary for the last successful job
-                  setLastJobSummary({
-                    processedCount: result.processedCount || (result.results || []).length || 0,
-                    finishedAt: new Date().toISOString(),
-                    summary: result.summary || ''
-                  });
-                setIsLoading(false);
-                setProgress(100);
-                toast.success(`Successfully extracted ${result.processedCount || 0} universities`, {
-                  id: "job-status"
-                });
-                stopJobPolling();
-              } catch (parseError) {
-                console.error("Failed to parse job result:", parseError);
-                console.error("Raw result:", status.result);
-                setError({ message: "Failed to parse results", code: "PARSE_ERROR" });
-                setIsLoading(false);
-                toast.error("Failed to parse extraction results", { id: "job-status" });
-                stopJobPolling();
-              }
-            } else {
-              setError({ message: "Job completed but no results found", code: "NO_RESULTS" });
-              setIsLoading(false);
-              toast.error("No results found", { id: "job-status" });
-              stopJobPolling();
-            }
-            break;
-
-          case "failed":
-            const errorMessage = status.failedReason || "Job failed";
-            setError({ message: errorMessage, code: "JOB_FAILED" });
-            setIsLoading(false);
-            toast.error(`Extraction failed: ${errorMessage}`, { id: "job-status" });
-            stopJobPolling();
-            break;
-
-          case "active":
-            // Job is running, continue polling
-            if (pollCount % 12 === 0) { // Every minute
-              toast.loading(`Processing... ${status.progress || 0}% complete`, { id: "job-status" });
-            }
-            break;
-
-          case "waiting":
-            // Job is queued
-            if (pollCount === 1) {
-              toast.loading("Job queued, waiting for processing...", { id: "job-status" });
-            }
-            break;
-
-          default:
-            // Unknown state, continue polling
-            break;
-        }
-
-        // Stop polling after max time
-        if (pollCount >= maxPolls) {
-          setError({ message: "Job timed out", code: "TIMEOUT" });
-          setIsLoading(false);
-          toast.error("Job timed out", { id: "job-status" });
-          stopJobPolling();
-        }
-
-      } catch (err) {
-        const error = err as Error;
-        console.error("Error polling job status:", error);
-
-        if (error.message === "Job not found") {
-          setError({ message: "Job not found", code: "JOB_NOT_FOUND" });
-          setIsLoading(false);
-          toast.error("Job not found", { id: "job-status" });
-          stopJobPolling();
-        } else {
-          // Retry on network errors
-          console.warn(`Poll attempt ${pollCount} failed, retrying...`);
-        }
-      }
+  const calculateStats = useCallback((universities: EnhancedUniversityData[]) => {
+    const stats = {
+      totalUniversities: universities.length,
+      averageQualityScore: universities.reduce((sum, uni) => sum + (uni.qualityScore || 0), 0) / universities.length,
+      countryCounts: universities.reduce((acc, uni) => {
+        const country = uni.location?.country || 'Unknown';
+        acc[country] = (acc[country] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>),
+      topCategories: universities.reduce((acc, uni) => {
+        const specialization = uni.academicInfo?.primarySpecialization || 'General';
+        acc[specialization] = (acc[specialization] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
     };
 
-    // Poll immediately, then every 5 seconds
-    pollStatus();
-    const interval = setInterval(pollStatus, 5000);
-    setPollingInterval(interval);
+    setStatistics(stats);
   }, []);
 
-  // Abort / cancel an active job
-  const handleAbort = useCallback(async () => {
-    if (!currentJobId) return;
-    // stop local polling immediately
-    stopJobPolling();
-    try {
-      // best-effort cancel request - backend may or may not support this
-      await fetch('/api/tools/agritech-universities/cancel', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId: currentJobId })
-      });
-    } catch (err) {
-      // ignore network errors from cancel attempt
-      console.warn('Cancel request failed', err);
-    }
-    // update UI state
-    setIsLoading(false);
-    setJobStatus(prev => prev ? { ...prev, state: 'failed' } : null);
-    setCurrentJobId(null);
-    setError({ message: 'Job aborted by user', code: 'ABORTED' });
-    toast.error('Extraction aborted', { id: 'extract-job' });
-  }, [currentJobId, stopJobPolling]);
-
-  // Requeue a previously cancelled job (best-effort: reads original job data on server and re-adds)
-  const handleRequeue = useCallback(async (jobId: string | null) => {
-    if (!jobId) return;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const resp = await fetch('/api/tools/agritech-universities/requeue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId })
-      });
-
-      const data = await resp.json();
-      if (!resp.ok) {
-        throw new Error(data?.error || 'Failed to requeue job');
-      }
-
-      toast.success(data.message || 'Job requeued');
-      // Start polling the new job
-      setCurrentJobId(data.jobId);
-      startJobPolling(data.jobId);
-    } catch (err) {
-      console.error('Requeue failed', err);
-      setError({ message: (err as Error).message || 'Requeue failed', code: 'REQUEUE_FAILED' });
-      toast.error('Failed to requeue job');
-      setIsLoading(false);
-    }
-  }, [startJobPolling]);
-
-  // Smoothly animate displayedProgress toward progress
-  useEffect(() => {
-    if (animRef.current) {
-      cancelAnimationFrame(animRef.current);
-      animRef.current = null;
-    }
-
-    const step = () => {
-      setDisplayedProgress((prev) => {
-        const target = Math.max(0, Math.min(100, progress));
-        if (Math.abs(target - prev) < 0.5) {
-          return target;
-        }
-        // ease the value toward target
-        return prev + (target - prev) * 0.15;
-      });
-      animRef.current = requestAnimationFrame(step);
-    };
-
-    animRef.current = requestAnimationFrame(step);
-
-    return () => {
-      if (animRef.current) cancelAnimationFrame(animRef.current);
-      animRef.current = null;
-    };
-  }, [progress]);
-
-  // Cleanup polling on unmount
-  useEffect(() => {
-    return () => {
-      stopJobPolling();
-    };
-  }, []);
-
-  // Load existing results on mount
-  useEffect(() => {
-    if (session?.user) {
-      loadExistingResults();
-    }
-  }, [session]);
-
-  const loadExistingResults = useCallback(async () => {
-    if (!session?.user) return;
-
-    try {
-      const response = await fetch("/api/tools/agritech-universities/results?page=1&limit=100");
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          // User not authenticated, redirect will handle this
-          return;
-        }
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-
-      if (data.results && data.results.length > 0) {
-        // Convert database format to UI format
-        const uiResults: UniversityData[] = data.results.map((row: any) => ({
-          University: row.university || "Unknown",
-          Country: row.country || "Unknown",
-          Region: row.region || "Unknown",
-          Website: row.website || "N/A",
-          "Has TTO?": row.hasTto ? "Yes" : "No",
-          "TTO Page URL": row.ttoPageUrl || "N/A",
-          "Incubation Record": row.incubationRecord || "Not Found",
-          "Apollo/LinkedIn Search URL": row.linkedinSearchUrl || "N/A",
-        }));
-
-        setResults(uiResults);
-        setLastUpdated(new Date());
-
-        if (data.results.length >= 100) {
-          toast.info("Showing last 100 results. Use pagination for more.");
-        }
-      } else {
-        // No existing results, show empty state
-        setResults([]);
-      }
-    } catch (err) {
-      const error = err as Error;
-      console.error("Error loading existing results:", error);
-
-      // Don't show error for loading existing results, just log it
-      // Users can still start new extractions
-      toast.error("Failed to load previous results", { duration: 3000 });
-    }
-  }, [session]);
-
-  const handleDownloadCSV = useCallback(() => {
+  const exportToCSV = useCallback(() => {
     if (results.length === 0) {
-      toast.error("No data to download");
+      toast.error("No data to export");
       return;
     }
 
-    if (isDownloading) return;
+    const csvData = results.map(uni => ({
+      name: uni.name,
+      country: uni.location?.country || '',
+      city: uni.location?.city || '',
+      website: uni.contactInfo?.website || '',
+      email: uni.contactInfo?.email || '',
+      phone: uni.contactInfo?.phone || '',
+      specialization: uni.academicInfo?.primarySpecialization || '',
+      qualityScore: uni.qualityScore || 0
+    }));
 
-    setIsDownloading(true);
+    const csv = [
+      Object.keys(csvData[0]).join(','),
+      ...csvData.map(row => Object.values(row).map(val => `"${val}"`).join(','))
+    ].join('\n');
 
-    try {
-      const headers = Object.keys(results[0]);
-      const csvContent = [
-        headers.join(","),
-        ...results.map(row =>
-          headers.map(header => {
-            const value = row[header as keyof UniversityData] || "";
-            // Escape quotes and wrap in quotes if contains comma, quote, or newline
-            const escaped = value.toString().replace(/"/g, '""');
-            return /[,\"\n]/.test(escaped) ? `"${escaped}"` : escaped;
-          }).join(",")
-        )
-      ].join("\n");
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `agritech-universities-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
 
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
+    toast.success("Data exported successfully!");
+  }, [results]);
 
-      link.setAttribute("href", url);
-      link.setAttribute("download", `agritech-universities-${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = "hidden";
+  const filteredResults = useMemo(() => {
+    let filtered = results;
 
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Cleanup
-      setTimeout(() => URL.revokeObjectURL(url), 100);
-
-      toast.success(`Downloaded ${results.length} universities`);
-    } catch (err) {
-      console.error("Download error:", err);
-      toast.error("Failed to download CSV");
-    } finally {
-      setIsDownloading(false);
+    if (searchQuery) {
+      filtered = filtered.filter(uni =>
+        uni.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        uni.location?.country?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        uni.location?.city?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     }
-  }, [results, isDownloading]);
 
-  // Show loading state during initialization
-  if (isInitializing || sessionStatus === "loading") {
+    if (countryFilter && countryFilter !== 'all') {
+      filtered = filtered.filter(uni => uni.location?.country === countryFilter);
+    }
+
+    if (sortBy) {
+      filtered = [...filtered].sort((a, b) => {
+        let aVal, bVal;
+        
+        switch (sortBy) {
+          case 'name':
+            aVal = a.name.toLowerCase();
+            bVal = b.name.toLowerCase();
+            break;
+          case 'country':
+            aVal = (a.location?.country || '').toLowerCase();
+            bVal = (b.location?.country || '').toLowerCase();
+            break;
+          case 'qualityScore':
+            aVal = a.qualityScore || 0;
+            bVal = b.qualityScore || 0;
+            break;
+          default:
+            return 0;
+        }
+
+        if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [results, searchQuery, countryFilter, sortBy, sortOrder]);
+  // ============================================================================
+  // COMPONENT LIFECYCLE EFFECTS
+  // ============================================================================
+
+  useEffect(() => {
+    if (session?.user) {
+      loadHistoricalResults();
+    }
+  }, [session, loadHistoricalResults]);
+
+  // ============================================================================
+  // DIALOG HANDLERS
+  // ============================================================================
+
+  const openUniversityDialog = useCallback((university: EnhancedUniversityData) => {
+    setSelectedUniversity(university);
+    setIsDialogOpen(true);
+  }, []);
+
+  // ============================================================================
+  // RENDER COMPONENT
+  // ============================================================================
+
+  if (sessionStatus === "loading") {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-            <p className="text-muted-foreground">Loading...</p>
-          </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
   }
 
-  // Redirect handled by useEffect
-  if (!session) {
-    return null;
+  if (!session?.user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
+          <p className="text-gray-600 mb-6">Please sign in to access this tool.</p>
+          <Button onClick={() => signIn()}>Sign In</Button>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6 max-w-7xl">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <University className="h-8 w-8 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Agritech Universities Extractor</h1>
-            <p className="text-muted-foreground">
-              Extract and analyze universities with agriculture departments in Thailand
-            </p>
-          </div>
-        </div>
-
-        {lastUpdated && (
-          <div className="text-sm text-muted-foreground">
-            Last updated: {lastUpdated.toLocaleString()}
-          </div>
-        )}
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+          🌱 Agritech Universities Tool
+        </h1>
+        <p className="text-gray-600 max-w-2xl mx-auto">
+          Extract comprehensive information about agricultural technology universities worldwide 
+          using our enterprise-grade scraping service.
+        </p>
       </div>
 
-      <Separator />
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="configure">🔧 Configure</TabsTrigger>
+          <TabsTrigger value="results">📊 Results</TabsTrigger>
+          <TabsTrigger value="history">📂 History</TabsTrigger>
+        </TabsList>
 
-      {/* Extraction Configuration */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Search className="h-5 w-5" />
-            <span>Extraction Configuration</span>
-          </CardTitle>
-          <CardDescription>
-            Configure the extraction parameters and start the analysis process
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="limit" className="text-sm font-medium">
-                Maximum Universities to Process
-              </Label>
-              <Input
-                id="limit"
-                type="number"
-                min="1"
-                max="100"
-                value={universityLimit}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value);
-                  if (value >= 1 && value <= 100) {
-                    setUniversityLimit(value);
-                  }
-                }}
-                disabled={isLoading}
-                className="w-full"
-              />
-              <p className="text-xs text-muted-foreground">
-                Process 1-100 universities (higher numbers take longer)
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Estimated Processing Time</Label>
-              <div className="p-3 bg-muted rounded-md">
-                <p className="text-sm">
-                  ~{Math.ceil(universityLimit * 0.5)} - {Math.ceil(universityLimit * 1.5)} minutes
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Based on current load and processing speed
+        {/* Configuration Tab */}
+        <TabsContent value="configure" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="w-5 h-5" />
+                Extraction Configuration
+              </CardTitle>
+              <CardDescription>
+                Configure your university data extraction parameters
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* University Limit */}
+              <div className="space-y-2">
+                <Label htmlFor="university-limit">Number of Universities</Label>
+                <Input
+                  id="university-limit"
+                  type="number"
+                  min="1"
+                  max="1000"
+                  value={universityLimit}
+                  onChange={(e) => setUniversityLimit(parseInt(e.target.value) || 50)}
+                  placeholder="Enter number of universities to extract"
+                />
+                <p className="text-sm text-gray-500">
+                  Recommended: 50-200 universities for optimal performance
                 </p>
               </div>
-            </div>
-          </div>
 
-          <Separator />
+              {/* Country Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="country-select">Target Country</Label>
+                <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">🌍 All Countries</SelectItem>
+                    <SelectItem value="us">🇺🇸 United States</SelectItem>
+                    <SelectItem value="canada">🇨🇦 Canada</SelectItem>
+                    <SelectItem value="uk">🇬🇧 United Kingdom</SelectItem>
+                    <SelectItem value="germany">🇩🇪 Germany</SelectItem>
+                    <SelectItem value="france">🇫🇷 France</SelectItem>
+                    <SelectItem value="australia">🇦🇺 Australia</SelectItem>
+                    <SelectItem value="india">🇮🇳 India</SelectItem>
+                    <SelectItem value="china">🇨🇳 China</SelectItem>
+                    <SelectItem value="brazil">🇧🇷 Brazil</SelectItem>
+                    <SelectItem value="netherlands">🇳🇱 Netherlands</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <Info className="h-4 w-4" />
-              <span>
-                This will analyze university websites for agriculture departments, TTOs, and incubation programs
-              </span>
-            </div>
+              {/* Scraping Mode Selection */}
+              <div className="space-y-3">
+                <Label htmlFor="scraping-mode">Scraping Mode</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <Card 
+                    className={`cursor-pointer transition-all border-2 ${
+                      scrapingMode === 'traditional' 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setScrapingMode('traditional')}
+                  >
+                    <CardContent className="p-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <Globe className="w-4 h-4 text-blue-600" />
+                          <p className="font-medium text-sm">Traditional</p>
+                        </div>
+                        <p className="text-xs text-gray-600">Fast & reliable</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card 
+                    className={`cursor-pointer transition-all border-2 ${
+                      scrapingMode === 'ai' 
+                        ? 'border-purple-500 bg-purple-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setScrapingMode('ai')}
+                  >
+                    <CardContent className="p-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <Activity className="w-4 h-4 text-purple-600" />
+                          <p className="font-medium text-sm">AI Enhanced</p>
+                        </div>
+                        <p className="text-xs text-gray-600">Smart analysis</p>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-            <Button
-              onClick={handleExtract}
-              disabled={isLoading || universityLimit < 1 || universityLimit > 100}
-              size="lg"
-              aria-busy={isLoading}
-              className={`min-w-[160px] rounded-full px-5 py-2 flex items-center justify-center gap-3 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-sm ${isLoading || universityLimit < 1 || universityLimit > 100 ? 'opacity-60 cursor-not-allowed bg-muted/10 text-muted-foreground' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}
-            >
-              {isLoading ? (
-                <>
-                  <span className="inline-flex items-center justify-center p-2 rounded-full bg-white/10">
-                    <Loader2 className="h-4 w-4 animate-spin text-white" />
-                  </span>
-                  <span>Processing...</span>
-                </>
-              ) : (
-                <>
-                  <span className="inline-flex items-center justify-center p-2 rounded-full bg-white/10">
-                    <Search className="h-4 w-4 text-white" />
-                  </span>
-                  <span className="font-medium">Start Extraction</span>
-                </>
-              )}
-            </Button>
-          </div>
-
-          {/* Progress Section */}
-          {isLoading && currentJobId && (
-            <div className="p-4 bg-muted/60 rounded-lg border border-muted/30 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="p-3 rounded-md bg-muted/10 flex items-center justify-center">
-                    {jobStatus?.state === 'waiting' && <Clock className="h-5 w-5 text-yellow-400" />}
-                    {jobStatus?.state === 'active' && <RefreshCw className="h-5 w-5 text-blue-400 animate-spin" />}
-                    {jobStatus?.state === 'completed' && <CheckCircle className="h-5 w-5 text-green-400" />}
-                  </div>
-
-                  <div>
-                    <div className="text-sm font-semibold">
-                      {jobStatus?.state === 'waiting' ? 'Queued for processing' : jobStatus?.state === 'active' ? 'Processing universities' : jobStatus?.state === 'completed' ? 'Extraction completed' : jobStatus?.state === 'failed' ? 'Extraction failed' : 'Job status'}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">Job ID: <span className="font-mono">{currentJobId.slice(0, 8)}...</span></div>
-                  </div>
+                  <Card 
+                    className={`cursor-pointer transition-all border-2 ${
+                      scrapingMode === 'hybrid' 
+                        ? 'border-green-500 bg-green-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setScrapingMode('hybrid')}
+                  >
+                    <CardContent className="p-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <Zap className="w-4 h-4 text-green-600" />
+                          <p className="font-medium text-sm">Hybrid ⭐</p>
+                        </div>
+                        <p className="text-xs text-gray-600">Best of both</p>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
+                <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                  <p className="font-medium mb-1">
+                    {scrapingMode === 'ai' && '🤖 AI Mode:'}
+                    {scrapingMode === 'traditional' && '🌐 Traditional Mode:'}
+                    {scrapingMode === 'hybrid' && '⚡ Hybrid Mode (Recommended):'}
+                  </p>
+                  <p>
+                    {scrapingMode === 'ai' && 'Uses real-time web search with AI intelligence similar to ChatGPT/Claude. Provides verified, cross-validated university data with advanced quality assessment.'}
+                    {scrapingMode === 'traditional' && 'Scrapes data directly from verified university websites and educational databases. Fast, reliable, and uses established academic sources.'}
+                    {scrapingMode === 'hybrid' && 'Intelligently combines traditional scraping with AI enhancement. Starts fast with traditional methods, then enriches data with AI insights. Automatic fallback ensures maximum reliability.'}
+                  </p>
+                </div>
+              </div>
 
-                <div className="flex flex-col items-end">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-muted/10 text-sm">
-                    <RefreshCw className={`h-4 w-4 ${jobStatus?.state === 'active' ? 'animate-spin text-blue-400' : 'text-muted-foreground'}`} />
-                    <span className="text-sm">{jobStatus?.state === 'active' ? 'Processing...' : jobStatus?.state === 'waiting' ? 'Queued' : jobStatus?.state === 'completed' ? 'Completed' : 'Status'}</span>
-                  </div>
-                  <div className="mt-2 text-lg font-semibold">{Math.round(Math.max(0, Math.min(100, displayedProgress))) }%</div>
-                  <div className="mt-3 flex items-center gap-2">
-                    {jobStatus?.state === 'active' && (
-                      <Button size="sm" variant="destructive" onClick={handleAbort}>
-                        Abort
-                      </Button>
+              {/* Include Analysis */}
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="include-analysis"
+                  checked={includeAnalysis}
+                  onCheckedChange={(checked) => setIncludeAnalysis(checked === true)}
+                />
+                <Label htmlFor="include-analysis">
+                  Include detailed academic analysis
+                </Label>
+              </div>
+
+              {/* Start Extraction Button */}
+              <Button
+                onClick={handleExtraction}
+                disabled={isProcessing}
+                className={`w-full ${
+                  scrapingMode === 'ai' ? 'bg-purple-600 hover:bg-purple-700' : 
+                  scrapingMode === 'hybrid' ? 'bg-green-600 hover:bg-green-700' : 
+                  'bg-blue-600 hover:bg-blue-700'
+                }`}
+                size="lg"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {scrapingMode === 'ai' ? 'AI Processing...' : 
+                     scrapingMode === 'hybrid' ? 'Hybrid Processing...' : 
+                     'Extracting...'}
+                  </>
+                ) : (
+                  <>
+                    {scrapingMode === 'ai' ? (
+                      <Activity className="mr-2 h-4 w-4" />
+                    ) : scrapingMode === 'hybrid' ? (
+                      <Zap className="mr-2 h-4 w-4" />
+                    ) : (
+                      <Play className="mr-2 h-4 w-4" />
                     )}
-                  </div>
-                </div>
-              </div>
+                    Start {scrapingMode === 'ai' ? 'AI' : 
+                           scrapingMode === 'hybrid' ? 'Hybrid' : 
+                           'Traditional'} Extraction
+                  </>
+                )}
+              </Button>
 
-              <div className="mt-4">
-                <Progress value={Math.max(0, Math.min(100, displayedProgress))} className="w-full h-3 rounded-full" />
-                <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                  <span aria-live="polite">{Math.round(Math.max(0, Math.min(100, displayedProgress)))}% complete</span>
-                  <span>
-                    {jobStatus?.state === 'waiting' && 'Waiting in queue...'}
-                    {jobStatus?.state === 'active' && 'Analyzing university data...'}
-                    {jobStatus?.state === 'completed' && 'Results ready for download'}
-                  </span>
+              {/* Progress Bar */}
+              {isProcessing && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>
+                      {scrapingMode === 'ai' ? '🤖 AI processing universities...' : '🌐 Extracting universities...'}
+                    </span>
+                    <span>{Math.round(progress)}%</span>
+                  </div>
+                  <Progress value={progress} className="w-full" />
+                  <p className="text-xs text-gray-500 text-center">
+                    Mode: {scrapingMode === 'ai' ? 'AI-Powered Search' : 'Traditional Web Scraping'}
+                  </p>
                 </div>
-              </div>
+              )}
+
+              {/* Error Display */}
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>
+                    {error.error}
+                    {error.code && (
+                      <span className="text-xs block mt-1">Code: {error.code}</span>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        {/* Results Tab */}
+        <TabsContent value="results" className="space-y-6">
+          {/* Statistics Cards */}
+          {statistics && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <School className="h-8 w-8 text-blue-600" />
+                    <div className="ml-4">
+                      <p className="text-sm text-gray-600">Total Universities</p>
+                      <p className="text-2xl font-bold">{statistics.totalUniversities}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <Star className="h-8 w-8 text-yellow-600" />
+                    <div className="ml-4">
+                      <p className="text-sm text-gray-600">Avg Quality Score</p>
+                      <p className="text-2xl font-bold">{statistics.averageQualityScore?.toFixed(1) || '0.0'}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <Globe className="h-8 w-8 text-green-600" />
+                    <div className="ml-4">
+                      <p className="text-sm text-gray-600">Countries</p>
+                      <p className="text-2xl font-bold">{Object.keys(statistics.countryCounts).length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <BookOpen className="h-8 w-8 text-purple-600" />
+                    <div className="ml-4">
+                      <p className="text-sm text-gray-600">Specializations</p>
+                      <p className="text-2xl font-bold">{Object.keys(statistics.topCategories).length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
 
-          {/* Last Job Summary */}
-          {lastJobSummary && (
+          {/* Processing Metadata */}
+          {processingMetadata && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Last Extraction Summary</CardTitle>
-                <CardDescription>
-                  Processed {lastJobSummary.processedCount} items on {new Date(lastJobSummary.finishedAt).toLocaleString()}
-                </CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="w-5 h-5" />
+                  Processing Summary
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                {lastJobSummary.summary ? <p className="text-sm text-muted-foreground">{lastJobSummary.summary}</p> : <p className="text-sm text-muted-foreground">No summary available.</p>}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-600">Processing Time</p>
+                    <p className="font-semibold">{processingMetadata.processingTime}ms</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Success Rate</p>
+                    <p className="font-semibold">{processingMetadata.successRate}%</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Total Processed</p>
+                    <p className="font-semibold">{processingMetadata.totalProcessed}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Quality Score</p>
+                    <p className="font-semibold">{processingMetadata.qualityScore?.toFixed(1) || 'N/A'}</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}
-        </CardContent>
-      </Card>
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            {error.message}
-            {error.code && (
-              <div className="mt-2 text-xs text-muted-foreground">
-                Error code: {error.code}
-                {error.retryAfter && (
-                  <div>Retry after: {Math.ceil(error.retryAfter / 60)} minutes</div>
-                )}
-              </div>
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Results Section */}
-      {results.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+          {/* Search and Filters */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Search universities, countries, cities..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full"
+                  />
                 </div>
-                <div>
-                  <CardTitle className="text-xl">Extraction Results</CardTitle>
-                  <CardDescription>
-                    Found {results.length} universities with agriculture departments
-                  </CardDescription>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Button
-                  onClick={() => loadExistingResults()}
-                  variant="outline"
-                  size="sm"
-                >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Refresh
-                </Button>
-                <Button
-                  onClick={handleDownloadCSV}
-                  disabled={isDownloading}
-                  size="sm"
-                >
-                  {isDownloading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="mr-2 h-4 w-4" />
-                  )}
-                  Download CSV
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border overflow-hidden">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead className="font-semibold">University</TableHead>
-                      <TableHead className="font-semibold">Country</TableHead>
-                      <TableHead className="font-semibold">Region</TableHead>
-                      <TableHead className="font-semibold">Website</TableHead>
-                      <TableHead className="font-semibold">TTO</TableHead>
-                      <TableHead className="font-semibold">TTO URL</TableHead>
-                      <TableHead className="font-semibold">Incubation</TableHead>
-                      <TableHead className="font-semibold">LinkedIn</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {results.map((uni, index) => (
-                      <TableRow key={`${uni.University}-${index}`} className="hover:bg-muted/30">
-                        <TableCell className="font-medium max-w-xs">
-                          <div className="flex items-center space-x-2">
-                            <University className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                            <span className="truncate" title={uni.University}>
-                              {uni.University}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{uni.Country}</TableCell>
-                        <TableCell className="text-muted-foreground">{uni.Region}</TableCell>
-                        <TableCell>
-                          {uni.Website !== "N/A" ? (
-                            <a
-                              href={uni.Website}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                            >
-                              <Globe className="h-4 w-4" />
-                              <span className="underline">Visit</span>
-                            </a>
-                          ) : (
-                            <span className="text-muted-foreground">N/A</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={uni["Has TTO?"] === "Yes" ? "default" : "secondary"}
-                            className={uni["Has TTO?"] === "Yes" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" : ""}
-                          >
-                            {uni["Has TTO?"]}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {uni["TTO Page URL"] !== "N/A" ? (
-                            <a
-                              href={uni["TTO Page URL"]}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
-                            >
-                              Link
-                            </a>
-                          ) : (
-                            <span className="text-muted-foreground">N/A</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="max-w-xs">
-                          <span
-                            className="text-sm truncate block"
-                            title={uni["Incubation Record"]}
-                          >
-                            {uni["Incubation Record"]}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          {uni["Apollo/LinkedIn Search URL"] !== "N/A" ? (
-                            <a
-                              href={uni["Apollo/LinkedIn Search URL"]}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                            >
-                              <Linkedin className="h-4 w-4" />
-                              <span className="underline">LinkedIn</span>
-                            </a>
-                          ) : (
-                            <span className="text-muted-foreground">N/A</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
+                <Select value={countryFilter} onValueChange={setCountryFilter}>
+                  <SelectTrigger className="w-full md:w-48">
+                    <SelectValue placeholder="Filter by country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Countries</SelectItem>
+                    {statistics && Object.keys(statistics.countryCounts).map(country => (
+                      <SelectItem key={country} value={country}>
+                        {country} ({statistics.countryCounts[country]})
+                      </SelectItem>
                     ))}
-                  </TableBody>
-                </Table>
+                  </SelectContent>
+                </Select>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-full md:w-48">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name">Name</SelectItem>
+                    <SelectItem value="country">Country</SelectItem>
+                    <SelectItem value="qualityScore">Quality Score</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                >
+                  {sortOrder === 'asc' ? '↑' : '↓'}
+                </Button>
+                <Button onClick={exportToCSV} disabled={results.length === 0}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export CSV
+                </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Results Table */}
+          {filteredResults.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Universities ({filteredResults.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>University</TableHead>
+                        <TableHead>Country</TableHead>
+                        <TableHead>City</TableHead>
+                        <TableHead>Specialization</TableHead>
+                        <TableHead>Quality Score</TableHead>
+                        <TableHead>Website</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredResults.map((university, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{university.name}</TableCell>
+                          <TableCell>{university.location?.country || 'N/A'}</TableCell>
+                          <TableCell>{university.location?.city || 'N/A'}</TableCell>
+                          <TableCell>{university.academicInfo?.primarySpecialization || 'General'}</TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              (university.qualityScore || 0) >= 8 ? 'default' :
+                              (university.qualityScore || 0) >= 6 ? 'secondary' : 'outline'
+                            }>
+                              {university.qualityScore?.toFixed(1) || 'N/A'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {university.contactInfo?.website ? (
+                              <a
+                                href={university.contactInfo.website}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline"
+                              >
+                                Visit
+                              </a>
+                            ) : (
+                              'N/A'
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openUniversityDialog(university)}
+                            >
+                              View Details
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="text-center py-12">
+                <School className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Universities Found</h3>
+                <p className="text-gray-600 mb-4">
+                  {results.length === 0
+                    ? "Start an extraction to see university data here."
+                    : "No universities match your current filters."}
+                </p>
+                {results.length === 0 && (
+                  <Button onClick={() => setActiveTab('configure')}>
+                    Configure Extraction
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* History Tab */}
+        <TabsContent value="history" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <History className="w-5 h-5" />
+                Extraction History
+              </CardTitle>
+              <CardDescription>
+                View your previous extraction results and analytics
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingHistory ? (
+                <div className="text-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                  <p className="text-gray-600">Loading history...</p>
+                </div>
+              ) : historicalResults.length > 0 ? (
+                <div className="space-y-4">
+                  {historicalResults.map((result, index) => (
+                    <Card key={index} className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-semibold">{result.metadata.successfulCount} Universities Extracted</h4>
+                          <p className="text-sm text-gray-600">
+                            {new Date(result.createdAt).toLocaleString()}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Processing time: {result.metadata.processingTime}ms | 
+                            Success rate: {result.metadata.successRate}%
+                          </p>
+                        </div>
+                        <Button variant="outline" size="sm">
+                          View Details
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No History Found</h3>
+                  <p className="text-gray-600">Your extraction history will appear here.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* University Details Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <School className="w-5 h-5" />
+              {selectedUniversity?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Detailed information about this university
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedUniversity && (
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Basic Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Name</Label>
+                      <p className="font-medium">{selectedUniversity.name}</p>
+                    </div>
+                    <div>
+                      <Label>Quality Score</Label>
+                      <Badge variant={
+                        (selectedUniversity.qualityScore || 0) >= 8 ? 'default' :
+                        (selectedUniversity.qualityScore || 0) >= 6 ? 'secondary' : 'outline'
+                      }>
+                        {selectedUniversity.qualityScore?.toFixed(1) || 'N/A'}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Location Information */}
+              {selectedUniversity.location && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Location</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Country</Label>
+                        <p>{selectedUniversity.location.country || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <Label>City</Label>
+                        <p>{selectedUniversity.location.city || 'N/A'}</p>
+                      </div>
+                      {selectedUniversity.location.address && (
+                        <div className="col-span-2">
+                          <Label>Address</Label>
+                          <p>{selectedUniversity.location.address}</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Contact Information */}
+              {selectedUniversity.contactInfo && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Contact Information</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      {selectedUniversity.contactInfo.website && (
+                        <div>
+                          <Label>Website</Label>
+                          <a
+                            href={selectedUniversity.contactInfo.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline block"
+                          >
+                            {selectedUniversity.contactInfo.website}
+                          </a>
+                        </div>
+                      )}
+                      {selectedUniversity.contactInfo.email && (
+                        <div>
+                          <Label>Email</Label>
+                          <p>{selectedUniversity.contactInfo.email}</p>
+                        </div>
+                      )}
+                      {selectedUniversity.contactInfo.phone && (
+                        <div className="col-span-2">
+                          <Label>Phone</Label>
+                          <p>{selectedUniversity.contactInfo.phone}</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Academic Information */}
+              {selectedUniversity.academicInfo && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Academic Information</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {selectedUniversity.academicInfo.primarySpecialization && (
+                        <div>
+                          <Label>Primary Specialization</Label>
+                          <p>{selectedUniversity.academicInfo.primarySpecialization}</p>
+                        </div>
+                      )}
+                      {selectedUniversity.academicInfo.departments && selectedUniversity.academicInfo.departments.length > 0 && (
+                        <div>
+                          <Label>Departments</Label>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {selectedUniversity.academicInfo.departments.map((dept, idx) => (
+                              <Badge key={idx} variant="outline">{dept}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {selectedUniversity.academicInfo.researchAreas && selectedUniversity.academicInfo.researchAreas.length > 0 && (
+                        <div>
+                          <Label>Research Areas</Label>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {selectedUniversity.academicInfo.researchAreas.map((area, idx) => (
+                              <Badge key={idx} variant="secondary">{area}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
-          </CardContent>
-        </Card>
-      ) : !isLoading && !error ? (
-        /* Empty State */
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="p-4 bg-muted rounded-full mb-4">
-              <Search className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">No Results Yet</h3>
-            <p className="text-muted-foreground text-center max-w-md mb-6">
-              Start an extraction to analyze universities with agriculture departments in Thailand.
-              The process will scan university websites for relevant information.
-            </p>
-            <Button onClick={handleExtract} disabled={isLoading}>
-              <Search className="mr-2 h-4 w-4" />
-              Start Your First Extraction
-            </Button>
-          </CardContent>
-        </Card>
-      ) : null}
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
