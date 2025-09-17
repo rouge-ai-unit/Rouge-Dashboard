@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { MessageCircle, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePathname } from "next/navigation";
 
 interface ChatbotWidgetProps {
   chatbotUrl?: string;
@@ -18,8 +19,15 @@ export default function ChatbotWidget({
   const [isOpen, setIsOpen] = useState(false);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const pathname = usePathname();
+
+  // Prevent hydration mismatch by only rendering after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Optimized body scroll lock
   useEffect(() => {
@@ -111,6 +119,16 @@ export default function ChatbotWidget({
   };
 
   const currentTheme = themeClasses[theme];
+
+  // Don't render on signin pages
+  const isSigninPage = pathname?.startsWith('/signin') || 
+                      pathname?.startsWith('/auth/signin') || 
+                      pathname?.startsWith('/(auth)/signin');
+
+  // Prevent hydration mismatch by not rendering until mounted or on signin pages
+  if (!mounted || isSigninPage) {
+    return null;
+  }
 
   return (
     <>

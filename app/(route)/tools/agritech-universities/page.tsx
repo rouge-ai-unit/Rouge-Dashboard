@@ -101,6 +101,7 @@ interface ProcessingMetadata {
   successRate: number;
   qualityScore?: number;
   totalProcessed: number;
+  mode: string;
 }
 
 interface ExtractionResponse {
@@ -118,7 +119,7 @@ interface ExtractionResponse {
 }
 
 interface ErrorResponse {
-  error: string;
+  error: string | { code: string; message: string; details?: any; timestamp: string };
   code: string;
   retryAfter?: number;
   timestamp: string;
@@ -249,14 +250,48 @@ export default function AgritechUniversitiesPage() {
       if (!response.ok) {
         const errorData = data as ErrorResponse;
         setError(errorData);
-        toast.error(errorData.error, { id: "extract-process" });
+        toast.error(typeof errorData.error === 'object' ? errorData.error.message : errorData.error, { id: "extract-process" });
         return;
       }
 
       const successData = data as ExtractionResponse;
-      setResults(successData.data);
+      
+      // Transform API data to EnhancedUniversityData format
+      const transformedData: EnhancedUniversityData[] = successData.data.map((uni: any, index: number) => ({
+        id: `uni-${Date.now()}-${index}`,
+        name: uni.university,
+        location: {
+          country: uni.country,
+          city: uni.region || uni.country, // Use region as city fallback
+          address: undefined
+        },
+        contactInfo: {
+          website: uni.website,
+          email: undefined,
+          phone: undefined
+        },
+        academicInfo: {
+          primarySpecialization: 'Agriculture & Technology', // Default specialization
+          departments: undefined,
+          researchAreas: undefined
+        },
+        qualityScore: uni.qualityScore,
+        university: uni.university,
+        country: uni.country,
+        region: uni.region,
+        website: uni.website,
+        hasAgriculture: true, // Assume all are agriculture-focused
+        hasTto: uni.hasTto,
+        ttoPageUrl: uni.ttoPageUrl,
+        incubationRecord: uni.incubationRecord,
+        linkedinSearchUrl: uni.linkedinSearchUrl,
+        lastVerified: new Date().toISOString(),
+        analysisNotes: `TTO: ${uni.hasTto ? 'Yes' : 'No'}${uni.ttoPageUrl ? ` - ${uni.ttoPageUrl}` : ''}`
+      }));
+      
+      setResults(transformedData);
       setProcessingMetadata(successData.metadata);
-      calculateStats(successData.data);
+      calculateStats(transformedData);
       
       const successModeEmoji = scrapingMode === 'ai' ? '🤖' : scrapingMode === 'hybrid' ? '⚡' : '🌐';
       const successModeName = scrapingMode === 'ai' ? 'AI-powered' : scrapingMode === 'hybrid' ? 'Hybrid' : 'Traditional';
@@ -314,13 +349,15 @@ export default function AgritechUniversitiesPage() {
     }
 
     const csvData = results.map(uni => ({
-      name: uni.name,
-      country: uni.location?.country || '',
-      city: uni.location?.city || '',
+      name: uni.name || uni.university,
+      country: uni.location?.country || uni.country || '',
+      city: uni.location?.city || uni.region || '',
       website: uni.contactInfo?.website || '',
       email: uni.contactInfo?.email || '',
       phone: uni.contactInfo?.phone || '',
-      specialization: uni.academicInfo?.primarySpecialization || '',
+      hasTto: uni.hasTto ? 'Yes' : 'No',
+      ttoPageUrl: uni.ttoPageUrl || '',
+      incubationRecord: uni.incubationRecord || '',
       qualityScore: uni.qualityScore || 0
     }));
 
@@ -345,9 +382,9 @@ export default function AgritechUniversitiesPage() {
 
     if (searchQuery) {
       filtered = filtered.filter(uni =>
-        uni.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        uni.location?.country?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        uni.location?.city?.toLowerCase().includes(searchQuery.toLowerCase())
+        (uni.name || uni.university || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (uni.location?.country || uni.country || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (uni.location?.city || '').toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
@@ -361,12 +398,12 @@ export default function AgritechUniversitiesPage() {
         
         switch (sortBy) {
           case 'name':
-            aVal = a.name.toLowerCase();
-            bVal = b.name.toLowerCase();
+            aVal = (a.name || a.university || '').toLowerCase();
+            bVal = (b.name || b.university || '').toLowerCase();
             break;
           case 'country':
-            aVal = (a.location?.country || '').toLowerCase();
-            bVal = (b.location?.country || '').toLowerCase();
+            aVal = (a.location?.country || a.country || '').toLowerCase();
+            bVal = (b.location?.country || b.country || '').toLowerCase();
             break;
           case 'qualityScore':
             aVal = a.qualityScore || 0;
@@ -445,9 +482,9 @@ export default function AgritechUniversitiesPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="configure">🔧 Configure</TabsTrigger>
-          <TabsTrigger value="results">📊 Results</TabsTrigger>
-          <TabsTrigger value="history">📂 History</TabsTrigger>
+          <TabsTrigger value="configure" className={`flex items-center justify-center ${activeTab === 'configure' ? 'bg-muted/30 rounded-md ring-1 ring-offset-1 ring-indigo-400' : ''}`}>🔧 Configure</TabsTrigger>
+          <TabsTrigger value="results" className={`flex items-center justify-center ${activeTab === 'results' ? 'bg-muted/30 rounded-md ring-1 ring-offset-1 ring-indigo-400' : ''}`}>📊 Results</TabsTrigger>
+          <TabsTrigger value="history" className={`flex items-center justify-center ${activeTab === 'history' ? 'bg-muted/30 rounded-md ring-1 ring-offset-1 ring-indigo-400' : ''}`}>📂 History</TabsTrigger>
         </TabsList>
 
         {/* Configuration Tab */}
@@ -489,6 +526,7 @@ export default function AgritechUniversitiesPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">🌍 All Countries</SelectItem>
+                    <SelectItem value="thailand">🇹🇭 Thailand</SelectItem>
                     <SelectItem value="us">🇺🇸 United States</SelectItem>
                     <SelectItem value="canada">🇨🇦 Canada</SelectItem>
                     <SelectItem value="uk">🇬🇧 United Kingdom</SelectItem>
@@ -510,7 +548,7 @@ export default function AgritechUniversitiesPage() {
                   <Card 
                     className={`cursor-pointer transition-all border-2 ${
                       scrapingMode === 'traditional' 
-                        ? 'border-blue-500 bg-blue-50' 
+                        ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-900/20' 
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                     onClick={() => setScrapingMode('traditional')}
@@ -529,7 +567,7 @@ export default function AgritechUniversitiesPage() {
                   <Card 
                     className={`cursor-pointer transition-all border-2 ${
                       scrapingMode === 'ai' 
-                        ? 'border-purple-500 bg-purple-50' 
+                        ? 'border-purple-500 bg-purple-50/70 dark:bg-purple-900/20' 
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                     onClick={() => setScrapingMode('ai')}
@@ -548,7 +586,7 @@ export default function AgritechUniversitiesPage() {
                   <Card 
                     className={`cursor-pointer transition-all border-2 ${
                       scrapingMode === 'hybrid' 
-                        ? 'border-green-500 bg-green-50' 
+                        ? 'border-green-500 bg-green-50/70 dark:bg-green-900/18' 
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                     onClick={() => setScrapingMode('hybrid')}
@@ -564,13 +602,13 @@ export default function AgritechUniversitiesPage() {
                     </CardContent>
                   </Card>
                 </div>
-                <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                <div className="text-sm text-gray-300 bg-gray-800/30 p-3 rounded-md">
                   <p className="font-medium mb-1">
                     {scrapingMode === 'ai' && '🤖 AI Mode:'}
                     {scrapingMode === 'traditional' && '🌐 Traditional Mode:'}
                     {scrapingMode === 'hybrid' && '⚡ Hybrid Mode (Recommended):'}
                   </p>
-                  <p>
+                  <p className="text-gray-400">
                     {scrapingMode === 'ai' && 'Uses real-time web search with AI intelligence similar to ChatGPT/Claude. Provides verified, cross-validated university data with advanced quality assessment.'}
                     {scrapingMode === 'traditional' && 'Scrapes data directly from verified university websites and educational databases. Fast, reliable, and uses established academic sources.'}
                     {scrapingMode === 'hybrid' && 'Intelligently combines traditional scraping with AI enhancement. Starts fast with traditional methods, then enriches data with AI insights. Automatic fallback ensures maximum reliability.'}
@@ -646,7 +684,11 @@ export default function AgritechUniversitiesPage() {
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Error</AlertTitle>
                   <AlertDescription>
-                    {error.error}
+                    {typeof error.error === 'object' && error.error?.message
+                      ? error.error.message
+                      : typeof error.error === 'string'
+                      ? error.error
+                      : 'An error occurred'}
                     {error.code && (
                       <span className="text-xs block mt-1">Code: {error.code}</span>
                     )}
@@ -658,6 +700,61 @@ export default function AgritechUniversitiesPage() {
         </TabsContent>
         {/* Results Tab */}
         <TabsContent value="results" className="space-y-6">
+          {/* Processing Summary */}
+          {processingMetadata && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5" />
+                  Processing Summary
+                </CardTitle>
+                <CardDescription>
+                  Details from the latest extraction process
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-blue-600">{processingMetadata.totalProcessed || 0}</p>
+                    <p className="text-sm text-gray-600">Total Processed</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-green-600">{processingMetadata.successfulCount || 0}</p>
+                    <p className="text-sm text-gray-600">Successful</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-purple-600">{processingMetadata.successRate || 0}%</p>
+                    <p className="text-sm text-gray-600">Success Rate</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-yellow-600">{processingMetadata.averageQualityScore?.toFixed(1) || '0.0'}</p>
+                    <p className="text-sm text-gray-600">Avg Quality Score</p>
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">Processing Time:</span>
+                      <span className="ml-2 font-medium">{processingMetadata.processingTime || 0}ms</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Mode:</span>
+                      <span className="ml-2 font-medium">{processingMetadata.mode || 'Unknown'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Requested:</span>
+                      <span className="ml-2 font-medium">{processingMetadata.requestedLimit || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Actual:</span>
+                      <span className="ml-2 font-medium">{processingMetadata.actualLimit || 0}</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Statistics Cards */}
           {statistics && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -706,38 +803,6 @@ export default function AgritechUniversitiesPage() {
                 </CardContent>
               </Card>
             </div>
-          )}
-
-          {/* Processing Metadata */}
-          {processingMetadata && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="w-5 h-5" />
-                  Processing Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-600">Processing Time</p>
-                    <p className="font-semibold">{processingMetadata.processingTime}ms</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Success Rate</p>
-                    <p className="font-semibold">{processingMetadata.successRate}%</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Total Processed</p>
-                    <p className="font-semibold">{processingMetadata.totalProcessed}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Quality Score</p>
-                    <p className="font-semibold">{processingMetadata.qualityScore?.toFixed(1) || 'N/A'}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           )}
 
           {/* Search and Filters */}
@@ -803,7 +868,8 @@ export default function AgritechUniversitiesPage() {
                         <TableHead>University</TableHead>
                         <TableHead>Country</TableHead>
                         <TableHead>City</TableHead>
-                        <TableHead>Specialization</TableHead>
+                        <TableHead>TTO</TableHead>
+                        <TableHead>Incubation</TableHead>
                         <TableHead>Quality Score</TableHead>
                         <TableHead>Website</TableHead>
                         <TableHead>Actions</TableHead>
@@ -812,10 +878,19 @@ export default function AgritechUniversitiesPage() {
                     <TableBody>
                       {filteredResults.map((university, index) => (
                         <TableRow key={index}>
-                          <TableCell className="font-medium">{university.name}</TableCell>
-                          <TableCell>{university.location?.country || 'N/A'}</TableCell>
-                          <TableCell>{university.location?.city || 'N/A'}</TableCell>
-                          <TableCell>{university.academicInfo?.primarySpecialization || 'General'}</TableCell>
+                          <TableCell className="font-medium">{university.name || university.university}</TableCell>
+                          <TableCell>{university.location?.country || university.country || 'N/A'}</TableCell>
+                          <TableCell>{university.location?.city || university.region || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Badge variant={university.hasTto ? 'default' : 'outline'}>
+                              {university.hasTto ? 'Yes' : 'No'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={university.incubationRecord && university.incubationRecord !== 'Unknown' ? 'default' : 'outline'}>
+                              {university.incubationRecord && university.incubationRecord !== 'Unknown' ? 'Yes' : 'No'}
+                            </Badge>
+                          </TableCell>
                           <TableCell>
                             <Badge variant={
                               (university.qualityScore || 0) >= 8 ? 'default' :
@@ -907,7 +982,16 @@ export default function AgritechUniversitiesPage() {
                             Success rate: {result.metadata.successRate}%
                           </p>
                         </div>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            // Show session details in a toast or modal
+                            toast.info(`Session Details: ${result.metadata.successfulCount} universities extracted on ${new Date(result.createdAt).toLocaleDateString()}`, {
+                              description: `Processing time: ${result.metadata.processingTime}ms | Success rate: ${result.metadata.successRate}%`
+                            });
+                          }}
+                        >
                           View Details
                         </Button>
                       </div>
@@ -928,7 +1012,7 @@ export default function AgritechUniversitiesPage() {
 
       {/* University Details Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <School className="w-5 h-5" />
@@ -950,7 +1034,7 @@ export default function AgritechUniversitiesPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Name</Label>
-                      <p className="font-medium">{selectedUniversity.name}</p>
+                      <p className="font-medium">{selectedUniversity.name || selectedUniversity.university}</p>
                     </div>
                     <div>
                       <Label>Quality Score</Label>
@@ -1029,6 +1113,48 @@ export default function AgritechUniversitiesPage() {
                   </CardContent>
                 </Card>
               )}
+
+              {/* TTO & Incubation Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Technology Transfer & Innovation</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Technology Transfer Office (TTO)</Label>
+                      <Badge variant={selectedUniversity.hasTto ? 'default' : 'outline'}>
+                        {selectedUniversity.hasTto ? 'Available' : 'Not Detected'}
+                      </Badge>
+                    </div>
+                    <div>
+                      <Label>Incubation Programs</Label>
+                      <Badge variant={selectedUniversity.incubationRecord && selectedUniversity.incubationRecord !== 'Unknown' ? 'default' : 'outline'}>
+                        {selectedUniversity.incubationRecord && selectedUniversity.incubationRecord !== 'Unknown' ? 'Available' : 'Not Detected'}
+                      </Badge>
+                    </div>
+                    {selectedUniversity.ttoPageUrl && (
+                      <div className="col-span-2">
+                        <Label>TTO Page</Label>
+                        <a
+                          href={selectedUniversity.ttoPageUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline block"
+                        >
+                          {selectedUniversity.ttoPageUrl}
+                        </a>
+                      </div>
+                    )}
+                    {selectedUniversity.incubationRecord && selectedUniversity.incubationRecord !== 'Unknown' && (
+                      <div className="col-span-2">
+                        <Label>Incubation Details</Label>
+                        <p>{selectedUniversity.incubationRecord}</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Academic Information */}
               {selectedUniversity.academicInfo && (

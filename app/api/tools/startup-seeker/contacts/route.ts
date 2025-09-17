@@ -25,6 +25,278 @@ const contactRequestSchema = z.object({
 });
 
 /**
+ * Perform asynchronous contact research
+ */
+async function performContactResearch(
+  jobId: string,
+  startupData: any,
+  options: { priority: string; includeLinkedIn: boolean; includeEmail: boolean; includePhone: boolean }
+) {
+  const db = getDb();
+
+  try {
+    // Perform comprehensive contact discovery
+    const findings: Record<string, any> = {
+      name: startupData.name,
+      website: startupData.website,
+      lastUpdated: new Date().toISOString(),
+      via: 'comprehensive-scan',
+      priority: options.priority,
+      options: options
+    };
+
+    // LinkedIn research
+    if (options.includeLinkedIn && startupData.name) {
+      const slug = startupData.name
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .trim()
+        .replace(/\s+/g, '-');
+      findings.linkedinUrl = `https://www.linkedin.com/company/${slug}`;
+
+      // Try to verify LinkedIn page exists
+      try {
+        const response = await axios.get(findings.linkedinUrl, {
+          timeout: 10000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+        findings.linkedinVerified = response.status === 200;
+      } catch {
+        findings.linkedinVerified = false;
+      }
+    }
+
+    // Email discovery with enhanced scraping
+    if (options.includeEmail && startupData.website) {
+      try {
+        const url = new URL(startupData.website.startsWith('http') ? startupData.website : `https://${startupData.website}`);
+        const domain = url.hostname.replace(/^www\./, '');
+
+        findings.emails = [
+          `info@${domain}`,
+          `contact@${domain}`,
+          `hello@${domain}`,
+          `support@${domain}`,
+          `sales@${domain}`,
+          `team@${domain}`
+        ];
+
+        // Enhanced website scraping for contact information
+        try {
+          console.log(`🔍 Scraping contact info from: ${startupData.website}`);
+          
+          const websiteResponse = await axios.get(startupData.website, {
+            timeout: 25000, // Increased timeout
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+              'Accept-Language': 'en-US,en;q=0.5',
+              'Accept-Encoding': 'gzip, deflate, br',
+              'Connection': 'keep-alive',
+              'Upgrade-Insecure-Requests': '1',
+              'Sec-Fetch-Dest': 'document',
+              'Sec-Fetch-Mode': 'navigate',
+              'Sec-Fetch-Site': 'none',
+              'Cache-Control': 'max-age=0'
+            },
+            maxRedirects: 5,
+            validateStatus: (status) => status < 500 // Accept 4xx but not 5xx
+          });
+
+          const html = websiteResponse.data;
+          
+          // Extract emails with improved regex
+          const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+          const foundEmails = html.match(emailRegex);
+          
+          if (foundEmails && foundEmails.length > 0) {
+            // Filter out common non-contact emails but keep legitimate business emails
+            const filteredEmails = foundEmails.filter((email: string) => {
+              const lowerEmail = email.toLowerCase();
+              return !lowerEmail.includes('noreply') && 
+                     !lowerEmail.includes('no-reply') && 
+                     !lowerEmail.includes('donotreply') &&
+                     !lowerEmail.includes('example') &&
+                     !lowerEmail.includes('test') &&
+                     !lowerEmail.includes('placeholder') &&
+                     !lowerEmail.includes('your') &&
+                     !lowerEmail.includes('email') &&
+                     !lowerEmail.includes('mail') &&
+                     email.length < 100 && // Reasonable email length
+                     email.includes('@') && // Must have @ symbol
+                     email.split('@')[1]?.includes('.'); // Must have domain
+            });
+            
+            findings.foundEmails = [...new Set(filteredEmails)].slice(0, 10); // Limit to 10 unique emails
+            console.log(`📧 Found ${findings.foundEmails.length} emails from website: ${findings.foundEmails.slice(0, 3).join(', ')}`);
+          }
+
+          // Try to find contact pages and scrape them too
+          const contactPageUrls = [
+            '/contact',
+            '/contact-us',
+            '/about',
+            '/about-us',
+            '/team',
+            '/our-team'
+          ];
+
+          for (const contactPath of contactPageUrls.slice(0, 2)) { // Limit to 2 additional pages
+            try {
+              const contactUrl = `${startupData.website.replace(/\/$/, '')}${contactPath}`;
+              console.log(`🔍 Checking contact page: ${contactUrl}`);
+              
+              const contactResponse = await axios.get(contactUrl, {
+                timeout: 10000,
+                headers: {
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                },
+                maxRedirects: 3
+              });
+
+              const contactHtml = contactResponse.data;
+              const contactEmails = contactHtml.match(emailRegex);
+              
+              if (contactEmails && contactEmails.length > 0) {
+                const filteredContactEmails = contactEmails.filter((email: string) => {
+                  const lowerEmail = email.toLowerCase();
+                  return !lowerEmail.includes('noreply') && 
+                         !lowerEmail.includes('example') &&
+                         !lowerEmail.includes('test') &&
+                         email.length < 100;
+                });
+                
+                if (filteredContactEmails.length > 0) {
+                  findings.foundEmails = [
+                    ...(findings.foundEmails || []),
+                    ...filteredContactEmails
+                  ];
+                  findings.foundEmails = [...new Set(findings.foundEmails)].slice(0, 10);
+                  console.log(`📧 Found additional ${filteredContactEmails.length} emails from ${contactPath}`);
+                }
+              }
+            } catch (contactError) {
+              // Continue if contact page doesn't exist
+              console.log(`⚠️ Could not access ${contactPath}: ${contactError}`);
+            }
+          }
+
+        } catch (websiteError) {
+          console.warn(`Could not scan website for emails: ${websiteError}`);
+          // Continue with basic contact info even if scraping fails
+        }
+      } catch (urlError) {
+        console.warn(`Invalid website URL: ${startupData.website}`);
+        // Continue with basic contact info
+      }
+    }
+
+    // Ensure we always have some contact information
+    if (!findings.foundEmails || findings.foundEmails.length === 0) {
+      // If no emails found from website, at least keep the generic ones
+      findings.foundEmails = findings.emails || [];
+      console.log(`📧 Using generic emails as fallback: ${findings.foundEmails.join(', ')}`);
+    }
+
+    // Phone number research
+    if (options.includePhone) {
+      findings.phone = null; // Initialize
+      
+      try {
+        // Try to extract phone numbers from website
+        const websiteResponse = await axios.get(startupData.website, {
+          timeout: 15000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+
+        const html = websiteResponse.data;
+        
+        // Phone number regex patterns
+        const phoneRegexes = [
+          /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g,  // US format: 123-456-7890
+          /\b\d{10,11}\b/g,  // 10-11 digits
+          /\+\d{1,3}[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,4}\b/g,  // International format
+          /\(\d{3}\)\s*\d{3}[-.]?\d{4}\b/g,  // (123) 456-7890
+          /\d{3}\s\d{3}\s\d{4}\b/g  // 123 456 7890
+        ];
+
+        const foundPhones: string[] = [];
+        
+        for (const regex of phoneRegexes) {
+          const matches = html.match(regex);
+          if (matches) {
+            foundPhones.push(...matches);
+          }
+        }
+
+        if (foundPhones.length > 0) {
+          // Clean and deduplicate phone numbers
+          const cleanedPhones = foundPhones
+            .map(phone => phone.replace(/[^\d+\-\(\)\.\s]/g, '').trim())
+            .filter(phone => phone.length >= 10 && phone.length <= 20)
+            .filter((phone, index, arr) => arr.indexOf(phone) === index) // Remove duplicates
+            .slice(0, 3); // Limit to 3 numbers
+            
+          if (cleanedPhones.length > 0) {
+            findings.foundPhones = cleanedPhones;
+            console.log(`📞 Found ${cleanedPhones.length} phone numbers from website`);
+          }
+        }
+      } catch (phoneError) {
+        console.warn(`Could not scan website for phone numbers: ${phoneError}`);
+      }
+      
+      findings.phoneNote = 'Phone numbers extracted from website contact information';
+    }
+
+    // Additional contact research
+    findings.contactMethods = {
+      website: startupData.website,
+      linkedin: findings.linkedinUrl,
+      emails: findings.emails || [],
+      foundEmails: findings.foundEmails || [],
+      foundPhones: findings.foundPhones || [],
+      priority: options.priority,
+      researchDate: new Date().toISOString(),
+      linkedinVerified: findings.linkedinVerified,
+      totalContactsFound: (findings.foundEmails?.length || 0) + (findings.foundPhones?.length || 0)
+    };
+
+    // Update startup with discovered contacts
+    await startupGenerationEngine.updateStartupContacts(startupData.id, findings, startupData.userId);
+
+    // Mark job completed
+    await db
+      .update(ContactResearchJobs)
+      .set({
+        status: 'completed',
+        result: findings,
+        completedAt: new Date().toISOString()
+      })
+      .where(eq(ContactResearchJobs.id, jobId));
+
+    console.log(`✅ Contact research job ${jobId} completed for startup ${startupData.id}`);
+
+  } catch (error) {
+    console.error(`❌ Contact research job ${jobId} failed:`, error);
+
+    // Mark job as failed
+    await db
+      .update(ContactResearchJobs)
+      .set({
+        status: 'failed',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        completedAt: new Date().toISOString()
+      })
+      .where(eq(ContactResearchJobs.id, jobId));
+  }
+}
+
+/**
  * POST /api/tools/startup-seeker/contacts
  * Research contact information for a specific startup
  * Enterprise-grade with comprehensive validation and error handling
@@ -136,58 +408,20 @@ export async function POST(request: NextRequest) {
 
     const jobId = jobRecord[0].id;
 
-    // Perform synchronous, lightweight contact discovery (no background worker)
-    const findings: Record<string, any> = {
-      name: startupData.name,
-      website: startupData.website,
-      lastUpdated: new Date().toISOString(),
-      via: 'synchronous-scan',
+    // Start asynchronous contact research
+    performContactResearch(jobId, startupData, {
       priority,
-      options: { includeLinkedIn, includeEmail, includePhone }
-    };
+      includeLinkedIn,
+      includeEmail,
+      includePhone
+    });
 
-    try {
-      // LinkedIn heuristic
-      if (includeLinkedIn && startupData.name) {
-        const slug = startupData.name
-          .toLowerCase()
-          .replace(/[^a-z0-9\s]/g, '')
-          .trim()
-          .replace(/\s+/g, '-');
-        findings.linkedinUrl = `https://www.linkedin.com/company/${slug}`;
-      }
-
-      // Email heuristic: try info@/contact@ based on domain
-      if (includeEmail && startupData.website) {
-        try {
-          const url = new URL(startupData.website.startsWith('http') ? startupData.website : `https://${startupData.website}`);
-          const domain = url.hostname.replace(/^www\./, '');
-          findings.emails = [`info@${domain}`, `contact@${domain}`];
-        } catch {}
-      }
-
-      // Phone: not reliably discoverable synchronously; leave placeholder
-      if (includePhone) {
-        findings.phone = null;
-      }
-    } catch {}
-
-    // Update startup with discovered contacts
-    await startupGenerationEngine.updateStartupContacts(startupId, findings, userId);
-
-    // Mark job completed
-    await db
-      .update(ContactResearchJobs)
-      .set({ status: 'completed', result: findings, completedAt: new Date().toISOString() })
-      .where(and(eq(ContactResearchJobs.id, jobId), eq(ContactResearchJobs.userId, userId)));
-
-    console.log(`✅ Contact research job ${jobId} completed for startup ${startupId}`);
+    console.log(`🚀 Started contact research job ${jobId} for startup ${startupId}`);
 
     return createSuccessResponse({
       jobId,
-      message: 'Contact research completed',
-      status: 'completed',
-      contactInfo: findings,
+      message: 'Contact research started',
+      status: 'processing',
       startup: {
         id: startupData.id,
         name: startupData.name,
@@ -267,14 +501,30 @@ export async function GET(request: NextRequest) {
     const startupData = startup[0];
     const contactInfo = startupData.contactInfo as any || {};
 
+    // Flatten contact information for easier frontend consumption
+    const flattenedContacts = {
+      linkedinUrl: contactInfo.linkedinUrl || null,
+      linkedinVerified: contactInfo.linkedinVerified || false,
+      emails: contactInfo.foundEmails || contactInfo.emails || [],
+      phones: contactInfo.foundPhones || [],
+      website: startupData.website,
+      lastUpdated: contactInfo.lastUpdated || null,
+      researchDate: contactInfo.researchDate || null,
+      totalContactsFound: contactInfo.contactMethods?.totalContactsFound || 
+                         ((contactInfo.foundEmails?.length || 0) + (contactInfo.foundPhones?.length || 0)),
+      priority: contactInfo.priority || 'medium',
+      // Include raw data for debugging
+      raw: contactInfo
+    };
+
     return createSuccessResponse({
       startup: {
         id: startupData.id,
         name: startupData.name,
         website: startupData.website
       },
-      contactInfo,
-      hasContacts: !!contactInfo.email || !!contactInfo.phone || !!contactInfo.linkedinUrl,
+      contactInfo: flattenedContacts,
+      hasContacts: !!(flattenedContacts.emails?.length || flattenedContacts.phones?.length || flattenedContacts.linkedinUrl),
       lastUpdated: contactInfo.lastUpdated || null
     }, {
       processingTime: Date.now() - startTime

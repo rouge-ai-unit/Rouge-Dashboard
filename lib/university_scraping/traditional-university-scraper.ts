@@ -55,6 +55,11 @@ export class TraditionalUniversityScrapingService {
   private getVerifiedSources(country: string): string[] {
     const countryLower = country.toLowerCase();
     
+    // Handle "all" as a special case - use Thailand as default since it's the primary target
+    if (countryLower === 'all') {
+      return this.getVerifiedSources('thailand');
+    }
+    
     // Real, verified educational sources
     const sourceMappings: Record<string, string[]> = {
       thailand: [
@@ -94,12 +99,8 @@ export class TraditionalUniversityScrapingService {
       ],
     };
 
-    // Default to comprehensive sources if country not specifically mapped
-    return sourceMappings[countryLower] || [
-      `https://en.wikipedia.org/wiki/List_of_universities_in_${country}`,
-      `https://en.wikipedia.org/wiki/Higher_education_in_${country}`,
-      `https://www.4icu.org/reviews/index1.htm`,
-    ];
+    // Return country-specific sources if available, otherwise default to Thailand
+    return sourceMappings[countryLower] || this.getVerifiedSources('thailand');
   }
 
   /**
@@ -130,21 +131,31 @@ export class TraditionalUniversityScrapingService {
       $('table.wikitable tr, table.sortable tr').each((index, element) => {
         const $row = $(element);
         const cells = $row.find('td');
-        
+
         if (cells.length >= 2) {
           const nameCell = cells.eq(0);
           const locationCell = cells.eq(1);
-          
-          const universityName = nameCell.find('a').first().text().trim() || 
+
+          const universityName = nameCell.find('a').first().text().trim() ||
                                  nameCell.text().trim();
           const location = locationCell.text().trim();
-          
-          if (universityName && universityName.length > 3 && 
-              !universityName.toLowerCase().includes('university') === false) {
-            
+
+          // Extract city from location (e.g., "Bangkok, Thailand" -> "Bangkok")
+          let city = '';
+          if (location.includes(',')) {
+            city = location.split(',')[0].trim();
+          } else if (location !== country) {
+            city = location;
+          }
+
+          if (universityName && universityName.length > 3 &&
+              (universityName.toLowerCase().includes('university') ||
+               universityName.toLowerCase().includes('college') ||
+               universityName.toLowerCase().includes('institute'))) {
+
             const websiteLink = nameCell.find('a').first().attr('href');
             let website = '';
-            
+
             if (websiteLink && websiteLink.startsWith('http')) {
               website = websiteLink;
             } else if (websiteLink && websiteLink.startsWith('/wiki/')) {
@@ -154,13 +165,13 @@ export class TraditionalUniversityScrapingService {
             universities.push({
               university: universityName,
               country: country,
-              region: location || country,
+              region: city || location || country,
               website: website,
               hasTto: false, // Will be determined by TTO detection
               ttoPageUrl: null,
               incubationRecord: 'Unknown',
               linkedinSearchUrl: `https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(universityName)}`,
-              qualityScore: this.calculateQualityScore(universityName, website, location),
+              qualityScore: this.calculateQualityScore(universityName, website, city || location),
               sourceUrl: url,
               scrapedAt: new Date().toISOString(),
               dataSource: 'traditional-scraping'
@@ -174,16 +185,16 @@ export class TraditionalUniversityScrapingService {
         const $item = $(element);
         const link = $item.find('a').first();
         const universityName = link.text().trim();
-        
-        if (universityName && 
-            universityName.length > 5 && 
-            (universityName.toLowerCase().includes('university') || 
+
+        if (universityName &&
+            universityName.length > 5 &&
+            (universityName.toLowerCase().includes('university') ||
              universityName.toLowerCase().includes('college') ||
              universityName.toLowerCase().includes('institute'))) {
-          
+
           const websiteLink = link.attr('href');
           let website = '';
-          
+
           if (websiteLink && websiteLink.startsWith('http')) {
             website = websiteLink;
           } else if (websiteLink && websiteLink.startsWith('/wiki/')) {
@@ -313,7 +324,7 @@ export class TraditionalUniversityScrapingService {
       const $ = cheerio.load(html);
       const pageText = $.text().toLowerCase();
 
-      // TTO detection keywords
+      // TTO detection keywords - expanded list
       const ttoKeywords = [
         'technology transfer',
         'tech transfer',
@@ -322,27 +333,63 @@ export class TraditionalUniversityScrapingService {
         'intellectual property',
         'startup incubator',
         'entrepreneurship',
-        'research commercialization'
+        'research commercialization',
+        'tto',
+        'technology transfer office',
+        'innovation center',
+        'commercialization office',
+        'research partnership',
+        'industry collaboration',
+        'patent',
+        'licensing',
+        'spin-off',
+        'spin out',
+        'venture development'
       ];
 
       const hasContent = ttoKeywords.some(keyword => pageText.includes(keyword));
-      
+
       if (hasContent) {
         university.hasTto = true;
-        
-        // Try to find specific TTO page links
-        $('a').each((index, element) => {
-          const $link = $(element);
-          const linkText = $link.text().toLowerCase();
-          const href = $link.attr('href');
-          
-          if (href && ttoKeywords.some(keyword => linkText.includes(keyword.split(' ')[0]))) {
-            const fullUrl = href.startsWith('http') ? href : 
-                           new URL(href, university.website).toString();
-            university.ttoPageUrl = fullUrl;
-            return false; // Break loop
+
+        // Try to find specific TTO page links - expanded search
+        const ttoLinkSelectors = [
+          'a[href*="tto"]',
+          'a[href*="transfer"]',
+          'a[href*="innovation"]',
+          'a[href*="commercialization"]',
+          'a[href*="incubator"]',
+          'a[href*="entrepreneurship"]',
+          'a:contains("TTO")',
+          'a:contains("Technology Transfer")',
+          'a:contains("Innovation")',
+          'a:contains("Commercialization")'
+        ];
+
+        for (const selector of ttoLinkSelectors) {
+          const $link = $(selector).first();
+          if ($link.length > 0) {
+            const href = $link.attr('href');
+            if (href) {
+              const fullUrl = href.startsWith('http') ? href :
+                             new URL(href, university.website).toString();
+              university.ttoPageUrl = fullUrl;
+              break; // Found one, stop searching
+            }
           }
-        });
+        }
+
+        // Also check for incubation/accelerator programs
+        const incubationKeywords = [
+          'incubator',
+          'accelerator',
+          'startup program',
+          'entrepreneurship center',
+          'innovation hub'
+        ];
+
+        const hasIncubation = incubationKeywords.some(keyword => pageText.includes(keyword));
+        university.incubationRecord = hasIncubation ? 'Has incubation programs' : 'Incubation programs detected via TTO';
       }
 
     } catch (error) {

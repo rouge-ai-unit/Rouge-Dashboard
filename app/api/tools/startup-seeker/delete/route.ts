@@ -174,7 +174,10 @@ export async function DELETE(request: NextRequest) {
         )
         .limit(1);
 
+      console.log(`🔍 Startup lookup result for ${startupId}:`, existingStartup.length > 0 ? 'Found' : 'Not found');
+
       if (existingStartup.length === 0) {
+        console.log(`❌ Startup ${startupId} not found for user ${userId}`);
         return createErrorResponse(
           'Startup not found or access denied',
           'STARTUP_NOT_FOUND',
@@ -183,9 +186,11 @@ export async function DELETE(request: NextRequest) {
       }
 
       const startup = existingStartup[0];
+      console.log(`✅ Found startup: ${startup.name} (score: ${startup.rougeScore})`);
 
       // Safety check for high-value startups
       if (startup.rougeScore >= 90 && !confirmDelete) {
+        console.log(`⚠️ High-value startup ${startup.name} (score: ${startup.rougeScore}) requires confirmation. confirmDelete: ${confirmDelete}`);
         return createErrorResponse(
           'High-quality startup deletion requires confirmation',
           'HIGH_VALUE_CONFIRMATION_REQUIRED',
@@ -198,27 +203,47 @@ export async function DELETE(request: NextRequest) {
         );
       }
 
+      console.log(`🗑️ Proceeding with deletion of ${startup.name} (confirmDelete: ${confirmDelete})`);
+
       // Delete related contact research jobs first
-      await db
-        .delete(ContactResearchJobs)
-        .where(
-          and(
-            eq(ContactResearchJobs.startupId, startupId),
-            eq(ContactResearchJobs.userId, userId)
-          )
+      try {
+        await db
+          .delete(ContactResearchJobs)
+          .where(
+            and(
+              eq(ContactResearchJobs.startupId, startupId),
+              eq(ContactResearchJobs.userId, userId)
+            )
+          );
+        console.log(`🗑️ Deleted contact research jobs for startup ${startupId}`);
+      } catch (contactError) {
+        console.error(`Failed to delete contact research jobs for ${startupId}:`, contactError);
+        return createErrorResponse(
+          'Failed to delete related contact research data',
+          'CONTACT_DELETE_ERROR',
+          500
         );
+      }
 
       // Delete the startup
-      await db
-        .delete(AgritechStartups)
-        .where(
-          and(
-            eq(AgritechStartups.id, startupId),
-            eq(AgritechStartups.userId, userId)
-          )
+      try {
+        const deleteResult = await db
+          .delete(AgritechStartups)
+          .where(
+            and(
+              eq(AgritechStartups.id, startupId),
+              eq(AgritechStartups.userId, userId)
+            )
+          );
+        console.log(`✅ Successfully deleted startup ${startupId} (${startup.name}) - affected rows:`, deleteResult.rowCount);
+      } catch (startupError) {
+        console.error(`Failed to delete startup ${startupId}:`, startupError);
+        return createErrorResponse(
+          'Failed to delete startup from database',
+          'STARTUP_DELETE_ERROR',
+          500
         );
-
-      console.log(`✅ Successfully deleted startup ${startupId} (${startup.name})`);
+      }
 
       return createSuccessResponse({
         message: 'Startup deleted successfully',

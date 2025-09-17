@@ -118,7 +118,7 @@ export default function Topbar({ title }: Props) {
             return {
               id: `t:${t.id}`,
               title: `New ticket: ${t.title}`,
-              href: "/Submit-Request-Form",
+              href: "/tools/ai-tools-request-form",
               type: "ticket" as const,
               ts: isNaN(ts) ? Date.now() : ts,
               meta: t.criticality || "",

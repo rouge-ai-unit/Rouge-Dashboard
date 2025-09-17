@@ -16,7 +16,8 @@ const generationSchema = z.object({
   mode: z.enum(['traditional', 'ai', 'hybrid']).default('hybrid'),
   priority: z.enum(['low', 'medium', 'high']).default('medium'),
   focusAreas: z.array(z.string()).max(5).default([]),
-  excludeExisting: z.boolean().default(true)
+  excludeExisting: z.boolean().default(true),
+  country: z.enum(['all', 'Thailand', 'Singapore', 'Indonesia', 'Malaysia', 'Philippines', 'Vietnam', 'Global']).default('all')
 });
 
 const getStartupsSchema = z.object({
@@ -77,12 +78,13 @@ export async function POST(request: NextRequest) {
       return createErrorResponse(validation.error);
     }
 
-    const { numStartups, mode, priority, focusAreas, excludeExisting } = validation.data;
+    const { numStartups, mode, priority, focusAreas, excludeExisting, country } = validation.data;
 
     console.log(`🔍 Starting enhanced startup generation for user ${userId}:`, {
       numStartups,
       mode,
       priority,
+      country,
       focusAreas: focusAreas.length
     });
 
@@ -106,16 +108,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`🌍 Using ${mode === 'ai' ? 'AI-powered' : 'Traditional'} mode with ${priority} priority`);
+    console.log(`🌍 Using ${mode === 'ai' ? 'AI-powered' : mode === 'hybrid' ? 'Hybrid AI + Traditional' : 'Traditional'} mode with ${priority} priority for ${country}`);
 
     // Generate startups with enhanced options
     const startups = await startupGenerationEngine.generateStartupData(
       userId,
       numStartups,
-      mode
+      mode,
+      country,
+      excludeExisting
     );
 
     console.log(`✅ Generated ${startups.length} startups using ${mode} mode`);
+
+    // Handle case where no new startups were found (e.g., all were existing and excluded)
+    if (startups.length === 0) {
+      return createSuccessResponse({
+        startups: [],
+        metadata: {
+          count: 0,
+          mode,
+          priority,
+          country,
+          message: 'No new startups found. All discovered startups were already in your portfolio.',
+          processingTime: Date.now() - startTime,
+          focusAreas: focusAreas.length > 0 ? focusAreas : undefined
+        },
+        message: 'No new startups found - all discovered startups were already in your portfolio.',
+        status: 'completed',
+        jobId: null
+      }, {
+        processingTime: Date.now() - startTime
+      });
+    }
 
     // Save to database with performance optimization
     await startupGenerationEngine.saveStartupsToDatabase(startups, userId);
@@ -130,13 +155,14 @@ export async function POST(request: NextRequest) {
         count: startups.length,
         mode,
         priority,
+        country,
         averageScore: Math.round(avgScore),
         highQualityCount,
         qualityRate: Math.round((highQualityCount / startups.length) * 100),
         processingTime: Date.now() - startTime,
         focusAreas: focusAreas.length > 0 ? focusAreas : undefined
       },
-      message: `Successfully generated ${startups.length} ${mode === 'ai' ? 'AI-powered' : 'traditional'} startups`,
+      message: `Successfully generated ${startups.length} ${mode === 'ai' ? 'AI-powered' : 'traditional'} startups from ${country}`,
       status: 'completed',
       jobId: null // Direct processing, no job tracking needed
     };

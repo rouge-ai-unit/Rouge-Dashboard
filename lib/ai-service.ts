@@ -1,15 +1,15 @@
 /**
  * Enterprise-Grade Unified AI Service
- * 
+ *
  * Features:
- * - Multi-provider support (DeepSeek, OpenAI)
+ * - Multi-provider support (DeepSeek primary, Gemini secondary - temporarily disabled)
  * - Intelligent fallback mechanisms
  * - Rate limiting and request queuing
  * - Response caching and optimization
  * - Comprehensive error handling
  * - Production monitoring and health checks
  * - Real-time performance tracking
- * 
+ *
  * Used by both startup seeker and university systems
  */
 
@@ -20,7 +20,7 @@ import OpenAI from 'openai';
 // ============================================================================
 
 export interface AIProvider {
-  name: 'deepseek' | 'openai';
+  name: 'deepseek' | 'gemini';
   client: OpenAI;
   baseURL: string;
   maxTokens: number;
@@ -40,7 +40,7 @@ export interface AIRequest {
   temperature?: number;
   maxTokens?: number;
   model?: string;
-  provider?: 'deepseek' | 'openai' | 'auto';
+  provider?: 'deepseek' | 'gemini' | 'auto';
   retryAttempts?: number;
   timeoutMs?: number;
 }
@@ -88,8 +88,8 @@ class UnifiedAIService {
   };
 
   private readonly CACHE_TTL = 60 * 60 * 1000; // 1 hour
-  private readonly DEFAULT_TIMEOUT = 30000; // 30 seconds
-  private readonly DEFAULT_RETRIES = 3;
+  private readonly DEFAULT_TIMEOUT = 120000; // 120 seconds (increased from 60)
+  private readonly DEFAULT_RETRIES = 2; // Reduced from 3 to avoid too many timeouts
 
   constructor() {
     this.initializeProviders();
@@ -102,7 +102,7 @@ class UnifiedAIService {
    */
   private initializeProviders(): void {
     const deepseekKey = process.env.DEEPSEEK_API_KEY;
-    const openaiKey = process.env.OPENAI_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY;
 
     // DeepSeek provider (primary for cost-effectiveness and performance)
     if (deepseekKey) {
@@ -131,36 +131,18 @@ class UnifiedAIService {
       console.warn('⚠️ DEEPSEEK_API_KEY not found - DeepSeek provider disabled');
     }
 
-    // OpenAI provider (backup/fallback with enhanced configuration)
-    if (openaiKey) {
-      const openaiClient = new OpenAI({
-        apiKey: openaiKey,
-        timeout: 25000,
-        maxRetries: 1,
-      });
-
-      this.providers.set('openai', {
-        name: 'openai',
-        client: openaiClient,
-        baseURL: 'https://api.openai.com',
-        maxTokens: 4096,
-        rateLimit: {
-          requests: 60,
-          window: 60 * 1000 // 1 minute
-        },
-        priority: 2,
-        isHealthy: true
-      });
-
-      console.log('🤖 OpenAI provider initialized (Fallback)');
+    // Gemini provider (temporarily disabled due to rate limiting)
+    if (geminiKey) {
+      // Temporarily disabled due to 429 rate limit errors
+      console.log('🤖 Gemini AI provider disabled (Rate limited - needs proper API key)');
     } else {
-      console.warn('⚠️ OPENAI_API_KEY not found - OpenAI provider disabled');
+      console.warn('⚠️ GEMINI_API_KEY not found - Gemini provider disabled');
     }
 
-    console.log(`🚀 AI Service initialized successfully with ${Array.from(this.providers.keys()).length} providers: ${Array.from(this.providers.keys()).join(', ')}`);
+    console.log(`🚀 AI Service initialized successfully with ${Array.from(this.providers.keys()).length} provider: ${Array.from(this.providers.keys()).join(', ')}`);
     
     if (this.providers.size === 0) {
-      console.error('🚨 No AI providers available! Please configure DEEPSEEK_API_KEY or OPENAI_API_KEY');
+      console.error('🚨 No AI providers available! Please configure DEEPSEEK_API_KEY');
     }
   }
 
@@ -327,13 +309,13 @@ class UnifiedAIService {
    */
   private getModelForProvider(provider: string, requestedModel?: string): string {
     const models = {
+      gemini: {
+        default: 'gemini-1.5-flash',
+        alternatives: ['gemini-1.5-flash', 'gemini-1.5-pro']
+      },
       deepseek: {
         default: 'deepseek-chat',
         alternatives: ['deepseek-coder', 'deepseek-chat']
-      },
-      openai: {
-        default: 'gpt-4o-mini',
-        alternatives: ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo']
       }
     };
 
@@ -501,7 +483,7 @@ export const aiGenerateStartupData = async (prompt: string, country: string = 'G
     ],
     temperature: 0.3,
     maxTokens: 2048,
-    provider: 'deepseek' // Prefer DeepSeek for data generation
+    provider: 'gemini' // Prefer Gemini for data generation
   });
 };
 
@@ -519,7 +501,7 @@ export const aiGenerateUniversityData = async (prompt: string, country: string =
     ],
     temperature: 0.2,
     maxTokens: 2048,
-    provider: 'deepseek' // Prefer DeepSeek for data generation
+    provider: 'gemini' // Prefer Gemini for data generation
   });
 };
 

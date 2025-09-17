@@ -3,6 +3,7 @@
 // Hydration-safe LastUpdatedFooter component
 import { Switch } from "../../../components/ui/switch";
 import { useEffect as useClientEffect, useState as useClientState } from "react";
+import React from "react";
 
 function LastUpdatedFooter({ lastRefresh, autoRefresh, setAutoRefresh }: {
   lastRefresh: Date;
@@ -75,7 +76,8 @@ import {
   SortAsc, SortDesc, Heart, Share2, Download, RefreshCw,
   TrendingUp, Clock, Users, Eye, Star, Zap, Shield,
   CheckCircle, AlertCircle, Calendar, Tag, ExternalLink,
-  ChevronDown, X, Settings, Bookmark, ArrowUpRight
+  ChevronDown, X, Settings, Bookmark, ArrowUpRight,
+  FileText, UserCog, Target, GraduationCap, BrainCircuit
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -105,7 +107,6 @@ export default function Page() {
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [retrying, setRetrying] = useState(false);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
@@ -117,6 +118,59 @@ export default function Page() {
       setLastRefresh(new Date());
     }
   }, [lastRefresh]);
+
+  // Static tools data
+  const staticTools: Tool[] = [
+    {
+      id: "/tools/ai-tools-request-form",
+      name: "AI Tools Request Form",
+      href: "/tools/ai-tools-request-form",
+      description: "Streamline your workflow by requesting custom AI tools tailored to your specific needs. Submit detailed requirements, specify use cases, and collaborate with our AI specialists to develop cutting-edge solutions that enhance productivity and drive innovation in your projects.",
+      status: "Available",
+    },
+    {
+      id: "/tools/work-tracker",
+      name: "Work Tracker",
+      href: "/tools/work-tracker",
+      description: "Comprehensive project management solution with advanced tracking capabilities. Monitor task progress, set milestones, track time spent, generate detailed reports, and maintain accountability across teams. Features include real-time updates, customizable dashboards, and integration with popular productivity platforms.",
+      status: "Available",
+    },
+    {
+      id: "/tools/ai-news-daily",
+      name: "Ai News Daily",
+      href: "/tools/ai-news-daily",
+      description: "Stay ahead of the curve with curated daily AI news and insights. Get personalized news feeds, trending topics, expert analysis, and breaking developments in artificial intelligence. Features include smart filtering, bookmarking, sharing capabilities, and notifications for topics that matter most to you.",
+      status: "Available",
+    },
+    {
+      id: "/tools/startup-seeker",
+      name: "Agritech Startup Seeker",
+      href: "/tools/startup-seeker",
+      description: "Discover innovative agritech startups revolutionizing agriculture. Explore comprehensive startup profiles, funding information, technology stacks, market impact, and investment opportunities. Connect with founders, track industry trends, and identify potential partners or acquisition targets in the growing agritech ecosystem.",
+      status: "Available",
+    },
+    {
+      id: "/tools/agritech-universities",
+      name: "Agritech Universities",
+      href: "/tools/agritech-universities",
+      description: "Explore leading universities driving agritech research and innovation. Access detailed profiles of academic programs, research centers, faculty expertise, ongoing projects, and collaboration opportunities. Find potential partners for research, internships, or technology transfer initiatives in agricultural technology.",
+      status: "Available",
+    },
+    {
+      id: "/tools/content-idea-automation",
+      name: "Content Idea Automation",
+      href: "/tools/content-idea-automation",
+      description: "Revolutionize your content creation process with AI-powered idea generation. Generate topic suggestions, content outlines, SEO-optimized headlines, and creative concepts based on your niche and audience. Features include trend analysis, competitor research, and automated content calendars to maintain consistent publishing schedules.",
+      status: "Available",
+    },
+  ];
+
+  // Set static tools on mount
+  useEffect(() => {
+    setTools(staticTools);
+    setLoading(false);
+    setError(null);
+  }, []);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   useEffect(() => {
@@ -245,57 +299,11 @@ export default function Page() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Data Fetching
-  const fetchTools = useCallback(async (showRetrying = false) => {
-    if (showRetrying) setRetrying(true);
-    else setLoading(true);
-    setError(null);
-    
-    try {
-      const res = await fetch("/api/tools", { 
-        cache: "no-store",
-        headers: {
-          'Cache-Control': 'no-cache',
-        }
-      });
-      
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      }
-      
-      const data: Tool[] = await res.json();
-      
-  // No extra validation, just set tools as returned from API
-  setTools(data);
-      setLastRefresh(new Date());
-    } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : "An unexpected error occurred";
-      setError(`Failed to load tools: ${errorMessage}`);
-      console.error("Error fetching tools:", e);
-    } finally {
-      setLoading(false);
-      setRetrying(false);
-    }
-  }, []);
+  // Data Fetching - Removed, using static data now
 
-  // Auto-refresh
-  useEffect(() => {
-    if (autoRefresh) {
-      refreshIntervalRef.current = setInterval(() => {
-        fetchTools(true);
-      }, 60000); // Refresh every 1 minute
-    }
-    return () => {
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current);
-      }
-    };
-  }, [autoRefresh, fetchTools]);
+  // Auto-refresh - Removed, using static data
 
-  // Initial fetch
-  useEffect(() => {
-    fetchTools();
-  }, [fetchTools]);
+  // Initial fetch - Removed, using static data
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -305,10 +313,6 @@ export default function Page() {
           case 'k':
             e.preventDefault();
             searchInputRef.current?.focus();
-            break;
-          case 'r':
-            e.preventDefault();
-            fetchTools(true);
             break;
           case '1':
             e.preventDefault();
@@ -326,7 +330,7 @@ export default function Page() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [fetchTools]);
+  }, []);
 
   // Load favorites from localStorage
   useEffect(() => {
@@ -363,17 +367,14 @@ export default function Page() {
     t.status === "In Progress" || t.status === "Coming Soon" || t.status === "Maintenance"
   );
 
-  // Retry handler
-  const handleRetry = useCallback(() => {
-    fetchTools();
-  }, [fetchTools]);
+  // Retry handler - Removed, using static data
 
 
 
 
 
   // Tool Card Component
-  const ToolCard = ({ tool, index }: { tool: Tool; index: number }) => (
+  const ToolCard = React.memo(({ tool, index }: { tool: Tool; index: number }) => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -385,10 +386,13 @@ export default function Page() {
         className={`
           relative overflow-hidden bg-gray-900/50 backdrop-blur-sm border-gray-700/50
           hover:bg-gray-900/70 hover:border-gray-600/50 hover:shadow-2xl hover:shadow-blue-500/10
-          transition-all duration-300 group h-auto
+          transition-all duration-300 group h-auto cursor-pointer
           ${viewMode === 'list' ? 'flex flex-row' : 'flex flex-col'}
-          ${viewMode === 'grid' ? 'min-h-[180px] flex flex-col justify-between' : ''}
+          ${viewMode === 'grid' ? 'min-h-[200px] flex flex-col justify-between' : ''}
+          focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:border-blue-500/50
         `}
+        role="article"
+        aria-labelledby={`tool-${tool.id}-title`}
       >
   <CardHeader className={`${viewMode === 'list' ? 'flex-shrink-0 w-64' : ''} pb-1`}> {/* Even less bottom padding */}
           <div className="flex items-start gap-2">
@@ -396,6 +400,7 @@ export default function Page() {
             <div className="min-w-0 flex-1 flex flex-col">
               <div className="flex min-w-0 w-full items-start">
                 <CardTitle
+                  id={`tool-${tool.id}-title`}
                   className="text-lg sm:text-xl text-white font-bold group-hover:text-blue-400 transition-colors min-w-0 flex-1 break-words whitespace-normal leading-tight"
                 >
                   {tool.name}
@@ -439,16 +444,23 @@ export default function Page() {
 
   <CardContent className={`flex-1 ${viewMode === 'list' ? 'flex flex-col justify-between' : ''} pt-0`}> {/* Remove top padding */}
           <div>
-            <p className="text-gray-300 text-sm leading-relaxed line-clamp-3">
+            <p className="text-gray-300 text-sm leading-relaxed line-clamp-4 mb-2">
               {tool.description}
             </p>
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <span>Click to explore</span>
+              <ExternalLink className="w-3 h-3" />
+            </div>
           </div>
 
           {/* Action Button */}
-          <div className="mt-3 pt-3 border-t border-gray-700/50"> {/* Reduce margin-top */}
+          <div className="mt-4 pt-3 border-t border-gray-700/50"> {/* Reduce margin-top */}
             {tool.status === "Available" ? (
               <Link href={tool.href} className="block w-full">
-                <Button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white transition-all duration-200 group">
+                <Button 
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white transition-all duration-200 group focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                  aria-label={`Open ${tool.name}`}
+                >
                   Open Tool
                   <ExternalLink className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
                 </Button>
@@ -463,10 +475,20 @@ export default function Page() {
         </CardContent>
       </Card>
     </motion.div>
-  );
+  ));
+
+  ToolCard.displayName = "ToolCard";
 
   return (
     <TooltipProvider>
+      {/* Skip to main content link for accessibility */}
+      <a 
+        href="#main-content" 
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded-md z-50 focus:ring-2 focus:ring-blue-500"
+      >
+        Skip to main content
+      </a>
+      
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
         <div className="container mx-auto px-4 py-8 max-w-7xl">
           {/* Header Section */}
@@ -492,12 +514,14 @@ export default function Page() {
           </motion.div>
 
           {/* Search and Controls */}
-
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="mb-8"
+            id="main-content"
+            role="main"
+            aria-labelledby="tools-section"
           >
             {/* Search Bar + Controls Row (aligned) */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -511,7 +535,9 @@ export default function Page() {
                   placeholder="Search tools... (Ctrl+K)"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-12 pr-20 py-4 text-lg border-gray-700/50 text-white placeholder-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="pl-12 pr-20 py-4 text-lg border-gray-700/50 text-white placeholder-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  aria-label="Search tools"
+                  role="searchbox"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2 select-none">
                   <span className="text-xs text-white">{filteredAndSortedTools.length} found</span>
@@ -531,47 +557,6 @@ export default function Page() {
               {/* Controls Row (aligned right) */}
               <div className="flex items-center gap-2 self-end sm:self-auto">
                 {/* View Mode Toggle */}
-                <div className="flex bg-gray-800/50 rounded-lg border border-gray-700/50 p-1">
-                  <Button
-                    variant={viewMode === "grid" ? "default" : "ghost"}
-                    size="icon"
-                    onClick={() => setViewMode("grid")}
-                    className={`h-8 w-8 p-0 ${viewMode === "grid" ? "bg-blue-700 text-white shadow-lg font-bold" : ""}`}
-                    aria-label="Grid view"
-                  >
-                    <Grid3X3 className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === "list" ? "default" : "ghost"}
-                    size="icon"
-                    onClick={() => setViewMode("list")}
-                    className={`h-8 w-8 p-0 ${viewMode === "list" ? "bg-blue-700 text-white shadow-lg font-bold" : ""}`}
-                    aria-label="List view"
-                  >
-                    <List className="w-4 h-4" />
-                  </Button>
-                </div>
-
-                {/* Refresh Button */}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => fetchTools(true)}
-                        disabled={retrying}
-                        className="h-10 w-10 bg-gray-800/50 border-gray-700/50 text-white hover:bg-gray-700"
-                        aria-label="Refresh tools"
-                      >
-                        <RefreshCw className={`w-4 h-4 ${retrying ? 'animate-spin' : ''}`} />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      Refresh tools (Ctrl+R)
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
 
 
               </div>
@@ -603,10 +588,13 @@ export default function Page() {
                         <Skeleton className="h-6 w-6 rounded bg-gray-700" />
                         <Skeleton className="h-6 w-32 rounded bg-gray-700" />
                       </div>
+                      <Skeleton className="h-4 w-16 rounded bg-gray-700 mt-2" />
                     </CardHeader>
                     <CardContent>
                       <Skeleton className="h-4 w-full mb-2 rounded bg-gray-700" />
-                      <Skeleton className="h-4 w-3/4 mb-4 rounded bg-gray-700" />
+                      <Skeleton className="h-4 w-3/4 mb-2 rounded bg-gray-700" />
+                      <Skeleton className="h-4 w-1/2 mb-4 rounded bg-gray-700" />
+                      <Skeleton className="h-4 w-24 rounded bg-gray-700 mb-4" />
                       <Skeleton className="h-10 w-full rounded bg-gray-700" />
                     </CardContent>
                   </Card>
@@ -627,23 +615,6 @@ export default function Page() {
                     <AlertDescription className="mb-4 text-base text-gray-300">
                       {error}
                     </AlertDescription>
-                    <Button 
-                      onClick={handleRetry}
-                      className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-md mt-2"
-                      disabled={retrying}
-                    >
-                      {retrying ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Retrying...
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="w-4 h-4 mr-2" />
-                          Try Again
-                        </>
-                      )}
-                    </Button>
                   </div>
                 </Alert>
               </motion.div>
@@ -654,21 +625,38 @@ export default function Page() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                <Tabs defaultValue="available" className="w-full">
-                  <TabsList className="grid w-full grid-cols-4 bg-gray-800/50 border border-gray-700/50">
-                    <TabsTrigger value="available" className="flex items-center gap-2 data-[state=active]:bg-blue-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:font-bold">
+                <Tabs defaultValue="available" className="w-full" aria-labelledby="tools-section">
+                  <h2 id="tools-section" className="sr-only">Tools Collection</h2>
+                  <TabsList className="grid w-full grid-cols-4 bg-gray-800/50 border border-gray-700/50 rounded-lg p-1">
+                    <TabsTrigger 
+                      value="available" 
+                      className="flex items-center gap-2 data-[state=active]:bg-blue-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:font-bold transition-all duration-200 focus:ring-2 focus:ring-blue-500/50"
+                      aria-label={`${availableTools.length} available tools`}
+                    >
                       <CheckCircle className="w-4 h-4" />
                       Available ({availableTools.length})
                     </TabsTrigger>
-                    <TabsTrigger value="beta" className="flex items-center gap-2 data-[state=active]:bg-blue-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:font-bold">
+                    <TabsTrigger 
+                      value="beta" 
+                      className="flex items-center gap-2 data-[state=active]:bg-blue-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:font-bold transition-all duration-200 focus:ring-2 focus:ring-blue-500/50"
+                      aria-label={`${betaTools.length} beta tools`}
+                    >
                       <Zap className="w-4 h-4" />
                       Beta ({betaTools.length})
                     </TabsTrigger>
-                    <TabsTrigger value="upcoming" className="flex items-center gap-2 data-[state=active]:bg-blue-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:font-bold">
+                    <TabsTrigger 
+                      value="upcoming" 
+                      className="flex items-center gap-2 data-[state=active]:bg-blue-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:font-bold transition-all duration-200 focus:ring-2 focus:ring-blue-500/50"
+                      aria-label={`${inProgressTools.length} upcoming tools`}
+                    >
                       <Clock className="w-4 h-4" />
                       Upcoming ({inProgressTools.length})
                     </TabsTrigger>
-                    <TabsTrigger value="progress" className="flex items-center gap-2 data-[state=active]:bg-yellow-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:font-bold">
+                    <TabsTrigger 
+                      value="progress" 
+                      className="flex items-center gap-2 data-[state=active]:bg-yellow-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:font-bold transition-all duration-200 focus:ring-2 focus:ring-blue-500/50"
+                      aria-label="Tools in progress"
+                    >
                       <Wrench className="w-4 h-4" />
                       Tools In Progress
                     </TabsTrigger>
@@ -676,10 +664,26 @@ export default function Page() {
 
                   <TabsContent value="available" className="mt-6">
                     {availableTools.length === 0 ? (
-                      <div className="text-center py-12">
-                        <Rocket className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold text-gray-400 mb-2">No available tools found</h3>
-                        <p className="text-gray-500">Try adjusting your search or filters</p>
+                      <div className="text-center py-12 col-span-full">
+                        <div className="max-w-md mx-auto">
+                          <Rocket className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                          <h3 className="text-xl font-semibold text-gray-400 mb-2">No tools found</h3>
+                          <p className="text-gray-500 mb-4">
+                            {debouncedSearch 
+                              ? `No tools match "${debouncedSearch}". Try a different search term.`
+                              : "No available tools at the moment. Check back later!"
+                            }
+                          </p>
+                          {debouncedSearch && (
+                            <Button 
+                              variant="outline" 
+                              onClick={() => setSearch("")}
+                              className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                            >
+                              Clear search
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ) : (
                       <div className={`grid gap-6 ${
@@ -812,20 +816,20 @@ export default function Page() {
           </AnimatePresence>
 
           {/* Footer Info */}
-
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
             className="mt-16 text-center text-gray-500 text-sm"
           >
-            <div className="flex items-center justify-center gap-4 flex-wrap">
+            <div className="flex items-center justify-center gap-4 flex-wrap mb-4">
               <span>Press Ctrl+K to search</span>
-              <Separator orientation="vertical" className="h-4" />
-              <span>Ctrl+R to refresh</span>
               <Separator orientation="vertical" className="h-4" />
               <span>Ctrl+1/2 to switch view</span>
             </div>
+            <p className="text-gray-400 text-xs">
+              Built with ❤️ for productivity and innovation
+            </p>
             {/* Hydration-safe last updated time */}
               {lastRefresh && (
                 <LastUpdatedFooter lastRefresh={lastRefresh} autoRefresh={autoRefresh} setAutoRefresh={setAutoRefresh} />

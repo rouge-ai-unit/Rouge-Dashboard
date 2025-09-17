@@ -15,6 +15,8 @@ import {
   University,
   Briefcase,
   ListChecks,
+  GraduationCap,
+  Target,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -23,32 +25,31 @@ import { useSession, signOut } from "next-auth/react";
 const navItems = [
   { title: "Home", icon: LayoutDashboard, href: "/home" },
   {
-    title: "Support Request Form",
+    title: "AI Tools Request Form",
     icon: LayoutDashboard,
-    href: "/Submit-Request-Form",
+    href: "/tools/ai-tools-request-form",
   },
-  { title: "Work Tracker", icon: UserCog2, href: "/work-tracker" },
+  { title: "Work Tracker", icon: UserCog2, 
+        href: "/tools/work-tracker",
+    
+   },
   {
     title: "Ai News Daily",
     icon: Newspaper,
     href: "/tools/ai-news-daily",
   },
+  {
+    title: "Agritech Startup Seeker",
+    icon: Target,
+    href: "/tools/startup-seeker",
+  },
+  {
+    title: "Agritech Universities",
+    icon: GraduationCap,
+    href: "/tools/agritech-universities",
+  },
   
   {
-    title: "ASEAN University Data Extractor",
-    icon: University,
-    href: "https://rouge-university-list.streamlit.app/",
-  },
-  {
-    title: "Startup Seeker Generator",
-    icon: Briefcase,
-    href: "https://rouge-startupseeker.streamlit.app/",
-  },
-  {
-    title: "Rouge University List Generator",
-    icon: ListChecks,
-    href: "https://rouge-university-list.streamlit.app/",
-  },{
     title: "Content Idea Automation",
     icon: BrainCircuit,
     href: "/tools/content-idea-automation",

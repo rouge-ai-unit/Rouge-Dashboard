@@ -11,6 +11,17 @@ import { aiStartupScrapingService } from './ai-startup-scraper';
 import { traditionalStartupScrapingService } from './traditional-startup-scraper';
 
 /**
+ * Normalize company names for comparison by removing common variations
+ */
+function normalizeName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^\w\s]/g, '') // Remove punctuation
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim();
+}
+
+/**
  * Unified interface for scraped startup data from both AI and traditional sources
  */
 export interface ScrapedStartupData {
@@ -118,7 +129,9 @@ export class StartupGenerationEngine {
   async generateStartupData(
     userId: string,
     count: number = 10,
-    mode: 'traditional' | 'ai' | 'hybrid' = 'hybrid'
+    mode: 'traditional' | 'ai' | 'hybrid' = 'hybrid',
+    country: string = 'all',
+    excludeExisting: boolean = true
   ): Promise<StartupData[]> {
     const startTime = Date.now();
     
@@ -148,39 +161,53 @@ export class StartupGenerationEngine {
       const targetCount = Math.min(count * 2, 50); // Get more data for better filtering
 
       if (mode === 'ai') {
-        console.log(`🤖 Using AI-powered startup discovery (${targetCount} targets)`);
-        const result = await aiStartupScrapingService.extractStartups(targetCount, 'Global', 'ai');
+        console.log(`🤖 Using AI-powered startup discovery (${targetCount} targets) for ${country}`);
+        const result = await aiStartupScrapingService.extractStartups(targetCount, country, 'ai');
         if (result.success) {
           scrapedData = result.data;
           console.log(`✅ AI extraction: ${scrapedData.length} startups discovered`);
         } else {
           console.warn('⚠️ AI extraction failed, falling back to traditional');
-          const fallbackResult = await traditionalStartupScrapingService.extractStartups('Global', targetCount, true);
-          if (fallbackResult.success) scrapedData = fallbackResult.data;
+          const fallbackResult = await traditionalStartupScrapingService.extractStartups(country, targetCount, true);
+          if (fallbackResult.success) {
+            scrapedData = fallbackResult.data;
+            console.log(`✅ Traditional fallback: ${scrapedData.length} startups discovered`);
+          } else {
+            console.error('❌ Both AI and traditional extraction failed');
+            throw new Error('Unable to discover startups using AI or traditional methods');
+          }
         }
       } else if (mode === 'traditional') {
-        console.log(`🌐 Using traditional web scraping (${targetCount} targets)`);
-        const result = await traditionalStartupScrapingService.extractStartups('Global', targetCount, true);
+        console.log(`🌐 Using traditional web scraping (${targetCount} targets) for ${country}`);
+        const result = await traditionalStartupScrapingService.extractStartups(country, targetCount, true);
         if (result.success) {
           scrapedData = result.data;
           console.log(`✅ Traditional extraction: ${scrapedData.length} startups discovered`);
         } else {
-          throw new Error('Traditional scraping failed and no fallback available');
+          console.warn('⚠️ Traditional extraction failed, falling back to AI');
+          const fallbackResult = await aiStartupScrapingService.extractStartups(targetCount, country, 'ai');
+          if (fallbackResult.success) {
+            scrapedData = fallbackResult.data;
+            console.log(`✅ AI fallback: ${scrapedData.length} startups discovered`);
+          } else {
+            console.error('❌ Both traditional and AI extraction failed');
+            throw new Error('Unable to discover startups using traditional or AI methods');
+          }
         }
       } else {
         // Hybrid mode: Combine AI and traditional for maximum reliability
-        console.log(`⚡ Using hybrid AI + Traditional processing (${targetCount} targets)`);
+        console.log(`⚡ Using hybrid AI + Traditional processing (${targetCount} targets) for ${country}`);
         
         const aiCount = Math.ceil(targetCount * 0.6); // 60% from AI
         const traditionalCount = targetCount - aiCount; // 40% from traditional
         
         // Phase 1: AI extraction (faster, broader coverage)
         console.log(`🤖 Phase 1: AI extraction (${aiCount} startups)`);
-        const aiResult = await aiStartupScrapingService.extractStartups(aiCount, 'Global', 'ai');
+        const aiResult = await aiStartupScrapingService.extractStartups(aiCount, country, 'ai');
         
         // Phase 2: Traditional extraction (higher accuracy)
         console.log(`🌐 Phase 2: Traditional extraction (${traditionalCount} startups)`);
-        const traditionalResult = await traditionalStartupScrapingService.extractStartups('Global', traditionalCount, true);
+        const traditionalResult = await traditionalStartupScrapingService.extractStartups(country, traditionalCount, true);
         
         // Combine results
         const aiData = aiResult.success ? aiResult.data : [];
@@ -208,23 +235,86 @@ export class StartupGenerationEngine {
         
         scrapedData = combinedData;
         console.log(`✅ Hybrid processing: ${aiData.length} AI + ${traditionalData.length} traditional = ${scrapedData.length} total`);
+
+        // If we still don't have enough data, try fallback modes
+        if (scrapedData.length < count) {
+          console.log(`⚠️ Hybrid mode only found ${scrapedData.length}/${count} startups, trying additional sources...`);
+          
+          // Try AI-only fallback with higher limit
+          if (aiData.length < aiCount) {
+            console.log(`🔄 Trying AI-only fallback for additional startups`);
+            const aiFallbackResult = await aiStartupScrapingService.extractStartups(count - scrapedData.length, country, 'ai');
+            if (aiFallbackResult.success && aiFallbackResult.data.length > 0) {
+              const additionalAiData = aiFallbackResult.data.filter((startup: any) => 
+                !existingNamesSet.has(startup.name.toLowerCase())
+              );
+              scrapedData.push(...additionalAiData);
+              console.log(`➕ Added ${additionalAiData.length} additional startups from AI fallback`);
+            }
+          }
+          
+          // Try traditional-only fallback with higher limit
+          if (scrapedData.length < count) {
+            console.log(`🔄 Trying traditional-only fallback for additional startups`);
+            const traditionalFallbackResult = await traditionalStartupScrapingService.extractStartups(
+              country, 
+              Math.max(count - scrapedData.length, 10), 
+              true
+            );
+            if (traditionalFallbackResult.success && traditionalFallbackResult.data.length > 0) {
+              const additionalTraditionalData = traditionalFallbackResult.data
+                .filter((startup: any) => !existingNamesSet.has(startup.name.toLowerCase()))
+                .map((traditional: any) => ({
+                  ...traditional,
+                  confidence: traditional.qualityScore / 100,
+                  lastVerified: new Date().toISOString(),
+                  processingMethod: 'traditional-fallback' as const,
+                }));
+              scrapedData.push(...additionalTraditionalData);
+              console.log(`➕ Added ${additionalTraditionalData.length} additional startups from traditional fallback`);
+            }
+          }
+        }
       }
 
       // Convert scraped data to StartupData format and validate agritech focus
       console.log(`🔄 Processing and validating ${scrapedData.length} discovered startups...`);
-      const convertedStartups = this.convertScrapedToStartupData(scrapedData, existingNames)
+      const convertedStartups = this.convertScrapedToStartupData(scrapedData, existingNames, excludeExisting)
         .filter(startup => this.isAgritechStartup(startup));
 
       console.log(`📊 After conversion and validation: ${convertedStartups.length} agritech startups`);
 
-      if (convertedStartups.length === 0) {
-        throw new Error(`No valid agritech startups found using ${mode} mode. Try a different mode or check your filters.`);
-      }
+      let finalStartups: StartupData[] = [];
 
-      // Sort by quality and take the best ones
-      const finalStartups = convertedStartups
-        .sort((a, b) => b.rougeScore - a.rougeScore)
-        .slice(0, count);
+      if (convertedStartups.length === 0) {
+        // If exclude existing is enabled and we found startups but they were all existing, 
+        // and user requested a specific number, try with exclusion disabled
+        if (scrapedData.length > 0 && count >= 5) {
+          console.log(`⚠️ All ${scrapedData.length} discovered startups were existing, trying without exclusion for requested ${count} startups...`);
+          const convertedWithoutExclusion = this.convertScrapedToStartupData(scrapedData, existingNames, false)
+            .filter(startup => this.isAgritechStartup(startup));
+          
+          if (convertedWithoutExclusion.length > 0) {
+            console.log(`✅ Found ${convertedWithoutExclusion.length} startups with exclusion disabled`);
+            finalStartups = convertedWithoutExclusion
+              .sort((a, b) => b.rougeScore - a.rougeScore)
+              .slice(0, count);
+          } else {
+            console.log(`ℹ️ All ${scrapedData.length} discovered startups were existing and excluded per user preference`);
+            return [];
+          }
+        } else if (scrapedData.length > 0) {
+          console.log(`ℹ️ All ${scrapedData.length} discovered startups were existing and excluded per user preference`);
+          return [];
+        } else {
+          throw new Error(`No valid agritech startups found using ${mode} mode. Try a different mode or check your filters.`);
+        }
+      } else {
+        // Sort by quality and take the best ones
+        finalStartups = convertedStartups
+          .sort((a, b) => b.rougeScore - a.rougeScore)
+          .slice(0, count);
+      }
 
       const processingTime = Date.now() - startTime;
       console.log(`✅ Startup generation completed successfully:`);
@@ -245,13 +335,13 @@ export class StartupGenerationEngine {
   /**
    * Convert scraped startup data to StartupData format
    */
-  private convertScrapedToStartupData(scrapedData: any[], existingNames: string[]): StartupData[] {
+  private convertScrapedToStartupData(scrapedData: any[], existingNames: string[], excludeExisting: boolean): StartupData[] {
     const startups: StartupData[] = [];
     const seenNames = new Set<string>();
     const seenNormalizedNames = new Set<string>();
 
     // Helper function to normalize startup names for better duplicate detection
-    const normalizeName = (name: string): string => {
+    const normalizeNameForDedup = (name: string): string => {
       return name.toLowerCase()
         .trim()
         .replace(/\s+(inc|llc|ltd|corp|corporation|company|co|limited|group|holdings|ventures|labs|tech|ai|io|com|org)$/gi, '')
@@ -261,10 +351,18 @@ export class StartupGenerationEngine {
     };
 
     for (const scraped of scrapedData) {
-      // Skip if already exists in database (exact match only)
-      if (existingNames.includes(scraped.name)) {
-        console.log(`⚠️ Skipping existing startup from database: ${scraped.name}`);
-        continue;
+      // Skip if already exists in database (only if excludeExisting is true)
+      // Use normalized comparison to catch variations
+      if (excludeExisting) {
+        const normalizedScrapedName = normalizeNameForDedup(scraped.name);
+        const isExisting = existingNames.some(existingName => 
+          normalizeName(existingName) === normalizedScrapedName
+        );
+        
+        if (isExisting) {
+          console.log(`⚠️ Skipping existing startup from database: ${scraped.name}`);
+          continue;
+        }
       }
 
       // Skip if already seen in this batch (exact match only, case-insensitive)
@@ -634,9 +732,6 @@ export class StartupGenerationEngine {
   }
 
   /**
-   * Validate if a startup is truly agritech-related
-   */
-  /**
    * Enhanced validation for agritech startups (stricter than basic validation)
    */
   private isAgritechStartup(startup: StartupData): boolean {
@@ -644,11 +739,17 @@ export class StartupGenerationEngine {
     const description = startup.description?.toLowerCase() || '';
     const website = startup.website?.toLowerCase() || '';
 
+    console.log(`🔍 Validating startup: "${startup.name}" - "${startup.description?.substring(0, 100)}..."`);
+
     // Must have a name
-    if (!name || name.length < 3) return false;
+    if (!name || name.length < 3) {
+      console.log(`❌ Rejected: Name too short or missing`);
+      return false;
+    }
 
     // Must have a valid website
     if (!website || !website.includes('.') || website.includes('linkedin.com') || website.includes('facebook.com')) {
+      console.log(`❌ Rejected: Invalid website "${website}"`);
       return false;
     }
 
@@ -657,22 +758,35 @@ export class StartupGenerationEngine {
       'competitors', 'alternatives', 'top companies', 'best companies', 'market leaders',
       'industry leaders', 'techstars', 'y combinator', 'accelerator', 'incubator',
       'newsletter', 'blog', 'news', 'article', 'report', 'analysis', 'guide',
-      'directory', 'list', 'ranking', 'review', 'comparison', 'vs', 'versus',
-      'farmers', 'agricultural', 'farming', 'crops', 'livestock', 'dairy', 'poultry'
+      'directory', 'list', 'ranking', 'review', 'comparison', 'vs', 'versus'
     ];
 
     if (excludePatterns.some(pattern => name.includes(pattern))) {
+      console.log(`❌ Rejected: Name contains excluded pattern`);
       return false;
     }
 
-    // Must contain agritech-specific keywords
+    // For traditional scraping sources, be much more lenient since we're specifically targeting agritech
+    // All traditional sources are from agritech-focused websites, so we trust them
+    const isTraditionalSource = startup.description?.includes('is an agritech startup') ||
+                               startup.description?.includes('traditional');
+
+    if (isTraditionalSource) {
+      // For traditional sources, just check if it looks like a company and has valid website
+      const looksLikeCompany = this.looksLikeCompanyName(name);
+      console.log(`🌾 From traditional source, using relaxed validation: looksLikeCompany=${looksLikeCompany}`);
+      return looksLikeCompany;
+    }
+
+    // For AI sources, require some agritech relevance but be more lenient
     const agritechKeywords = [
       'agritech', 'agtech', 'precision farming', 'smart farming', 'vertical farming',
       'hydroponics', 'aquaponics', 'farm management', 'crop monitoring', 'soil sensor',
       'irrigation system', 'harvest optimization', 'yield prediction', 'pest detection',
       'drone farming', 'satellite farming', 'ai agriculture', 'machine learning farming',
       'data analytics farming', 'blockchain agriculture', 'iot farming', 'robotics farming',
-      'climate smart agriculture', 'sustainable farming', 'regenerative agriculture'
+      'climate smart agriculture', 'sustainable farming', 'regenerative agriculture',
+      'farm', 'agri', 'crop', 'soil', 'harvest', 'yield', 'pest', 'drone', 'satellite'
     ];
 
     const combinedText = `${name} ${description}`;
@@ -681,58 +795,64 @@ export class StartupGenerationEngine {
     );
 
     // Must look like a company name (not generic terms)
-    const looksLikeCompany = (
-      name.includes('tech') || name.includes('labs') || name.includes('systems') ||
-      name.includes('solutions') || name.includes('platform') || name.includes('digital') ||
-      name.includes('ventures') || name.includes('agri') || name.includes('farm') ||
-      name.includes('crop') || name.includes('food') || name.includes('harvest') ||
-      name.includes('seed') || name.includes('soil') || name.includes('plant') ||
-      /\d/.test(name) || // Contains numbers
-      /^[A-Z][a-z]+[A-Z][a-z]+$/.test(startup.name || '') || // CamelCase
-      name.split(' ').length >= 2 // Multi-word
-    );
+    const looksLikeCompany = this.looksLikeCompanyName(name);
 
-    return hasAgritechKeywords && looksLikeCompany;
+    // For AI sources, be more lenient - either has keywords OR looks like a company with some agricultural context
+    const hasAgriContext = combinedText.includes('agri') || combinedText.includes('farm') ||
+                          combinedText.includes('crop') || combinedText.includes('food') ||
+                          combinedText.includes('tech') || combinedText.includes('digital');
+
+    const result = (hasAgritechKeywords || (looksLikeCompany && hasAgriContext));
+    console.log(`📊 AI source validation: hasKeywords=${hasAgritechKeywords}, looksLikeCompany=${looksLikeCompany}, hasAgriContext=${hasAgriContext}, result=${result}`);
+
+    return result;
   }
 
   /**
-   * Validate if a startup is high-quality agritech
+   * Helper method to determine if a name looks like a company
    */
-  private isHighQualityAgritechStartup(startup: StartupData): boolean {
-    // Must pass basic agritech validation
-    if (!this.isAgritechStartup(startup)) {
-      return false;
-    }
+  private looksLikeCompanyName(name: string): boolean {
+    // Must be reasonable length
+    if (name.length < 3 || name.length > 100) return false;
 
-    const name = startup.name.toLowerCase();
-    const description = startup.description.toLowerCase();
-
-    // Exclude obvious website elements and generic terms
-    const excludePatterns = [
-      'home', 'about', 'contact', 'news', 'blog', 'research', 'company', 'invest', 'newsletter', 'welcome',
-      'agri-teche', 'challenge:', 'call for', 'participants needed', 'launches', 'women in farming',
-      'drive people-first growth', 'producers call for', 'australian producers'
+    // Exclude obvious non-company names
+    const invalidPatterns = [
+      /^home$/i,
+      /^about$/i,
+      /^contact$/i,
+      /^news$/i,
+      /^blog$/i,
+      /^search$/i,
+      /^login$/i,
+      /^register$/i,
+      /^\d+$/,
+      /^[-•\s]*$/,
+      /click here/i,
+      /read more/i,
+      /learn more/i,
+      /techcrunch$/i,
+      /crunchbase$/i,
+      /forbes$/i
     ];
 
-    if (excludePatterns.some(pattern => name.includes(pattern) || description.includes(pattern))) {
-      return false;
-    }
+    if (invalidPatterns.some(pattern => pattern.test(name))) return false;
 
-    // Must look like a real company name (not a website element or article title)
-    const looksLikeCompany = (
-      startup.name.length >= 4 && 
-      startup.name.length <= 50 &&
-      !startup.name.includes(':') &&
-      !startup.name.includes('|') &&
-      (startup.name.includes('tech') || 
-       startup.name.includes('farm') || 
-       startup.name.includes('agri') || 
-       startup.name.includes('crop') || 
-       startup.name.includes('food') ||
-       /^[A-Z][a-z]+([A-Z][a-z]*)*$/.test(startup.name)) // CamelCase pattern
-    );
+    // Must look like a company (contains tech/agri terms, numbers, or proper structure)
+    const companyIndicators = [
+      'tech', 'labs', 'systems', 'solutions', 'platform', 'digital', 'ventures',
+      'agri', 'farm', 'crop', 'food', 'harvest', 'seed', 'soil', 'plant',
+      /\d/, // Contains numbers
+      /^[A-Z][a-z]+([A-Z][a-z]*)*$/, // CamelCase
+      /\s+(inc|llc|ltd|corp|co|limited|group|holdings)$/i // Company suffixes
+    ];
 
-    return looksLikeCompany;
+    return companyIndicators.some(indicator => {
+      if (typeof indicator === 'string') {
+        return name.includes(indicator);
+      } else {
+        return indicator.test(name);
+      }
+    }) || name.split(' ').length >= 2; // Multi-word names are likely companies
   }
 }
 

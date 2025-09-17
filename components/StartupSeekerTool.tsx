@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,11 +11,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Plus, Search, Users, ExternalLink, RefreshCw, Zap, Target, BarChart3, Trash2, Database } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
-// HybridModeSelector removed - only Market Data Focus mode supported
-import { ValidationResults } from './ValidationResults';
 
 interface ContactInfo {
   email?: string;
@@ -43,6 +42,10 @@ interface Startup {
   userId?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  foundedYear?: string;
+  employeeCount?: string;
+  fundingStage?: string;
+  industry?: string;
 }
 
 interface Job {
@@ -55,6 +58,13 @@ interface Job {
   createdAt: string;
   completedAt?: string;
 }
+
+// Helper function to safely extract error messages
+const getErrorMessage = (error: any): string => {
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object' && error.message) return error.message;
+  return 'An error occurred';
+};
 
 export default function StartupSeekerTool() {
   const { data: session } = useSession();
@@ -69,14 +79,15 @@ export default function StartupSeekerTool() {
 
   // Only Market Data Focus mode supported
   const [generationMode, setGenerationMode] = useState<'traditional' | 'ai' | 'hybrid'>('hybrid');
-  // Advanced options for Market Data Focus
-  const [deepAnalysis, setDeepAnalysis] = useState(false);
-  const [realTimeValidation, setRealTimeValidation] = useState(true);
-  const [competitorAnalysis, setCompetitorAnalysis] = useState(true);
-  const [validationResults, setValidationResults] = useState<any>(null);
-  const [performingRealityCheck, setPerformingRealityCheck] = useState(false);
+  // API-required fields
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
+  const [country, setCountry] = useState<'all' | 'Thailand' | 'Singapore' | 'Indonesia' | 'Malaysia' | 'Philippines' | 'Vietnam' | 'Global'>('all');
+  const [focusAreas, setFocusAreas] = useState<string[]>([]);
+  const [excludeExisting, setExcludeExisting] = useState(true);
   const [activeTab, setActiveTab] = useState('generate');
   const [deletingStartup, setDeletingStartup] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [scoreFilter, setScoreFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
 
   // Load user's startups on component mount
   useEffect(() => {
@@ -104,7 +115,7 @@ export default function StartupSeekerTool() {
         const startups = data.startups ?? data.data?.startups ?? [];
         setStartups(startups);
       } else {
-        setError(data.error || 'Failed to load startups');
+        setError(getErrorMessage(data.error) || 'Failed to load startups');
       }
     } catch (err) {
       setError('Failed to load startups');
@@ -112,6 +123,33 @@ export default function StartupSeekerTool() {
       setLoading(false);
     }
   };
+
+  // Filtered startups based on search and filters
+  const filteredStartups = useMemo((): Startup[] => {
+    let filtered = startups;
+
+    // Search filter
+    if (searchQuery) {
+      filtered = filtered.filter(startup =>
+        startup.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        startup.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (startup.city && startup.city.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    }
+
+    // Score filter
+    if (scoreFilter !== 'all') {
+      filtered = filtered.filter(startup => {
+        const score = startup.rougeScore || 0;
+        if (scoreFilter === 'high') return score >= 7;
+        if (scoreFilter === 'medium') return score >= 4 && score < 7;
+        if (scoreFilter === 'low') return score < 4;
+        return true;
+      });
+    }
+
+    return filtered;
+  }, [startups, searchQuery, scoreFilter]);
 
   const generateStartups = async () => {
     if (!numStartups || numStartups < 1 || numStartups > 50) {
@@ -123,7 +161,7 @@ export default function StartupSeekerTool() {
     setGenerating(true);
     setError(null);
     toast.info('Starting startup generation...', {
-      description: `Generating ${numStartups} startups using ${
+      description: `Generating ${numStartups} startups from ${country === 'all' ? 'all countries' : country} using ${
         generationMode === 'ai' ? 'AI-powered' : 
         generationMode === 'hybrid' ? 'Hybrid' : 
         'Traditional'
@@ -139,8 +177,10 @@ export default function StartupSeekerTool() {
         body: JSON.stringify({
           numStartups,
           mode: generationMode,
-          useHybridValidation: false,
-          advancedOptions: { deepAnalysis, realTimeValidation, competitorAnalysis }
+          priority,
+          country,
+          focusAreas,
+          excludeExisting
         }),
       });
 
@@ -165,10 +205,42 @@ export default function StartupSeekerTool() {
           });
           setGenerating(false);
           setCurrentJob(null);
-          loadStartups();
+          
+          // Automatically start contact research for new startups
+          setTimeout(async () => {
+            await loadStartups();
+            
+            // Get the updated startups list
+            const response = await fetch('/api/tools/startup-seeker/results');
+            const data = await response.json();
+            if (data.success) {
+              const currentStartups = data.startups ?? data.data?.startups ?? [];
+              
+              // Find newly generated startups (those without contact info)
+              const startupsNeedingResearch = currentStartups.filter((s: Startup) => !s.contactInfo);
+              const startupsNeedingValidation = currentStartups.filter((s: Startup) => !s.contactInfo);
+              
+              if (startupsNeedingResearch.length > 0) {
+                toast.info('Starting automatic contact research...', {
+                  description: `Researching contacts for ${Math.min(startupsNeedingResearch.length, 3)} startups`
+                });
+                // Start contact research for up to 3 startups without contacts
+                startupsNeedingResearch.slice(0, 3).forEach((startup: Startup) => {
+                  researchContacts(startup);
+                });
+              }
+              
+              if (startupsNeedingValidation.length > 0) {
+                // Start contact research for up to 2 startups without contact info
+                startupsNeedingValidation.slice(0, 2).forEach((startup: Startup) => {
+                  researchContacts(startup);
+                });
+              }
+            }
+          }, 1000); // Small delay to ensure data is saved
         }
       } else {
-        const errorMsg = data.error || 'Failed to start generation';
+        const errorMsg = getErrorMessage(data.error) || 'Failed to start generation';
         setError(errorMsg);
         toast.error('Generation failed', {
           description: errorMsg
@@ -256,54 +328,22 @@ export default function StartupSeekerTool() {
       const data = await response.json();
 
       if (data.success) {
-        // Start polling for job status
-        checkJobStatus(data.jobId, 'research');
+        // Some responses may not return jobId if contact info is cached
+        if (data.jobId) {
+          checkJobStatus(data.jobId, 'research');
+        } else if (data.contactInfo) {
+          toast.success('Contact info already up to date!', { description: 'Contact information has been updated.' });
+          loadStartups();
+        } else {
+          setError('No jobId or contactInfo returned.');
+        }
       } else {
-        setError(data.error || 'Failed to start contact research');
+        setError(getErrorMessage(data.error) || 'Failed to start contact research');
       }
     } catch (err) {
       setError('Failed to start contact research');
     } finally {
       setContactResearching(null);
-    }
-  };
-
-  const performRealityCheck = async (startup: Startup, deepAnalysis: boolean = false) => {
-    setPerformingRealityCheck(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/tools/startup-seeker/reality-check', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          startupName: startup.name,
-          startupDescription: startup.description,
-          startupWebsite: startup.website,
-          deepAnalysis
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setValidationResults(data.data);
-        setActiveTab('validate');
-      } else {
-        setError(data.error || 'Failed to perform reality check');
-      }
-    } catch (err) {
-      setError('Failed to perform reality check');
-    } finally {
-      setPerformingRealityCheck(false);
-    }
-  };
-
-  const refreshValidation = async () => {
-    if (selectedStartup) {
-      await performRealityCheck(selectedStartup, true);
     }
   };
 
@@ -316,7 +356,11 @@ export default function StartupSeekerTool() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ startupId }),
+        body: JSON.stringify({ 
+          startupId,
+          confirmDelete: true,
+          reason: 'User requested deletion'
+        }),
       });
 
       const data = await response.json();
@@ -330,7 +374,7 @@ export default function StartupSeekerTool() {
         }
       } else {
         toast.error('Failed to delete startup', {
-          description: data.error || 'Unknown error occurred'
+          description: getErrorMessage(data.error) || 'Unknown error occurred'
         });
       }
     } catch (err) {
@@ -386,7 +430,7 @@ export default function StartupSeekerTool() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 gap-2">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 gap-2">
           <TabsTrigger
             value="generate"
             className={`flex items-center gap-2 ${activeTab === 'generate' ? 'bg-muted/30 rounded-md ring-1 ring-offset-1 ring-indigo-400' : ''}`}
@@ -401,69 +445,109 @@ export default function StartupSeekerTool() {
             <BarChart3 className="h-4 w-4" />
             Portfolio
           </TabsTrigger>
-          <TabsTrigger
-            value="validate"
-            className={`flex items-center gap-2 ${activeTab === 'validate' ? 'bg-muted/30 rounded-md ring-1 ring-offset-1 ring-indigo-400' : ''}`}
-          >
-            <Target className="h-4 w-4" />
-            Validate
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="generate" className="space-y-6">
-          {/* Market Data Focus Configuration */}
+          {/* Generation Settings */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Database className="h-5 w-5 text-purple-600" />
-                Market Data Focus Mode
+                <Target className="h-5 w-5 text-green-600" />
+                Generation Settings
               </CardTitle>
               <CardDescription>
-                Seek real, existing agritech startups using AI research and market data validation
+                Configure how startups are generated and filtered
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-sm font-medium">Deep Analysis</Label>
-                    <p className="text-xs text-gray-600">Perform comprehensive market analysis</p>
+                    <Label className="text-sm font-medium">Target Country</Label>
+                    <p className="text-xs text-gray-600">Focus on startups from specific countries</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setDeepAnalysis(!deepAnalysis)}
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${deepAnalysis ? 'bg-green-600 text-white' : 'bg-muted/10 text-muted-foreground'}`}
-                  >
-                    {deepAnalysis ? 'On' : 'Off'}
-                  </button>
+                  <Select value={country} onValueChange={(value) => setCountry(value as typeof country)}>
+                    <SelectTrigger className="w-48 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">
+                      <SelectValue placeholder="Select a country" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
+                      <SelectItem value="all" className="text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700">🌍 All Countries</SelectItem>
+                      <SelectItem value="Thailand" className="text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700">🇹🇭 Thailand</SelectItem>
+                      <SelectItem value="Singapore" className="text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700">🇸🇬 Singapore</SelectItem>
+                      <SelectItem value="Indonesia" className="text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700">🇮🇩 Indonesia</SelectItem>
+                      <SelectItem value="Malaysia" className="text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700">🇲🇾 Malaysia</SelectItem>
+                      <SelectItem value="Philippines" className="text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700">🇵🇭 Philippines</SelectItem>
+                      <SelectItem value="Vietnam" className="text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700">🇻🇳 Vietnam</SelectItem>
+                      <SelectItem value="Global" className="text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700">🌐 Global</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-sm font-medium">Real-time Validation</Label>
-                    <p className="text-xs text-gray-600">Validate against live market data</p>
+                    <Label className="text-sm font-medium">Priority Level</Label>
+                    <p className="text-xs text-gray-600">Set processing priority for generation</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setRealTimeValidation(!realTimeValidation)}
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${realTimeValidation ? 'bg-green-600 text-white' : 'bg-muted/10 text-muted-foreground'}`}
-                  >
-                    {realTimeValidation ? 'On' : 'Off'}
-                  </button>
+                  <Select value={priority} onValueChange={(value) => setPriority(value as 'low' | 'medium' | 'high')}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-sm font-medium">Competitor Analysis</Label>
-                    <p className="text-xs text-gray-600">Include detailed competitor insights</p>
+                    <Label className="text-sm font-medium">Exclude Existing</Label>
+                    <p className="text-xs text-gray-600">Skip startups already in your portfolio</p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setCompetitorAnalysis(!competitorAnalysis)}
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${competitorAnalysis ? 'bg-green-600 text-white' : 'bg-muted/10 text-muted-foreground'}`}
+                    onClick={() => setExcludeExisting(!excludeExisting)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border ${
+                      excludeExisting 
+                        ? 'bg-green-600 text-white border-green-600 hover:bg-green-700 hover:border-green-700 shadow-md' 
+                        : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
+                    }`}
                   >
-                    {competitorAnalysis ? 'On' : 'Off'}
+                    {excludeExisting ? '✓ On' : '✗ Off'}
                   </button>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium">Focus Areas</Label>
+                  <p className="text-xs text-gray-600 mb-2">Specify areas to focus on (max 5)</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['precision-agriculture', 'vertical-farming', 'iot-sensors', 'ai-ml', 'sustainable-ag', 'food-supply-chain', 'robotics'].map((area) => (
+                      <button
+                        key={area}
+                        type="button"
+                        onClick={() => {
+                          if (focusAreas.includes(area)) {
+                            setFocusAreas(focusAreas.filter(a => a !== area));
+                          } else if (focusAreas.length < 5) {
+                            setFocusAreas([...focusAreas, area]);
+                          }
+                        }}
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          focusAreas.includes(area)
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-muted/10 text-muted-foreground hover:bg-muted/20'
+                        }`}
+                      >
+                        {area.replace('-', ' ')}
+                      </button>
+                    ))}
+                  </div>
+                  {focusAreas.length > 0 && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      Selected: {focusAreas.length}/5 focus areas
+                    </p>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -485,7 +569,7 @@ export default function StartupSeekerTool() {
                 <Card 
                   className={`cursor-pointer transition-all border-2 ${
                     generationMode === 'traditional' 
-                      ? 'border-blue-500 bg-blue-50' 
+                      ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-900/20' 
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                   onClick={() => setGenerationMode('traditional')}
@@ -504,7 +588,7 @@ export default function StartupSeekerTool() {
                 <Card 
                   className={`cursor-pointer transition-all border-2 ${
                     generationMode === 'ai' 
-                      ? 'border-purple-500 bg-purple-50' 
+                      ? 'border-purple-500 bg-purple-50/70 dark:bg-purple-900/20' 
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                   onClick={() => setGenerationMode('ai')}
@@ -523,7 +607,7 @@ export default function StartupSeekerTool() {
                 <Card 
                   className={`cursor-pointer transition-all border-2 ${
                     generationMode === 'hybrid' 
-                      ? 'border-green-500 bg-green-50' 
+                      ? 'border-green-500 bg-green-50/70 dark:bg-green-900/18' 
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                   onClick={() => setGenerationMode('hybrid')}
@@ -539,13 +623,13 @@ export default function StartupSeekerTool() {
                   </CardContent>
                 </Card>
               </div>
-              <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md mt-4">
+              <div className="text-sm text-gray-300 bg-gray-800/30 p-3 rounded-md mt-4">
                 <p className="font-medium mb-1">
                   {generationMode === 'ai' && '🤖 AI Mode:'}
                   {generationMode === 'traditional' && '🌐 Traditional Mode:'}
                   {generationMode === 'hybrid' && '⚡ Hybrid Mode (Recommended):'}
                 </p>
-                <p>
+                <p className="text-gray-400">
                   {generationMode === 'ai' && 'Uses advanced AI algorithms to discover startups from web search, news, and social media with intelligent pattern recognition.'}
                   {generationMode === 'traditional' && 'Scrapes real startup data from verified sources like Crunchbase, AngelList, TechCrunch, and AgFunder.'}
                   {generationMode === 'hybrid' && 'Intelligently combines traditional data sources with AI discovery. Starts with verified databases, then enriches with AI insights for maximum coverage and accuracy.'}
@@ -621,12 +705,58 @@ export default function StartupSeekerTool() {
         </TabsContent>
 
         <TabsContent value="portfolio" className="space-y-6">
+          {/* Statistics Cards */}
+          {startups.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <Database className="h-8 w-8 text-blue-600" />
+                    <div className="ml-4">
+                      <p className="text-sm text-gray-600">Total Startups</p>
+                      <p className="text-2xl font-bold">{startups.length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <BarChart3 className="h-8 w-8 text-yellow-600" />
+                    <div className="ml-4">
+                      <p className="text-sm text-gray-600">Avg Rouge Score</p>
+                      <p className="text-2xl font-bold">
+                        {filteredStartups.length > 0 
+                          ? (filteredStartups.reduce((sum: number, s: Startup) => sum + (s.rougeScore || 0), 0) / filteredStartups.length).toFixed(1)
+                          : '0.0'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <Users className="h-8 w-8 text-purple-600" />
+                    <div className="ml-4">
+                      <p className="text-sm text-gray-600">With Contacts</p>
+                      <p className="text-2xl font-bold">
+                        {filteredStartups.filter((s: Startup) => s.contactInfo).length}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           {/* Results Section */}
           <Card>
             <CardHeader>
               <CardTitle>Your Startup Portfolio</CardTitle>
               <CardDescription>
-                {startups.length} startup{startups.length !== 1 ? 's' : ''} found
+                {filteredStartups.length} startup{filteredStartups.length !== 1 ? 's' : ''} found
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -639,18 +769,50 @@ export default function StartupSeekerTool() {
                   No startups found. Generate some startups to get started.
                 </div>
               ) : (
-                <div className="w-full overflow-auto">
-                  <Table className="min-w-[700px]">
+                <>
+                  {/* Search and Filters */}
+                  <div className="mb-6 space-y-4">
+                    <div className="flex flex-col md:flex-row gap-4">
+                      <div className="flex-1">
+                        <Input
+                          placeholder="Search startups, descriptions, locations..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full"
+                        />
+                      </div>
+                      <Select value={scoreFilter} onValueChange={(value: any) => setScoreFilter(value)}>
+                        <SelectTrigger className="w-full md:w-48">
+                          <SelectValue placeholder="Score Range" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Scores</SelectItem>
+                          <SelectItem value="high">High (7+)</SelectItem>
+                          <SelectItem value="medium">Medium (4-6)</SelectItem>
+                          <SelectItem value="low">Low (&lt;4)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {filteredStartups.length !== startups.length && (
+                      <p className="text-sm text-muted-foreground">
+                        Showing {filteredStartups.length} of {startups.length} startups
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="w-full overflow-auto">
+                    <Table className="min-w-[1000px]">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Company</TableHead>
                         <TableHead>Location</TableHead>
+                        <TableHead>Rouge Score</TableHead>
                         <TableHead>Contacts</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {startups.map((startup) => (
+                      {filteredStartups.map((startup: Startup) => (
                         <TableRow key={startup.id}>
                           <TableCell>
                             <div>
@@ -661,6 +823,14 @@ export default function StartupSeekerTool() {
                             </div>
                           </TableCell>
                           <TableCell>{startup.city || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              startup.rougeScore >= 8 ? 'default' :
+                              startup.rougeScore >= 6 ? 'secondary' : 'outline'
+                            }>
+                              {startup.rougeScore?.toFixed(1) || 'N/A'}
+                            </Badge>
+                          </TableCell>
                           <TableCell>
                             {startup.contactInfo ? (
                               <Badge variant="secondary">Available</Badge>
@@ -677,19 +847,6 @@ export default function StartupSeekerTool() {
                                 aria-label={`View details for ${startup.name}`}
                               >
                                 View
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => performRealityCheck(startup)}
-                                disabled={performingRealityCheck}
-                                aria-label={`Validate ${startup.name}`}
-                              >
-                                {performingRealityCheck ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Target className="h-4 w-4" />
-                                )}
                               </Button>
                               <Button
                                 variant="outline"
@@ -734,33 +891,11 @@ export default function StartupSeekerTool() {
                       ))}
                     </TableBody>
                   </Table>
-                </div>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="validate" className="space-y-6">
-          {validationResults ? (
-            <ValidationResults
-              results={validationResults}
-              onRefresh={refreshValidation}
-              isRefreshing={performingRealityCheck}
-            />
-          ) : (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <Target className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-semibold mb-2">No Validation Results</h3>
-                <p className="text-gray-600 mb-4">
-                  Select a startup from your portfolio to perform a reality check validation.
-                </p>
-                <Button onClick={() => setActiveTab('portfolio')}>
-                  Go to Portfolio
-                </Button>
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
       </Tabs>
 
@@ -813,71 +948,254 @@ export default function StartupSeekerTool() {
                       {selectedStartup.locationScore}
                     </div>
                     <div className="text-sm text-gray-400">Location</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {selectedStartup.locationScore >= 80 ? 'Excellent location' :
+                       selectedStartup.locationScore >= 60 ? 'Good location' :
+                       selectedStartup.locationScore >= 40 ? 'Fair location' : 'Poor location'}
+                    </div>
                   </div>
                   <div className="text-center p-3 border border-gray-600 rounded bg-gray-800/50">
                     <div className={`text-2xl font-bold ${getScoreColor(selectedStartup.readinessScore)}`}>
                       {selectedStartup.readinessScore}
                     </div>
                     <div className="text-sm text-gray-400">Readiness</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {selectedStartup.readinessScore >= 80 ? 'Investment ready' :
+                       selectedStartup.readinessScore >= 60 ? 'Early stage' :
+                       selectedStartup.readinessScore >= 40 ? 'Concept stage' : 'Idea stage'}
+                    </div>
                   </div>
                   <div className="text-center p-3 border border-gray-600 rounded bg-gray-800/50">
                     <div className={`text-2xl font-bold ${getScoreColor(selectedStartup.feasibilityScore)}`}>
                       {selectedStartup.feasibilityScore}
                     </div>
                     <div className="text-sm text-gray-400">Feasibility</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {selectedStartup.feasibilityScore >= 80 ? 'Highly feasible' :
+                       selectedStartup.feasibilityScore >= 60 ? 'Moderately feasible' :
+                       selectedStartup.feasibilityScore >= 40 ? 'Challenging' : 'High risk'}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 p-3 border border-gray-600 rounded bg-gray-800/30">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">Overall Rouge Score</span>
+                    <div className="flex items-center gap-2">
+                      <div className={`text-xl font-bold ${getScoreColor(selectedStartup.rougeScore)}`}>
+                        {selectedStartup.rougeScore}
+                      </div>
+                      <Badge variant={selectedStartup.rougeScore >= 70 ? 'default' : 'secondary'}>
+                        {selectedStartup.rougeScore >= 80 ? 'Excellent' :
+                         selectedStartup.rougeScore >= 60 ? 'Good' :
+                         selectedStartup.rougeScore >= 40 ? 'Fair' : 'Needs Work'}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Justification */}
-              <div>
-                <Label>Evaluation Justification</Label>
-                <p className="mt-1 text-sm">{selectedStartup.justification}</p>
-              </div>
-
-              {/* Reality Check Section */}
-              <div>
-                <Label>Reality Check Validation</Label>
-                <div className="mt-2 p-4 border-2 border-dashed border-gray-600 rounded text-center bg-gray-800/30">
-                  <Target className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                  <p className="text-sm text-gray-400 mb-2">
-                    Perform comprehensive market validation and reality check
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => performRealityCheck(selectedStartup)}
-                    disabled={performingRealityCheck}
-                  >
-                    {performingRealityCheck ? (
-                      <span>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Analyzing...
-                      </span>
-                    ) : (
-                      <span>
-                        <Target className="h-4 w-4 mr-2" />
-                        Reality Check
-                      </span>
-                    )}
-                  </Button>
+              {selectedStartup.justification && (
+                <div>
+                  <Label>Evaluation Justification</Label>
+                  <div className="mt-2 p-3 border border-gray-600 rounded bg-gray-800/30">
+                    <p className="text-sm text-gray-300 whitespace-pre-wrap">
+                      {selectedStartup.justification}
+                    </p>
+                  </div>
                 </div>
+              )}
+
+              {/* Additional Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {selectedStartup.foundedYear && (
+                  <div>
+                    <Label>Founded Year</Label>
+                    <p className="text-sm text-gray-300 mt-1">{selectedStartup.foundedYear}</p>
+                  </div>
+                )}
+                {selectedStartup.employeeCount && (
+                  <div>
+                    <Label>Employee Count</Label>
+                    <p className="text-sm text-gray-300 mt-1">{selectedStartup.employeeCount}</p>
+                  </div>
+                )}
+                {selectedStartup.fundingStage && (
+                  <div>
+                    <Label>Funding Stage</Label>
+                    <p className="text-sm text-gray-300 mt-1">{selectedStartup.fundingStage}</p>
+                  </div>
+                )}
+                {selectedStartup.industry && (
+                  <div>
+                    <Label>Industry</Label>
+                    <p className="text-sm text-gray-300 mt-1">{selectedStartup.industry}</p>
+                  </div>
+                )}
               </div>
 
               {/* Contact Information */}
               {selectedStartup.contactInfo ? (
                 <div className="mt-2 p-4 bg-gray-800 rounded border border-gray-600">
-                  <pre className="whitespace-pre-wrap text-sm text-gray-200">
-                    {typeof selectedStartup.contactInfo === 'string'
-                      ? selectedStartup.contactInfo
-                      : JSON.stringify(selectedStartup.contactInfo, null, 2)
-                    }
-                  </pre>
+                  <h4 className="font-semibold text-sm mb-3 text-gray-200">Contact Information</h4>
+                  <div className="space-y-3">
+                    {(() => {
+                      let contactInfo: any = null;
+                      try {
+                        contactInfo = typeof selectedStartup.contactInfo === 'string'
+                          ? JSON.parse(selectedStartup.contactInfo)
+                          : selectedStartup.contactInfo;
+                      } catch (parseError) {
+                        console.error('Failed to parse contactInfo:', parseError);
+                        return (
+                          <div className="text-red-400 text-sm">
+                            Error parsing contact information
+                          </div>
+                        );
+                      }
+
+                      if (!contactInfo || typeof contactInfo !== 'object') {
+                        return (
+                          <div className="text-gray-400 text-sm">
+                            Contact information format is invalid
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <>
+                          {/* LinkedIn */}
+                          {(contactInfo.linkedinUrl || contactInfo.linkedin) && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-400 w-16">LinkedIn:</span>
+                              <a
+                                href={contactInfo.linkedinUrl || contactInfo.linkedin}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-400 hover:underline text-sm"
+                              >
+                                View Profile
+                              </a>
+                              {contactInfo.linkedinVerified && (
+                                <span className="text-green-400 text-xs">✓ Verified</span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Generic Emails */}
+                          {contactInfo.emails && Array.isArray(contactInfo.emails) && contactInfo.emails.length > 0 && (
+                            <div className="flex items-start gap-2">
+                              <span className="text-xs text-gray-400 w-16 mt-1">Emails:</span>
+                              <div className="flex flex-wrap gap-1">
+                                {contactInfo.emails.map((email: string, idx: number) => (
+                                  <a
+                                    key={`email-${idx}`}
+                                    href={`mailto:${email}`}
+                                    className="text-blue-400 hover:underline text-sm bg-gray-700 px-2 py-1 rounded"
+                                  >
+                                    {email}
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Found Emails (from website scraping) */}
+                          {contactInfo.foundEmails && Array.isArray(contactInfo.foundEmails) && contactInfo.foundEmails.length > 0 && (
+                            <div className="flex items-start gap-2">
+                              <span className="text-xs text-gray-400 w-16 mt-1">Found:</span>
+                              <div className="flex flex-wrap gap-1">
+                                {contactInfo.foundEmails.map((email: string, idx: number) => (
+                                  <a
+                                    key={`found-${idx}`}
+                                    href={`mailto:${email}`}
+                                    className="text-green-400 hover:underline text-sm bg-gray-700 px-2 py-1 rounded"
+                                  >
+                                    {email}
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Phone Numbers */}
+                          {(contactInfo.foundPhones || contactInfo.phone) && (
+                            <div className="flex items-start gap-2">
+                              <span className="text-xs text-gray-400 w-16 mt-1">Phones:</span>
+                              <div className="flex flex-wrap gap-1">
+                                {(() => {
+                                  const phones = contactInfo.foundPhones || (contactInfo.phone ? [contactInfo.phone] : []);
+                                  return phones.filter(Boolean).map((phone: string, idx: number) => (
+                                    <a
+                                      key={`phone-${idx}`}
+                                      href={`tel:${phone}`}
+                                      className="text-green-400 hover:underline text-sm bg-gray-700 px-2 py-1 rounded"
+                                    >
+                                      {phone}
+                                    </a>
+                                  ));
+                                })()}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Total Contacts Count */}
+                          {(contactInfo.totalContactsFound !== undefined || contactInfo.foundEmails?.length || contactInfo.emails?.length) && (
+                            <div className="flex items-center gap-2 pt-2 border-t border-gray-600">
+                              <span className="text-xs text-gray-400">Total Contacts:</span>
+                              <Badge variant="secondary" className="text-xs">
+                                {contactInfo.totalContactsFound ||
+                                 (contactInfo.foundEmails?.length || 0) +
+                                 (contactInfo.emails?.length || 0)}
+                              </Badge>
+                            </div>
+                          )}
+
+                          {/* Last Updated */}
+                          {contactInfo.lastUpdated && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-400">Last Updated:</span>
+                              <span className="text-xs text-gray-300">
+                                {(() => {
+                                  try {
+                                    return new Date(contactInfo.lastUpdated).toLocaleDateString();
+                                  } catch {
+                                    return contactInfo.lastUpdated;
+                                  }
+                                })()}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Via/Method */}
+                          {contactInfo.via && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-400">Method:</span>
+                              <span className="text-xs text-gray-300 capitalize">
+                                {contactInfo.via.replace('-', ' ')}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Show message if no contacts found */}
+                          {!contactInfo.linkedinUrl && !contactInfo.linkedin &&
+                           (!contactInfo.emails || contactInfo.emails.length === 0) &&
+                           (!contactInfo.foundEmails || contactInfo.foundEmails.length === 0) &&
+                           (!contactInfo.foundPhones || contactInfo.foundPhones.length === 0) &&
+                           !contactInfo.phone && (
+                            <div className="text-gray-400 text-sm italic">
+                              No specific contact details found, but research was completed.
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
               ) : (
                 <div className="mt-2 p-4 border-2 border-dashed border-gray-600 rounded text-center bg-gray-800/30">
                   <Users className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-gray-400 mb-2">
                     No contact information available
                   </p>
                   <Button
@@ -911,18 +1229,6 @@ export default function StartupSeekerTool() {
                   >
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Visit Website
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => performRealityCheck(selectedStartup)}
-                    disabled={performingRealityCheck}
-                  >
-                    {performingRealityCheck ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Target className="h-4 w-4 mr-2" />
-                    )}
-                    Reality Check
                   </Button>
                 </div>
                 <Button

@@ -41,6 +41,7 @@ type Ticket = {
   businessSteps: string;
   businessGoal: string;
   dueDate?: string | null;
+  aiToolCategory: string;
   // Additional fields (optional)
   problemStatement?: string | null;
   expectedOutcome?: string | null;
@@ -50,7 +51,7 @@ type Ticket = {
   // criticality removed from user-facing ticket
 };
 
-export default function SubmitRequestFormPage() {
+export default function AIToolsRequestFormPage() {
   const [tools, setTools] = useState<Tool[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [, setLoading] = useState({ tools: true, tickets: true });
@@ -74,6 +75,9 @@ export default function SubmitRequestFormPage() {
         <div className="space-y-3 mt-2">
           <div>
             <span className="font-semibold">Status:</span> <span className={`ml-1 px-2 py-0.5 rounded text-xs font-medium ${selectedTicket.status === 'Open' ? 'bg-blue-900 text-blue-300' : selectedTicket.status === 'In Progress' ? 'bg-yellow-900 text-yellow-300' : 'bg-green-900 text-green-300'}`}>{selectedTicket.status}</span>
+          </div>
+          <div>
+            <span className="font-semibold">AI Tool Category:</span> <span className="ml-1">{selectedTicket.aiToolCategory}</span>
           </div>
           <div>
             <span className="font-semibold">Requested By:</span> <span className="ml-1">{selectedTicket.requestedBy}</span>
@@ -155,6 +159,7 @@ export default function SubmitRequestFormPage() {
       ),
     team: z.string().default("AI team"),
     department: z.string().default("AI"),
+    aiToolCategory: z.string().min(1, "Please select an AI tool category"),
     // Additional fields (optional)
     problemStatement: z.string().optional(),
     expectedOutcome: z.string().optional(),
@@ -176,6 +181,7 @@ export default function SubmitRequestFormPage() {
       dueDate: "",
       team: "AI team",
       department: "AI",
+      aiToolCategory: "",
       problemStatement: "",
       expectedOutcome: "",
       dataSources: "",
@@ -269,7 +275,7 @@ export default function SubmitRequestFormPage() {
 
   function exportTicketsCsv(rows: Ticket[]) {
     try {
-      const headers = ["id","title","requestedBy","description","businessSteps","businessGoal","dueDate","status"] as const;
+      const headers = ["id","title","aiToolCategory","requestedBy","description","businessSteps","businessGoal","dueDate","status"] as const;
       const lines = rows.map(r => headers.map((h) => {
         const v = r[h] as unknown as string | number | null | undefined;
         const s = String(v).replace(/"/g, '""');
@@ -402,6 +408,7 @@ export default function SubmitRequestFormPage() {
         dueDate: "",
         team: "AI team",
         department: "AI",
+        aiToolCategory: "",
         problemStatement: "",
         expectedOutcome: "",
         dataSources: "",
@@ -466,12 +473,12 @@ export default function SubmitRequestFormPage() {
           transition={{ duration: 0.35 }}
           className="text-4xl font-bold mb-8 text-center text-white"
         >
-          Business Support Request
+          AI Tools Request Form
         </motion.h1>
 
         {/* Sidebar left, Form/Table right */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12">
-          {/* Left: Submit Business Support Request (75%) */}
+          {/* Left: Submit AI Tools Request (75%) */}
           <motion.section
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -479,7 +486,7 @@ export default function SubmitRequestFormPage() {
             className="lg:col-span-9 bg-[#232526] rounded-xl p-8 shadow-lg border border-gray-700 transition-transform duration-300 hover:-translate-y-0.5"
           >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-white flex items-center gap-2"><ClipboardList className="h-6 w-6 text-blue-400" /> Submit Business Support Request</h2>
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2"><ClipboardList className="h-6 w-6 text-blue-400" /> Submit AI Tools Request</h2>
               <button onClick={refreshNow} disabled={refreshing} className={`text-gray-300 hover:text-white inline-flex items-center gap-1 text-sm ${refreshing ? 'opacity-60 cursor-not-allowed' : ''}`}>
                 {refreshing ? (
                   <svg className="animate-spin h-4 w-4 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
@@ -513,6 +520,32 @@ export default function SubmitRequestFormPage() {
                   />
                   <div className="mt-1 text-xs text-gray-400">Department for this request (AI).</div>
                 </div>
+              </div>
+              <div className="md:col-span-2">
+                <Label className="block text-sm font-semibold mb-2 text-gray-300">AI Tool Category <RequiredMark /></Label>
+                <Controller
+                  name="aiToolCategory"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger className="bg-[#191A1A] border-gray-600 text-white">
+                        <SelectValue placeholder="Select the type of AI tool you need" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#232526] border-gray-700 text-white">
+                        <SelectItem value="chatbot">Chatbot / Conversational AI</SelectItem>
+                        <SelectItem value="data-analysis">Data Analysis & Insights</SelectItem>
+                        <SelectItem value="automation">Process Automation</SelectItem>
+                        <SelectItem value="content-generation">Content Generation</SelectItem>
+                        <SelectItem value="image-video">Image/Video Generation</SelectItem>
+                        <SelectItem value="prediction">Prediction & Forecasting</SelectItem>
+                        <SelectItem value="search-retrieval">Search & Information Retrieval</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <div className="mt-1 text-xs text-gray-400">Choose the category that best describes the AI tool you need.</div>
+                {errors.aiToolCategory && <p className="mt-1 text-sm text-red-400">{errors.aiToolCategory.message}</p>}
               </div>
               {/* ...existing form code... */}
               <div className="md:col-span-2 flex items-center gap-3 mb-2">
@@ -574,12 +607,12 @@ export default function SubmitRequestFormPage() {
                 <Label className="block text-sm font-semibold mb-2 text-gray-300">Request Title <RequiredMark /></Label>
                   <Input
                     required
-                    placeholder="E.g. &#39;Automated Report Generator&#39;"
+                    placeholder="E.g. &#39;Automated Sales Insights Generator&#39;, &#39;Customer Sentiment Chatbot&#39;"
                     className="bg-[#191A1A] border-gray-600 text-white"
                     aria-invalid={!!errors.title}
                     {...register("title")}
                   />
-                  <div className="mt-1 text-xs text-gray-400">A short, clear name for your request.</div>
+                  <div className="mt-1 text-xs text-gray-400">A clear, descriptive name for the AI tool you want built.</div>
                   <div className="mt-1 text-right text-[11px] text-gray-400">{(watch("title")?.length || 0)}/{MAX_TITLE}</div>
                   {errors.title && <p className="mt-1 text-sm text-red-400">{errors.title.message}</p>}
               </div>
@@ -596,40 +629,40 @@ export default function SubmitRequestFormPage() {
                   {errors.requestedBy && <p className="mt-1 text-sm text-red-400">{errors.requestedBy.message}</p>}
               </div>
               <div className="md:col-span-2">
-                <Label className="block text-sm font-semibold mb-2 text-gray-300">Business Context & Description <RequiredMark /></Label>
+                <Label className="block text-sm font-semibold mb-2 text-gray-300">AI Tool Description & Business Context <RequiredMark /></Label>
                   <Textarea
                     required
-                    placeholder="Describe the business context and what you want to achieve."
+                    placeholder="Describe the AI tool you need and the business context. What should it do? How will it help your work?"
                     className="bg-[#191A1A] border-gray-600 text-white min-h-[80px]"
                     aria-invalid={!!errors.description}
                     {...register("description")}
                   />
-                  <div className="mt-1 text-xs text-gray-400">Explain the business need and what outcome you want.</div>
+                  <div className="mt-1 text-xs text-gray-400">Explain what the AI tool should do and how it fits into your business processes.</div>
                   <div className="mt-1 text-right text-[11px] text-gray-400">{(watch("description")?.length || 0)}/{MAX_DESC}</div>
                   {errors.description && <p className="mt-1 text-sm text-red-400">{errors.description.message}</p>}
               </div>
               <div className="md:col-span-2">
-                <Label className="block text-sm font-semibold mb-2 text-gray-300">Business Steps <RequiredMark /></Label>
+                <Label className="block text-sm font-semibold mb-2 text-gray-300">How the AI Tool Should Work (Business Steps) <RequiredMark /></Label>
                   <Textarea
                     required
-                    placeholder="E.g. &#39;Collect sales data&#39;, &#39;Generate weekly report&#39;, &#39;Email report to manager&#39;"
+                    placeholder="Describe how the AI tool should work from a business perspective. E.g. 'Analyze sales data', 'Generate insights report', 'Send recommendations to manager'"
                     className="bg-[#191A1A] border-gray-600 text-white min-h-[80px]"
                     aria-invalid={!!errors.businessSteps}
                     {...register("businessSteps")}
                   />
-                  <div className="mt-1 text-xs text-gray-400">List the main steps as you see them from a business perspective. No technical details needed.</div>
+                  <div className="mt-1 text-xs text-gray-400">List the key steps the AI tool should perform. Focus on what you want it to do, not how.</div>
                   {errors.businessSteps && <p className="mt-1 text-sm text-red-400">{errors.businessSteps.message}</p>}
               </div>
               <div className="md:col-span-2">
-                <Label className="block text-sm font-semibold mb-2 text-gray-300">Business Goal <RequiredMark /></Label>
+                <Label className="block text-sm font-semibold mb-2 text-gray-300">What the AI Tool Should Achieve (Business Goal) <RequiredMark /></Label>
                   <Input
                     required
-                    placeholder="E.g. &#39;Save time on reporting&#39;, &#39;Improve accuracy of forecasts&#39;"
+                    placeholder="E.g. 'Reduce time spent on manual reporting by 50%', 'Improve forecast accuracy', 'Automate customer insights generation'"
                     className="bg-[#191A1A] border-gray-600 text-white"
                     aria-invalid={!!errors.businessGoal}
                     {...register("businessGoal")}
                   />
-                  <div className="mt-1 text-xs text-gray-400">What is the main business outcome you want to achieve?</div>
+                  <div className="mt-1 text-xs text-gray-400">What measurable business outcome should this AI tool deliver?</div>
                   {errors.businessGoal && <p className="mt-1 text-sm text-red-400">{errors.businessGoal.message}</p>}
               </div>
               <div>
@@ -695,6 +728,7 @@ export default function SubmitRequestFormPage() {
                   <thead className="bg-[#191A1A] text-gray-300">
                     <tr>
                       <th className="p-3">Title</th>
+                      <th className="p-3">AI Tool Category</th>
                       <th className="p-3">Requested By</th>
                       <th className="p-3">Business Goal</th>
                       <th className="p-3">Due</th>
@@ -717,6 +751,7 @@ export default function SubmitRequestFormPage() {
                             className="border-b border-gray-700"
                           >
                             <td className="p-3 text-white">{ticket.title}</td>
+                            <td className="p-3 text-white">{ticket.aiToolCategory}</td>
                             <td className="p-3 text-white">{ticket.requestedBy}</td>
                             <td className="p-3 text-white">{ticket.businessGoal}</td>
                             <td className="p-3 text-white">{ticket.dueDate ?? "—"}</td>

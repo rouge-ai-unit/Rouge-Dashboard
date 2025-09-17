@@ -2,15 +2,20 @@
 
 import { SessionProvider } from "next-auth/react";
 import "./globals.css";
-import ChatbotWidget from "../components/ChatbotWidget";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import GlobalDialogProvider from "@/components/GlobalDialog";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import dynamic from "next/dynamic";
 
 const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
+
+// Dynamically import ChatbotWidget to prevent SSR issues
+const ChatbotWidget = dynamic(() => import("../components/ChatbotWidget"), {
+  ssr: false,
+});
 
 
 
@@ -61,14 +66,7 @@ export default function RootLayout({
             </GlobalDialogProvider>
           </ThemeProvider>
           <Toaster richColors theme="dark" />
-          {/* Show ChatbotWidget for all users except on the signin page */}
-          {typeof window !== 'undefined' ? (() => {
-            const pathname = window.location.pathname;
-            if (!pathname.startsWith('/signin') && !pathname.startsWith('/auth/signin') && !pathname.startsWith('/(auth)/signin')) {
-              return <ChatbotWidget />;
-            }
-            return null;
-          })() : null}
+          <ChatbotWidget />
         </SessionProvider>
       </body>
     </html>

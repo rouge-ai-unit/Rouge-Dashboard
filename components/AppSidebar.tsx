@@ -37,14 +37,14 @@ const publicNavItems = [
   href: "/home",
   },
   {
-    title: "Support Request Form",
+    title: "AI Tools Request Form",
     icon: FileText, // Changed to FileText icon for uniqueness
-    href: "/Submit-Request-Form",
+    href: "/tools/ai-tools-request-form",
   },
   {
     title: "Work Tracker",
     icon: UserCog2,
-    href: "/work-tracker",
+    href: "/tools/work-tracker",
   },
   {
     title: "Ai News Daily",
