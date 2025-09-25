@@ -104,7 +104,7 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx) {
 
 export async function DELETE(_req: NextRequest, ctx: RouteCtx) {
   try {
-    // removed requireSession for public access
+    await requireSession();
   const rawParams = (ctx as { params?: { id: string } | Promise<{ id: string }> } | undefined)?.params;
   const isPromise = typeof (rawParams as Promise<unknown> | undefined)?.then === "function";
   const resolved = isPromise ? await (rawParams as Promise<{ id: string }>) : (rawParams as { id: string } | undefined);

@@ -62,77 +62,7 @@ export default function AIToolsRequestFormPage() {
   const [ticketsFilter, setTicketsFilter] = useState<"All" | "Open" | "In Progress" | "Closed">("All");
   const [ticketsSearch, setTicketsSearch] = useState("");
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  {/* Modal for viewing ticket details */}
-  <Dialog open={!!selectedTicket} onOpenChange={() => setSelectedTicket(null)}>
-    <DialogContent className="max-w-lg w-full bg-[#232526] border border-gray-700 text-white">
-      <DialogHeader>
-        <DialogTitle>Submission Details</DialogTitle>
-        <DialogDescription className="text-gray-400">
-          {selectedTicket?.title}
-        </DialogDescription>
-      </DialogHeader>
-      {selectedTicket && (
-        <div className="space-y-3 mt-2">
-          <div>
-            <span className="font-semibold">Status:</span> <span className={`ml-1 px-2 py-0.5 rounded text-xs font-medium ${selectedTicket.status === 'Open' ? 'bg-blue-900 text-blue-300' : selectedTicket.status === 'In Progress' ? 'bg-yellow-900 text-yellow-300' : 'bg-green-900 text-green-300'}`}>{selectedTicket.status}</span>
-          </div>
-          <div>
-            <span className="font-semibold">AI Tool Category:</span> <span className="ml-1">{selectedTicket.aiToolCategory}</span>
-          </div>
-          <div>
-            <span className="font-semibold">Requested By:</span> <span className="ml-1">{selectedTicket.requestedBy}</span>
-          </div>
-          <div>
-            <span className="font-semibold">Business Goal:</span> <span className="ml-1">{selectedTicket.businessGoal}</span>
-          </div>
-          <div>
-            <span className="font-semibold">Due Date:</span> <span className="ml-1">{selectedTicket.dueDate || '—'}</span>
-          </div>
-          <div>
-            <span className="font-semibold">Business Steps:</span>
-            <div className="ml-2 text-gray-300 whitespace-pre-line">{selectedTicket.businessSteps}</div>
-          </div>
-          <div>
-            <span className="font-semibold">Description:</span>
-            <div className="ml-2 text-gray-300 whitespace-pre-line">{selectedTicket.description}</div>
-          </div>
-          {selectedTicket.problemStatement && (
-            <div>
-              <span className="font-semibold">Problem Statement:</span>
-              <div className="ml-2 text-gray-300 whitespace-pre-line">{selectedTicket.problemStatement}</div>
-            </div>
-          )}
-          {selectedTicket.expectedOutcome && (
-            <div>
-              <span className="font-semibold">Expected Outcome:</span>
-              <div className="ml-2 text-gray-300 whitespace-pre-line">{selectedTicket.expectedOutcome}</div>
-            </div>
-          )}
-          {selectedTicket.dataSources && (
-            <div>
-              <span className="font-semibold">Data Sources:</span>
-              <div className="ml-2 text-gray-300 whitespace-pre-line">{selectedTicket.dataSources}</div>
-            </div>
-          )}
-          {selectedTicket.constraints && (
-            <div>
-              <span className="font-semibold">Constraints:</span>
-              <div className="ml-2 text-gray-300 whitespace-pre-line">{selectedTicket.constraints}</div>
-            </div>
-          )}
-          {selectedTicket.manualSteps && (
-            <div>
-              <span className="font-semibold">Manual Steps Today:</span>
-              <div className="ml-2 text-gray-300 whitespace-pre-line">{selectedTicket.manualSteps}</div>
-            </div>
-          )}
-        </div>
-      )}
-      <DialogFooter>
-        <Button onClick={() => setSelectedTicket(null)} className="mt-4 w-full bg-blue-700 hover:bg-blue-800 text-white">Close</Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
+  
 
   // Form schema and setup (RHF + Zod)
   const MAX_TITLE = 120;
@@ -142,8 +72,7 @@ export default function AIToolsRequestFormPage() {
     title: z.string().min(3, "Title is required").max(MAX_TITLE, `Keep under ${MAX_TITLE} characters`),
     requestedBy: z.string().email("Valid email required"),
     description: z.string().min(10, "Please describe your request").max(MAX_DESC, `Keep under ${MAX_DESC} characters`),
-  businessSteps: z.string().min(10, "Please break down your request into clear business steps. For example: &#39;Collect sales data&#39;, &#39;Generate weekly report&#39;, &#39;Email report to manager&#39;."),
-    businessGoal: z.string().min(5, "What is the main business goal for this request?"),
+  businessSteps: z.string().min(10, "Please break down your request into clear business steps. For example: 'Collect sales data', 'Generate weekly report', 'Email report to manager'."),    businessGoal: z.string().min(5, "What is the main business goal for this request?"),
     dueDate: z
       .string()
       .optional()
@@ -444,8 +373,7 @@ export default function AIToolsRequestFormPage() {
 
   async function deleteTicket(id: string) {
     try {
-      const prev = tickets;
-      setTickets((cur) => cur.filter((t) => t.id !== id));
+      setTickets((cur) => cur.filter((t) => t.id !== id));      setTickets((cur) => cur.filter((t) => t.id !== id));
       const res = await fetch(`/api/tickets/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed");
       toast.success("Ticket deleted");
@@ -466,8 +394,7 @@ export default function AIToolsRequestFormPage() {
 
   return (
     <main className="p-0 min-h-screen">
-      <div className="max-w-0xl mx-auto">
-        <motion.h1
+      <div className="max-w-6xl mx-auto">        <motion.h1
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
@@ -832,9 +759,81 @@ export default function AIToolsRequestFormPage() {
 
 
         {/* ...existing code... */}
-  {/* Available tools cards removed as requested */}
+        {/* Modal for viewing ticket details */}
+        <Dialog open={!!selectedTicket} onOpenChange={() => setSelectedTicket(null)}>
+          <DialogContent className="max-w-lg w-full bg-[#232526] border border-gray-700 text-white">
+            <DialogHeader>
+              <DialogTitle>Submission Details</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                {selectedTicket?.title}
+              </DialogDescription>
+            </DialogHeader>
+            {selectedTicket && (
+              <div className="space-y-3 mt-2">
+                <div>
+                  <span className="font-semibold">Status:</span> <span className={`ml-1 px-2 py-0.5 rounded text-xs font-medium ${selectedTicket.status === 'Open' ? 'bg-blue-900 text-blue-300' : selectedTicket.status === 'In Progress' ? 'bg-yellow-900 text-yellow-300' : 'bg-green-900 text-green-300'}`}>{selectedTicket.status}</span>
+                </div>
+                <div>
+                  <span className="font-semibold">AI Tool Category:</span> <span className="ml-1">{selectedTicket.aiToolCategory}</span>
+                </div>
+                <div>
+                  <span className="font-semibold">Requested By:</span> <span className="ml-1">{selectedTicket.requestedBy}</span>
+                </div>
+                <div>
+                  <span className="font-semibold">Business Goal:</span> <span className="ml-1">{selectedTicket.businessGoal}</span>
+                </div>
+                <div>
+                  <span className="font-semibold">Due Date:</span> <span className="ml-1">{selectedTicket.dueDate || '—'}</span>
+                </div>
+                <div>
+                  <span className="font-semibold">Business Steps:</span>
+                  <div className="ml-2 text-gray-300 whitespace-pre-line">{selectedTicket.businessSteps}</div>
+                </div>
+                <div>
+                  <span className="font-semibold">Description:</span>
+                  <div className="ml-2 text-gray-300 whitespace-pre-line">{selectedTicket.description}</div>
+                </div>
+                {selectedTicket.problemStatement && (
+                  <div>
+                    <span className="font-semibold">Problem Statement:</span>
+                    <div className="ml-2 text-gray-300 whitespace-pre-line">{selectedTicket.problemStatement}</div>
+                  </div>
+                )}
+                {selectedTicket.expectedOutcome && (
+                  <div>
+                    <span className="font-semibold">Expected Outcome:</span>
+                    <div className="ml-2 text-gray-300 whitespace-pre-line">{selectedTicket.expectedOutcome}</div>
+                  </div>
+                )}
+                {selectedTicket.dataSources && (
+                  <div>
+                    <span className="font-semibold">Data Sources:</span>
+                    <div className="ml-2 text-gray-300 whitespace-pre-line">{selectedTicket.dataSources}</div>
+                  </div>
+                )}
+                {selectedTicket.constraints && (
+                  <div>
+                    <span className="font-semibold">Constraints:</span>
+                    <div className="ml-2 text-gray-300 whitespace-pre-line">{selectedTicket.constraints}</div>
+                  </div>
+                )}
+                {selectedTicket.manualSteps && (
+                  <div>
+                    <span className="font-semibold">Manual Steps Today:</span>
+                    <div className="ml-2 text-gray-300 whitespace-pre-line">{selectedTicket.manualSteps}</div>
+                  </div>
+                )}
+              </div>
+            )}
+            <DialogFooter>
+              <Button onClick={() => setSelectedTicket(null)} className="mt-4 w-full bg-blue-700 hover:bg-blue-800 text-white">Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-  {/* To Be Launched Soon section removed as requested */}
+        {/* Available tools cards removed as requested */}
+
+        {/* To Be Launched Soon section removed as requested */}
       </div>
     </main>
   );

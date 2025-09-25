@@ -5,10 +5,9 @@
 /* Removed Tailwind-specific @custom-variant to avoid VS Code CSS diagnostics */
 
 *::selection {
-  color:aqua;
+  color: aqua;
   background-color:rgb(129, 162, 162);
 }
-
 :root{
   background: #202222;
   --sidebar-width: 15rem;

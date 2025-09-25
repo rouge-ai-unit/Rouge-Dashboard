@@ -16,6 +16,7 @@ import {
   FileText,
   Target,
   GraduationCap,
+  HelpCircle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -67,8 +68,13 @@ const publicNavItems = [
     href: "/tools/content-idea-automation",
   },
   {
-    title: "Contact Us",
+    title: "Cold Connect Automator",
     icon: Mail,
+    href: "/tools/cold-connect-automator",
+  },
+  {
+    title: "Contact Us",
+    icon: HelpCircle,
     href: "/tools/contact",
   },
 ];

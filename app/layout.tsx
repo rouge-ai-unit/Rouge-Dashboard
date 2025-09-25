@@ -9,6 +9,8 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import GlobalDialogProvider from "@/components/GlobalDialog";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import dynamic from "next/dynamic";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster as ToastToaster } from "@/components/ui/toaster";
 
 const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
 
@@ -17,7 +19,15 @@ const ChatbotWidget = dynamic(() => import("../components/ChatbotWidget"), {
   ssr: false,
 });
 
-
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
 export default function RootLayout({
   children,
@@ -50,23 +60,26 @@ export default function RootLayout({
           </>
         )}
       </head>
-  <body suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <SessionProvider>
-          {/* <Sidebar>{children}</Sidebar> */}
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <GlobalDialogProvider>
-              <ErrorBoundary>
-                <div className="bg-[#202222]">{children}</div>
-              </ErrorBoundary>
-            </GlobalDialogProvider>
-          </ThemeProvider>
-          <Toaster richColors theme="dark" />
-          <ChatbotWidget />
+          <QueryClientProvider client={queryClient}>
+            {/* <Sidebar>{children}</Sidebar> */}
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="dark"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <GlobalDialogProvider>
+                <ErrorBoundary>
+                  <div className="bg-[#202222]">{children}</div>
+                </ErrorBoundary>
+              </GlobalDialogProvider>
+            </ThemeProvider>
+            <Toaster richColors theme="dark" />
+            <ToastToaster />
+            <ChatbotWidget />
+          </QueryClientProvider>
         </SessionProvider>
       </body>
     </html>

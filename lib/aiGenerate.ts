@@ -1,10 +1,7 @@
-"use client";
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import {GoogleGenAI} from "@google/genai";
 import { toast } from "sonner";
 
-const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI as string);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
 
 export async function generateCompanyData(companyList: string) {
   const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -151,8 +148,8 @@ export async function analyzeCompany(company: Company) {
   }
 }
 
-export async function generateContent(from:string, to:string, contentTitles = "") {
-  const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI });
+export async function generateContent(from: string, to: string, contentTitles = "") {
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
   //   Also exclude the following already added companies (if any given):
   //   ${companyList}
 
@@ -201,13 +198,8 @@ export async function generateContent(from:string, to:string, contentTitles = ""
   `;
 
   try {
-    const result = await genAI.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-    });
-
-    // @ts-expect-error to be fixed
-    let text = result.text.trim();
+    const result = await model.generateContent(prompt);
+    let text = result.response.text().trim();
 
     // Remove potential markdown format (```json ... ```)
     text = text.replace(/```json\n?|```/g, "").trim();

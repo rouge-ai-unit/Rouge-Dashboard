@@ -87,6 +87,20 @@
 			"command": "npm run build",
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "TypeScript noEmit",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "TypeScript noEmit",
+			"type": "shell",
+			"command": "npx tsc --noEmit",
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }

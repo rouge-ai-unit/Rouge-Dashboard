@@ -1,8 +1,9 @@
 "use client";
 
 // Hydration-safe LastUpdatedFooter component
+// app/(route)/home/page.tsx
+
 import { Switch } from "../../../components/ui/switch";
-import { useEffect as useClientEffect, useState as useClientState } from "react";
 import React from "react";
 
 function LastUpdatedFooter({ lastRefresh, autoRefresh, setAutoRefresh }: {
@@ -10,9 +11,9 @@ function LastUpdatedFooter({ lastRefresh, autoRefresh, setAutoRefresh }: {
   autoRefresh: boolean;
   setAutoRefresh: (v: boolean) => void;
 }) {
-  const [timeAgo, setTimeAgo] = useClientState("just now");
+  const [timeAgo, setTimeAgo] = useState("just now");
 
-  useClientEffect(() => {
+  useEffect(() => {
     function updateTimeAgo() {
       const now = new Date();
       const diff = Math.floor((now.getTime() - lastRefresh.getTime()) / 1000);
@@ -29,27 +30,19 @@ function LastUpdatedFooter({ lastRefresh, autoRefresh, setAutoRefresh }: {
   return (
     <div className="flex items-center justify-center gap-4 mt-2 flex-wrap">
       <span className="text-xs text-gray-400">Last updated: {timeAgo}</span>
-      <button
-        type="button"
-        className={`flex items-center gap-2 text-xs font-medium px-3 py-1 rounded-full border transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 select-none ${autoRefresh ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-800 text-gray-300 border-gray-600 hover:bg-gray-700'}`}
-        aria-pressed={autoRefresh}
-        onClick={() => setAutoRefresh(!autoRefresh)}
-        style={{ minWidth: 110 }}
-      >
-        <span className={`inline-block w-4 h-4 rounded-full border mr-1 transition-all duration-200 flex items-center justify-center ${autoRefresh ? 'bg-white border-white' : 'bg-gray-700 border-gray-500'}`}>
-          {autoRefresh && (
-            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-blue-600">
-              <path d="M4 8l3 3 5-5" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
-        </span>
-        Auto-refresh
-      </button>
-    </div>
+      <div className="flex items-center gap-2">
+        <label htmlFor="auto-refresh" className="text-xs text-gray-400">
+          Auto-refresh
+        </label>
+        <Switch
+          id="auto-refresh"
+          checked={autoRefresh}
+          onCheckedChange={setAutoRefresh}
+          aria-label="Toggle auto-refresh"
+        />
+      </div>    </div>
   );
 }
-
-// ...existing code...
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -161,6 +154,13 @@ export default function Page() {
       name: "Content Idea Automation",
       href: "/tools/content-idea-automation",
       description: "Revolutionize your content creation process with AI-powered idea generation. Generate topic suggestions, content outlines, SEO-optimized headlines, and creative concepts based on your niche and audience. Features include trend analysis, competitor research, and automated content calendars to maintain consistent publishing schedules.",
+      status: "Available",
+    },
+    {
+      id: "/tools/cold-connect-automator",
+      name: "Cold Connect Automator",
+      href: "/tools/cold-connect-automator",
+      description: "Automate personalized cold outreach campaigns with AI-powered message generation. Sync contacts with Notion CRM or Google Sheets, personalize messages with recipient context, and track campaign performance. Boost your productivity and never miss a follow-up.",
       status: "Available",
     },
   ];

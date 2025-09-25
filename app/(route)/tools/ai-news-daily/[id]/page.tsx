@@ -62,11 +62,10 @@ function NewsDetailContent() {
     try {
       const raw = sessionStorage.getItem(`news-expanded:${url}`);
       if (raw != null) setExpanded(raw === "1");
-  const sum = sessionStorage.getItem(`news-summary:${url}`);
-  if (sum) setSummary(sum);
+      const sum = sessionStorage.getItem(`news-summary:${url}`);
+      if (sum) setSummary(sum);
     } catch {}
   }, [url]);
-
   // Fetch preview (OG meta)
   useEffect(() => {
     let mounted = true;
@@ -144,10 +143,9 @@ function NewsDetailContent() {
       await navigator.clipboard.writeText(summary);
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
-  toast.success("Summary copied to clipboard");
+      toast.success("Summary copied to clipboard");
     } catch {}
   };
-
   const onCopy = async () => {
     try {
       await navigator.clipboard.writeText(url);

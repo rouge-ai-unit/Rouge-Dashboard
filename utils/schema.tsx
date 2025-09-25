@@ -1,4 +1,5 @@
-import { boolean, date, integer, jsonb, pgTable, text, uuid, varchar } from "drizzle-orm/pg-core";
+import { boolean, date, decimal, integer, jsonb, pgTable, text, uuid, varchar } from "drizzle-orm/pg-core";
+import { z } from "zod";
 
 export const Companies = pgTable("companyDetails", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -103,7 +104,7 @@ export const AgritechStartups = pgTable("agritech_startups", {
   locationScore: integer("location_score").notNull(),
   readinessScore: integer("readiness_score").notNull(),
   feasibilityScore: integer("feasibility_score").notNull(),
-  rougeScore: integer("rouge_score").notNull(),
+  rogueScore: integer("rogue_score").notNull(),
   justification: text("justification").notNull(),
   isPriority: boolean("is_priority").default(false),
   contactInfo: jsonb("contact_info"),
@@ -137,6 +138,782 @@ export const ContactResearchJobs = pgTable("contact_research_jobs", {
   error: text("error"),
   createdAt: date("created_at").defaultNow(),
   completedAt: date("completed_at"),
+});
+
+// Cold Outreach Contacts - Enhanced
+export const Contacts = pgTable("cold_outreach_contacts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name").notNull(),
+  email: varchar("email").notNull(),
+  role: varchar("role"),
+  company: varchar("company"),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  linkedinUrl: varchar("linkedin_url"),
+  website: varchar("website"),
+  location: varchar("location"),
+  notes: text("notes"),
+
+  // Enhanced fields for enterprise features
+  phone: varchar("phone"),
+  industry: varchar("industry"),
+  companySize: varchar("company_size"),
+  revenue: varchar("revenue"),
+  linkedinProfile: jsonb("linkedin_profile"), // Store LinkedIn profile data
+  emailVerified: boolean("email_verified").default(false),
+  emailValid: boolean("email_valid").default(true),
+
+  // Engagement tracking
+  totalEmailsSent: integer("total_emails_sent").default(0),
+  totalOpens: integer("total_opens").default(0),
+  totalClicks: integer("total_clicks").default(0),
+  totalReplies: integer("total_replies").default(0),
+  lastContactedAt: date("last_contacted_at"),
+  lastRepliedAt: date("last_replied_at"),
+  lastOpenedAt: date("last_opened_at"),
+
+  // Scoring and prioritization
+  engagementScore: integer("engagement_score").default(0), // 0-100
+  priorityScore: integer("priority_score").default(50), // 0-100
+  leadScore: integer("lead_score").default(0), // 0-100
+
+  // Segmentation
+  segments: jsonb("segments").$type<string[]>().default([]),
+  tags: jsonb("tags").$type<string[]>().default([]),
+
+  // Status and lifecycle
+  status: varchar("status").default("active"), // active, inactive, bounced, unsubscribed
+  lifecycleStage: varchar("lifecycle_stage").default("prospect"), // prospect, lead, customer, lost
+
+  // Source tracking
+  source: varchar("source"), // csv_import, manual, linkedin, website_scrape
+  sourceDetails: jsonb("source_details"),
+
+  // Custom fields
+  customFields: jsonb("custom_fields").$type<Record<string, any>>().default({}),
+
+  userId: varchar("user_id").notNull(),
+  createdAt: date("created_at").defaultNow(),
+  updatedAt: date("updated_at").defaultNow(),
+});
+
+// Cold Outreach Campaigns - Enhanced
+export const Campaigns = pgTable("cold_outreach_campaigns", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+
+  // Status and lifecycle
+  status: varchar("status").notNull().default("draft"), // draft, active, paused, completed, archived
+  priority: varchar("priority").default("medium"), // low, medium, high, urgent
+
+  // Scheduling
+  startDate: date("start_date"),
+  endDate: date("end_date"),
+  timezone: varchar("timezone").default("UTC"),
+  scheduleType: varchar("schedule_type").default("immediate"), // immediate, scheduled, drip
+
+  // Targeting and segmentation
+  targetSegments: jsonb("target_segments").$type<string[]>().default([]),
+  targetContacts: jsonb("target_contacts").$type<string[]>().default([]), // Contact IDs
+  exclusionRules: jsonb("exclusion_rules").$type<any>().default({}),
+
+  // Email settings
+  fromEmail: varchar("from_email"),
+  fromName: varchar("from_name"),
+  replyToEmail: varchar("reply_to_email"),
+  dailyLimit: integer("daily_limit").default(50),
+  totalLimit: integer("total_limit"),
+
+  // Templates and content
+  primaryTemplateId: uuid("primary_template_id"),
+  followUpTemplates: jsonb("follow_up_templates").$type<Array<{
+    templateId: string;
+    delay: number; // in days
+    condition?: string;
+  }>>().default([]),
+
+  // A/B Testing
+  abTestingEnabled: boolean("ab_testing_enabled").default(false),
+  abTestConfig: jsonb("ab_test_config").$type<{
+    subjectLines: string[];
+    templates: string[];
+    sendTimes: string[];
+    sampleSize: number;
+  }>(),
+
+  // Sequences and automation
+  sequenceEnabled: boolean("sequence_enabled").default(false),
+  sequenceSteps: jsonb("sequence_steps").$type<Array<{
+    id: string;
+    name: string;
+    templateId: string;
+    delay: number; // in days
+    condition?: string;
+    maxRetries: number;
+  }>>().default([]),
+
+  // Performance metrics
+  sentCount: integer("sent_count").default(0),
+  deliveredCount: integer("delivered_count").default(0),
+  openedCount: integer("opened_count").default(0),
+  clickedCount: integer("clicked_count").default(0),
+  repliedCount: integer("replied_count").default(0),
+  bouncedCount: integer("bounced_count").default(0),
+  unsubscribedCount: integer("unsubscribed_count").default(0),
+  complainedCount: integer("complained_count").default(0),
+
+  // Calculated metrics
+  openRate: integer("open_rate").default(0), // percentage * 100
+  clickRate: integer("click_rate").default(0),
+  replyRate: integer("reply_rate").default(0),
+  bounceRate: integer("bounce_rate").default(0),
+  unsubscribeRate: integer("unsubscribe_rate").default(0),
+
+  // Goals and tracking
+  goals: jsonb("goals").$type<{
+    targetOpenRate?: number;
+    targetClickRate?: number;
+    targetReplyRate?: number;
+    targetConversions?: number;
+  }>().default({}),
+
+  // Integration settings
+  crmSyncEnabled: boolean("crm_sync_enabled").default(false),
+  crmSystem: varchar("crm_system"), // hubspot, salesforce, pipedrive, etc.
+  crmConfig: jsonb("crm_config").$type<any>().default({}),
+
+  // Advanced settings
+  trackingEnabled: boolean("tracking_enabled").default(true),
+  unsubscribeLink: boolean("unsubscribe_link").default(true),
+  customTrackingDomain: varchar("custom_tracking_domain"),
+
+  userId: varchar("user_id").notNull(),
+  createdAt: date("created_at").defaultNow(),
+  updatedAt: date("updated_at").defaultNow(),
+});
+
+// Cold Outreach Messages - Enhanced
+export const Messages = pgTable("cold_outreach_messages", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  campaignId: uuid("campaign_id").notNull().references(() => Campaigns.id),
+  contactId: uuid("contact_id").notNull().references(() => Contacts.id),
+
+  // Content
+  subject: varchar("subject").notNull(),
+  content: text("content").notNull(),
+  templateId: uuid("template_id"),
+  templateVersion: integer("template_version"),
+
+  // Status and lifecycle
+  status: varchar("status").notNull().default("pending"), // pending, queued, processing, sent, delivered, opened, clicked, replied, failed, bounced, unsubscribed, complained
+  priority: varchar("priority").default("normal"), // low, normal, high, urgent
+
+  // Scheduling
+  scheduledAt: date("scheduled_at"),
+  sentAt: date("sent_at"),
+  deliveredAt: date("delivered_at"),
+  openedAt: date("opened_at"),
+  clickedAt: date("clicked_at"),
+  repliedAt: date("replied_at"),
+  bouncedAt: date("bounced_at"),
+
+  // Email provider data
+  messageId: varchar("message_id"), // Provider's message ID
+  provider: varchar("provider").default("sendgrid"), // sendgrid, mailgun, etc.
+  providerData: jsonb("provider_data").$type<any>().default({}),
+
+  // Tracking and analytics
+  trackingPixelUrl: varchar("tracking_pixel_url"),
+  unsubscribeUrl: varchar("unsubscribe_url"),
+  clickTrackingUrls: jsonb("click_tracking_urls").$type<Record<string, string>>().default({}),
+
+  // Engagement data
+  openCount: integer("open_count").default(0),
+  clickCount: integer("click_count").default(0),
+  uniqueOpens: integer("unique_opens").default(0),
+  uniqueClicks: integer("unique_clicks").default(0),
+  deviceInfo: jsonb("device_info").$type<{
+    type?: string;
+    os?: string;
+    browser?: string;
+    location?: string;
+  }>(),
+
+  // Sequence and follow-up
+  sequenceStep: integer("sequence_step").default(1),
+  isFollowUp: boolean("is_follow_up").default(false),
+  parentMessageId: uuid("parent_message_id"),
+  followUpDelay: integer("follow_up_delay"), // in days
+
+  // A/B Testing
+  abTestVariant: varchar("ab_test_variant"), // A, B, C, etc.
+  abTestGroup: varchar("ab_test_group"),
+
+  // Error handling
+  retryCount: integer("retry_count").default(0),
+  maxRetries: integer("max_retries").default(3),
+  errorMessage: text("error_message"),
+  errorCode: varchar("error_code"),
+
+  // Compliance and legal
+  gdprConsent: boolean("gdpr_consent").default(false),
+  canSpamCompliant: boolean("can_spam_compliant").default(true),
+  unsubscribeToken: varchar("unsubscribe_token"),
+
+  userId: varchar("user_id").notNull(),
+  createdAt: date("created_at").defaultNow(),
+  updatedAt: date("updated_at").defaultNow(),
+});
+
+// Contact Segments - Enhanced
+export const Segments = pgTable("contact_segments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+
+  // Segmentation criteria
+  filters: jsonb("filters").$type<{
+    tags?: string[];
+    industries?: string[];
+    companySize?: { min?: number; max?: number };
+    jobTitles?: string[];
+    locations?: string[];
+    engagementScore?: { min?: number; max?: number };
+    lastContacted?: { days?: number };
+    customFields?: Record<string, any>;
+  }>().default({}),
+
+  // Dynamic vs static
+  isDynamic: boolean("is_dynamic").default(true),
+  contactIds: jsonb("contact_ids").$type<string[]>().default([]),
+
+  // Analytics
+  contactCount: integer("contact_count").default(0),
+  lastRefreshed: date("last_refreshed"),
+
+  userId: varchar("user_id").notNull(),
+  createdAt: date("created_at").defaultNow(),
+  updatedAt: date("updated_at").defaultNow(),
+});
+
+// Analytics Events - Enhanced
+export const AnalyticsEvents = pgTable("analytics_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  eventType: varchar("event_type").notNull(), // email_open, email_click, campaign_sent, etc.
+  eventData: jsonb("event_data").$type<any>().default({}),
+
+  // Relations
+  contactId: uuid("contact_id").references(() => Contacts.id),
+  campaignId: uuid("campaign_id").references(() => Campaigns.id),
+  messageId: uuid("message_id").references(() => Messages.id),
+  templateId: uuid("template_id").references(() => Templates.id),
+
+  // Metadata
+  timestamp: date("timestamp").defaultNow(),
+  ipAddress: varchar("ip_address"),
+  userAgent: text("user_agent"),
+  location: jsonb("location").$type<{
+    country?: string;
+    region?: string;
+    city?: string;
+  }>(),
+
+  // Device info
+  deviceType: varchar("device_type"), // desktop, mobile, tablet
+  browser: varchar("browser"),
+  os: varchar("os"),
+
+  userId: varchar("user_id").notNull(),
+  createdAt: date("created_at").defaultNow(),
+});
+
+// Activity Logs - Enhanced
+export const ActivityLogs = pgTable("activity_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  action: varchar("action").notNull(), // created, updated, deleted, sent, opened, etc.
+  entityType: varchar("entity_type").notNull(), // contact, campaign, template, message
+  entityId: uuid("entity_id").notNull(),
+
+  // Change tracking
+  oldValues: jsonb("old_values").$type<any>(),
+  newValues: jsonb("new_values").$type<any>(),
+  changes: jsonb("changes").$type<Record<string, { old: any; new: any }>>(),
+
+  // Context
+  metadata: jsonb("metadata").$type<any>().default({}),
+  ipAddress: varchar("ip_address"),
+  userAgent: text("user_agent"),
+
+  userId: varchar("user_id").notNull(),
+  createdAt: date("created_at").defaultNow(),
+});
+
+// Template Gallery - Enhanced
+export const TemplateGallery = pgTable("template_gallery", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  category: varchar("category").notNull(),
+  subCategory: varchar("sub_category"),
+
+  // Template content
+  subject: varchar("subject").notNull(),
+  content: text("content").notNull(),
+  variables: jsonb("variables").$type<string[]>().default([]),
+
+  // Gallery features
+  isPublic: boolean("is_public").default(false),
+  isPremium: boolean("is_premium").default(false),
+  authorId: varchar("author_id"),
+  authorName: varchar("author_name"),
+
+  // Usage stats
+  usageCount: integer("usage_count").default(0),
+  successRate: decimal("success_rate", { precision: 5, scale: 2 }),
+  averageOpenRate: decimal("average_open_rate", { precision: 5, scale: 2 }),
+  averageClickRate: decimal("average_click_rate", { precision: 5, scale: 2 }),
+
+  // Tags and search
+  tags: jsonb("tags").$type<string[]>().default([]),
+  industries: jsonb("industries").$type<string[]>().default([]),
+
+  createdAt: date("created_at").defaultNow(),
+  updatedAt: date("updated_at").defaultNow(),
+});
+
+// A/B Tests - Enhanced
+export const ABTests = pgTable("ab_tests", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+
+  // Test configuration
+  campaignId: uuid("campaign_id").references(() => Campaigns.id),
+  testType: varchar("test_type").notNull(), // subject_line, content, send_time, template
+  variants: jsonb("variants").$type<Array<{
+    id: string;
+    name: string;
+    content: any;
+    weight: number;
+  }>>().notNull(),
+
+  // Test parameters
+  sampleSize: integer("sample_size").notNull(),
+  confidenceLevel: decimal("confidence_level", { precision: 3, scale: 2 }).default("0.95"),
+  testDuration: integer("test_duration"), // in days
+
+  // Status and results
+  status: varchar("status").default("draft"), // draft, running, completed, paused
+  startedAt: date("started_at"),
+  completedAt: date("completed_at"),
+
+  // Results
+  winner: varchar("winner"), // variant ID
+  results: jsonb("results").$type<{
+    variants: Record<string, {
+      sent: number;
+      opens: number;
+      clicks: number;
+      replies: number;
+      conversions: number;
+    }>;
+    statisticalSignificance: boolean;
+    confidence: number;
+  }>(),
+
+  userId: varchar("user_id").notNull(),
+  createdAt: date("created_at").defaultNow(),
+  updatedAt: date("updated_at").defaultNow(),
+});
+
+// Scheduled Jobs - Enhanced
+export const ScheduledJobs = pgTable("scheduled_jobs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  jobType: varchar("job_type").notNull(), // send_campaign, follow_up, analytics_report, etc.
+  jobData: jsonb("job_data").$type<any>().notNull(),
+
+  // Scheduling
+  scheduledAt: date("scheduled_at").notNull(),
+  timezone: varchar("timezone").default("UTC"),
+  recurrence: jsonb("recurrence").$type<{
+    frequency: "once" | "daily" | "weekly" | "monthly";
+    interval?: number;
+    daysOfWeek?: number[];
+    daysOfMonth?: number[];
+    endDate?: string;
+  }>(),
+
+  // Execution
+  status: varchar("status").default("pending"), // pending, running, completed, failed, cancelled
+  startedAt: date("started_at"),
+  completedAt: date("completed_at"),
+  attempts: integer("attempts").default(0),
+  maxAttempts: integer("max_attempts").default(3),
+
+  // Error handling
+  errorMessage: text("error_message"),
+  errorStack: text("error_stack"),
+  nextRetryAt: date("next_retry_at"),
+
+  // Relations
+  campaignId: uuid("campaign_id").references(() => Campaigns.id),
+  contactId: uuid("contact_id").references(() => Contacts.id),
+
+  userId: varchar("user_id").notNull(),
+  createdAt: date("created_at").defaultNow(),
+  updatedAt: date("updated_at").defaultNow(),
+});
+
+// Integration Logs - Enhanced
+export const IntegrationLogs = pgTable("integration_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  integrationType: varchar("integration_type").notNull(), // sendgrid, google_sheets, notion, linkedin, etc.
+  action: varchar("action").notNull(), // sync, import, export, authenticate, etc.
+
+  // Request/Response data
+  requestData: jsonb("request_data").$type<any>(),
+  responseData: jsonb("response_data").$type<any>(),
+  statusCode: integer("status_code"),
+
+  // Status and timing
+  status: varchar("status").default("success"), // success, error, warning
+  duration: integer("duration"), // in milliseconds
+  errorMessage: text("error_message"),
+
+  // Metadata
+  recordCount: integer("record_count"),
+  externalId: varchar("external_id"), // ID from external service
+  webhookData: jsonb("webhook_data").$type<any>(),
+
+  userId: varchar("user_id").notNull(),
+  createdAt: date("created_at").defaultNow(),
+});
+
+// Cold Outreach Templates - Enhanced
+export const Templates = pgTable("cold_outreach_templates", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name").notNull(),
+  subject: varchar("subject").notNull(),
+  content: text("content").notNull(),
+
+  // Categorization
+  category: varchar("category").default("General"),
+  tags: jsonb("tags").$type<string[]>().default([]),
+  subCategory: varchar("sub_category"),
+
+  // User preferences
+  isFavorite: boolean("is_favorite").default(false),
+  isPublic: boolean("is_public").default(false),
+  sortOrder: integer("sort_order").default(0),
+
+  // Usage tracking
+  usageCount: integer("usage_count").default(0),
+  lastUsedAt: date("last_used_at"),
+  totalSent: integer("total_sent").default(0),
+  totalOpens: integer("total_opens").default(0),
+  totalClicks: integer("total_clicks").default(0),
+  totalReplies: integer("total_replies").default(0),
+
+  // Performance metrics
+  openRate: integer("open_rate").default(0), // percentage * 100
+  clickRate: integer("click_rate").default(0),
+  replyRate: integer("reply_rate").default(0),
+  conversionRate: integer("conversion_rate").default(0),
+
+  // Template metadata
+  variables: jsonb("variables").$type<Array<{
+    name: string;
+    description: string;
+    example: string;
+    required: boolean;
+  }>>().default([]),
+
+  // Version control
+  version: integer("version").default(1),
+  parentTemplateId: uuid("parent_template_id"), // For template variations
+  isArchived: boolean("is_archived").default(false),
+
+  // AI and automation
+  aiGenerated: boolean("ai_generated").default(false),
+  aiPrompt: text("ai_prompt"),
+  aiModel: varchar("ai_model"),
+
+  // Preview and thumbnails
+  previewText: text("preview_text"), // First 200 chars for preview
+  thumbnailUrl: varchar("thumbnail_url"),
+
+  // Advanced settings
+  sendTimeOptimization: boolean("send_time_optimization").default(false),
+  abTestEnabled: boolean("ab_test_enabled").default(false),
+  complianceCheck: boolean("compliance_check").default(true),
+
+  userId: varchar("user_id").notNull(),
+  createdAt: date("created_at").defaultNow(),
+  updatedAt: date("updated_at").defaultNow(),
+});
+
+// User Settings table
+export const UserSettings = pgTable("userSettings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: varchar("user_id").notNull().unique(),
+  profile: jsonb("profile").$type<{
+    firstName?: string;
+    lastName?: string;
+    company?: string;
+    role?: string;
+    timezone?: string;
+    avatar?: string;
+  }>(),
+
+  notifications: jsonb("notifications").$type<{
+    email: boolean;
+    push: boolean;
+    sound: boolean;
+    pollInterval: number; // in seconds
+    ticketUpdates: boolean;
+    workTracker: boolean;
+    campaignUpdates: boolean;
+    contactUpdates: boolean;
+  }>(),
+
+  security: jsonb("security").$type<{
+    twoFactorEnabled: boolean;
+    sessionTimeout: number; // in minutes
+    passwordLastChanged?: string;
+    apiKeys?: Array<{
+      id: string;
+      name: string;
+      key: string;
+      createdAt: string;
+      lastUsed?: string;
+    }>;
+  }>(),
+
+  integrations: jsonb("integrations").$type<{
+    sendgrid: {
+      apiKey?: string;
+      verified: boolean;
+      fromEmail?: string;
+      fromName?: string;
+    };
+    googleSheets: {
+      connected: boolean;
+      spreadsheetId?: string;
+      sheetName?: string;
+    };
+    notion: {
+      connected: boolean;
+      databaseId?: string;
+    };
+    linkedin: {
+      connected: boolean;
+      profileUrl?: string;
+    };
+  }>(),
+
+  coldOutreach: jsonb("cold_outreach").$type<{
+    defaultCampaignSettings: {
+      dailyLimit: number;
+      followUpDelay: number; // in days
+      maxFollowUps: number;
+    };
+    emailTemplates: {
+      defaultSubject: string;
+      defaultSignature: string;
+    };
+    crmSync: {
+      autoSync: boolean;
+      syncInterval: number; // in hours
+    };
+  }>(),
+
+  system: jsonb("system").$type<{
+    theme: 'light' | 'dark' | 'system';
+    language: string;
+    dateFormat: string;
+    timeFormat: '12h' | '24h';
+    dataRetention: number; // in days
+    exportFormat: 'csv' | 'json' | 'xlsx';
+  }>(),
+
+  createdAt: date("created_at").defaultNow(),
+  updatedAt: date("updated_at").defaultNow(),
+});
+
+// Settings validation schema
+export const settingsSchema = z.object({
+  id: z.string().optional(),
+  userId: z.string(),
+  profile: z.object({
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+    company: z.string().optional(),
+    role: z.string().optional(),
+    timezone: z.string().optional(),
+    avatar: z.string().optional(),
+  }).optional(),
+  notifications: z.object({
+    email: z.boolean(),
+    push: z.boolean(),
+    sound: z.boolean(),
+    pollInterval: z.number().min(10).max(300),
+    ticketUpdates: z.boolean(),
+    workTracker: z.boolean(),
+    campaignUpdates: z.boolean(),
+    contactUpdates: z.boolean(),
+  }).optional(),
+  security: z.object({
+    twoFactorEnabled: z.boolean(),
+    sessionTimeout: z.number().min(5).max(480),
+    passwordLastChanged: z.string().optional(),
+    apiKeys: z.array(z.object({
+      id: z.string(),
+      name: z.string(),
+      key: z.string(),
+      createdAt: z.string(),
+      lastUsed: z.string().optional(),
+    })).optional(),
+  }).optional(),
+  integrations: z.object({
+    sendgrid: z.object({
+      apiKey: z.string().optional(),
+      verified: z.boolean(),
+      fromEmail: z.string().optional(),
+      fromName: z.string().optional(),
+    }),
+    googleSheets: z.object({
+      connected: z.boolean(),
+      spreadsheetId: z.string().optional(),
+      sheetName: z.string().optional(),
+    }),
+    notion: z.object({
+      connected: z.boolean(),
+      databaseId: z.string().optional(),
+    }),
+    linkedin: z.object({
+      connected: z.boolean(),
+      profileUrl: z.string().optional(),
+    }),
+  }).optional(),
+  coldOutreach: z.object({
+    defaultCampaignSettings: z.object({
+      dailyLimit: z.number().min(1).max(1000),
+      followUpDelay: z.number().min(1).max(30),
+      maxFollowUps: z.number().min(0).max(10),
+    }),
+    emailTemplates: z.object({
+      defaultSubject: z.string(),
+      defaultSignature: z.string(),
+    }),
+    crmSync: z.object({
+      autoSync: z.boolean(),
+      syncInterval: z.number().min(1).max(24),
+    }),
+  }).optional(),
+  system: z.object({
+    theme: z.enum(['light', 'dark', 'system']),
+    language: z.string(),
+    dateFormat: z.string(),
+    timeFormat: z.enum(['12h', '24h']),
+    dataRetention: z.number().min(30).max(3650),
+    exportFormat: z.enum(['csv', 'json', 'xlsx']),
+  }).optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+// Contact validation schema
+export const contactSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, 'Name is required').max(100, 'Name must be less than 100 characters').optional(),
+  email: z.string().email('Invalid email address'),
+  role: z.string().optional(),
+  company: z.string().optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  phone: z.string().optional(),
+  linkedinUrl: z.string().url().optional().or(z.literal('')),
+  website: z.string().url().optional().or(z.literal('')),
+  location: z.string().optional(),
+  notes: z.string().optional(),
+  industry: z.string().optional(),
+  companySize: z.string().optional(),
+  revenue: z.string().optional(),
+  linkedinProfile: z.record(z.any()).optional(),
+  emailVerified: z.boolean().optional(),
+  emailValid: z.boolean().optional(),
+  status: z.string().optional(),
+  lifecycleStage: z.string().optional(),
+  engagementScore: z.number().min(0).max(100).optional(),
+  priorityScore: z.number().min(0).max(100).optional(),
+  leadScore: z.number().min(0).max(100).optional(),
+  totalEmailsSent: z.number().optional(),
+  totalOpens: z.number().optional(),
+  totalClicks: z.number().optional(),
+  totalReplies: z.number().optional(),
+  totalBounces: z.number().optional(),
+  lastContactedAt: z.date().optional(),
+  lastRepliedAt: z.date().optional(),
+  lastOpenedAt: z.date().optional(),
+  segments: z.array(z.string()).optional(),
+  tags: z.array(z.string()).optional(),
+  customFields: z.record(z.any()).optional(),
+  source: z.string().optional(),
+  sourceDetails: z.record(z.any()).optional(),
+  userId: z.string().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+export const coldOutreachSignupSchema = z.object({
+  email: z.string().email('Invalid email address').max(254, 'Email must be less than 254 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(128, 'Password must be less than 128 characters'),
+  name: z.string().min(1, 'Name is required').max(100, 'Name must be less than 100 characters'),
+});
+
+// Template validation schema
+export const templateSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, 'Name is required').max(100, 'Name must be less than 100 characters'),
+  subject: z.string().min(1, 'Subject is required').max(200, 'Subject must be less than 200 characters'),
+  content: z.string().min(1, 'Content is required').max(10000, 'Content must be less than 10,000 characters'),
+  category: z.string().optional().default('General'),
+  tags: z.array(z.string()).optional().default([]),
+  subCategory: z.string().optional(),
+  isFavorite: z.boolean().optional().default(false),
+  isPublic: z.boolean().optional().default(false),
+  sortOrder: z.number().optional().default(0),
+  usageCount: z.number().optional().default(0),
+  lastUsedAt: z.date().optional(),
+  totalSent: z.number().optional().default(0),
+  totalOpens: z.number().optional().default(0),
+  totalClicks: z.number().optional().default(0),
+  totalReplies: z.number().optional().default(0),
+  openRate: z.number().optional().default(0),
+  clickRate: z.number().optional().default(0),
+  replyRate: z.number().optional().default(0),
+  conversionRate: z.number().optional().default(0),
+  variables: z.array(z.object({
+    name: z.string(),
+    description: z.string(),
+    example: z.string(),
+    required: z.boolean()
+  })).optional().default([]),
+  version: z.number().optional().default(1),
+  parentTemplateId: z.string().optional(),
+  isArchived: z.boolean().optional().default(false),
+  aiGenerated: z.boolean().optional().default(false),
+  aiPrompt: z.string().optional(),
+  aiModel: z.string().optional(),
+  previewText: z.string().optional(),
+  thumbnailUrl: z.string().optional(),
+  sendTimeOptimization: z.boolean().optional().default(false),
+  abTestEnabled: z.boolean().optional().default(false),
+  complianceCheck: z.boolean().optional().default(true),
+  userId: z.string(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 });
 
 // Removed hybrid table - using simple startup generation only

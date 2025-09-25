@@ -124,27 +124,21 @@ export default function SettingsDialog({ open, onOpenChangeAction }: SettingsDia
                   <div className="text-sm font-medium">Ticket updates</div>
                   <div className="text-xs text-gray-400">New or changed support requests.</div>
                 </div>
-                <button type="button" tabIndex={0} aria-label="Toggle ticket updates" style={{ background: 'none', border: 'none', padding: 0 }}>
-                  <Switch checked={enableTickets} onCheckedChange={setEnableTickets} />
-                </button>
+                <Switch checked={enableTickets} onCheckedChange={setEnableTickets} />
               </div>
               <div className="flex items-center justify-between rounded-md border border-gray-700 p-3">
                 <div>
                   <div className="text-sm font-medium">Work tracker</div>
                   <div className="text-xs text-gray-400">Assigned tasks and status changes.</div>
                 </div>
-                <button type="button" tabIndex={0} aria-label="Toggle work tracker" style={{ background: 'none', border: 'none', padding: 0 }}>
-                  <Switch checked={enableWork} onCheckedChange={setEnableWork} />
-                </button>
+                <Switch checked={enableWork} onCheckedChange={setEnableWork} />
               </div>
               <div className="flex items-center justify-between rounded-md border border-gray-700 p-3">
                 <div>
                   <div className="text-sm font-medium">Sound</div>
                   <div className="text-xs text-gray-400">Play a short beep when new notifications arrive.</div>
                 </div>
-                <button type="button" tabIndex={0} aria-label="Toggle sound" style={{ background: 'none', border: 'none', padding: 0 }}>
-                  <Switch checked={enableSound} onCheckedChange={setEnableSound} />
-                </button>
+                <Switch checked={enableSound} onCheckedChange={setEnableSound} />
               </div>
             </CardContent>
           </Card>

@@ -9,11 +9,15 @@
  * - Comprehensive error handling
  * - Production monitoring and health checks
  * - Real-time performance tracking
+ * - Input validation and sanitization
+ * - Structured logging and audit trails
  *
  * Used by both startup seeker and university systems
  */
 
 import OpenAI from 'openai';
+import { logger, ValidationError, withPerformanceMonitoring, sanitizeInput } from './client-utils';
+import { z } from 'zod';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -69,6 +73,66 @@ export interface AIServiceMetrics {
   cacheHitRate: number;
 }
 
+// Validation schemas
+const AIMessageSchema = z.object({
+  role: z.enum(['system', 'user', 'assistant']),
+  content: z.string().min(1).max(10000)
+});
+
+const AIRequestSchema = z.object({
+  messages: z.array(AIMessageSchema).min(1).max(50),
+  temperature: z.number().min(0).max(2).optional(),
+  maxTokens: z.number().min(1).max(32768).optional(),
+  model: z.string().min(1).max(100).optional(),
+  provider: z.enum(['deepseek', 'gemini', 'auto']).optional(),
+  retryAttempts: z.number().min(0).max(5).optional(),
+  timeoutMs: z.number().min(1000).max(300000).optional()
+});
+
+const AIProviderConfigSchema = z.object({
+  name: z.enum(['deepseek', 'gemini']),
+  baseURL: z.string().url(),
+  maxTokens: z.number().min(1).max(32768),
+  rateLimit: z.object({
+    requests: z.number().min(1).max(10000),
+    window: z.number().min(1000).max(3600000)
+  }),
+  priority: z.number().min(1).max(10),
+  apiKey: z.string().min(10).max(200)
+});
+
+// Custom error classes
+class AIServiceError extends Error {
+  constructor(message: string, public code: string, public details?: any) {
+    super(message);
+    this.name = 'AIServiceError';
+  }
+}
+
+class AIProviderError extends AIServiceError {
+  constructor(message: string, public provider: string, details?: any) {
+    super(message, 'PROVIDER_ERROR', details);
+  }
+}
+
+class AIQuotaExceededError extends AIServiceError {
+  constructor(message: string = 'AI service quota exceeded') {
+    super(message, 'QUOTA_EXCEEDED');
+  }
+}
+
+class AIInvalidRequestError extends AIServiceError {
+  constructor(message: string = 'Invalid AI request') {
+    super(message, 'INVALID_REQUEST');
+  }
+}
+
+class AIUnavailableError extends AIServiceError {
+  constructor(message: string = 'AI service temporarily unavailable') {
+    super(message, 'SERVICE_UNAVAILABLE');
+  }
+}
+
 // ============================================================================
 // UNIFIED AI SERVICE CLASS
 // ============================================================================
@@ -95,54 +159,89 @@ class UnifiedAIService {
     this.initializeProviders();
     this.startHealthChecks();
     this.startCacheCleanup();
+
+    logger.info('AI Service initialized', {
+      providersCount: this.providers.size,
+      cacheEnabled: true,
+      healthChecksEnabled: true
+    });
   }
 
   /**
    * Initialize AI providers with configuration
    */
   private initializeProviders(): void {
-    const deepseekKey = process.env.DEEPSEEK_API_KEY;
-    const geminiKey = process.env.GEMINI_API_KEY;
+    try {
+      const deepseekKey = process.env.DEEPSEEK_API_KEY;
+      const geminiKey = process.env.GEMINI_API_KEY;
 
-    // DeepSeek provider (primary for cost-effectiveness and performance)
-    if (deepseekKey) {
-      const deepseekClient = new OpenAI({
-        apiKey: deepseekKey,
-        baseURL: 'https://api.deepseek.com',
-        timeout: 30000,
-        maxRetries: 2,
+      let providersInitialized = 0;
+
+      // DeepSeek provider (primary for cost-effectiveness and performance)
+      if (deepseekKey) {
+        // Validate configuration
+        const deepseekConfig = AIProviderConfigSchema.safeParse({
+          name: 'deepseek',
+          baseURL: 'https://api.deepseek.com',
+          maxTokens: 8192,
+          rateLimit: { requests: 100, window: 60 * 1000 },
+          priority: 1,
+          apiKey: deepseekKey
+        });
+
+        if (!deepseekConfig.success) {
+          logger.error('Invalid DeepSeek configuration', undefined, {
+            errors: deepseekConfig.error.errors
+          });
+          throw new ValidationError('Invalid DeepSeek provider configuration');
+        }
+
+        const deepseekClient = new OpenAI({
+          apiKey: deepseekKey,
+          baseURL: 'https://api.deepseek.com',
+          timeout: 30000,
+          maxRetries: 2,
+        });
+
+        this.providers.set('deepseek', {
+          name: 'deepseek',
+          client: deepseekClient,
+          baseURL: 'https://api.deepseek.com',
+          maxTokens: 8192,
+          rateLimit: {
+            requests: 100,
+            window: 60 * 1000 // 1 minute
+          },
+          priority: 1,
+          isHealthy: true
+        });
+
+        providersInitialized++;
+        logger.info('DeepSeek AI provider initialized', { priority: 1 });
+      } else {
+        logger.warn('DEEPSEEK_API_KEY not configured - DeepSeek provider disabled');
+      }
+
+      // Gemini provider (temporarily disabled due to rate limiting)
+      if (geminiKey) {
+        logger.info('Gemini provider available but temporarily disabled due to rate limiting');
+      } else {
+        logger.warn('GEMINI_API_KEY not configured - Gemini provider disabled');
+      }
+
+      if (providersInitialized === 0) {
+        logger.error('No AI providers available - service will not function');
+        throw new AIUnavailableError('No AI providers configured');
+      }
+
+      logger.info('AI providers initialization completed', {
+        providersInitialized,
+        totalConfigured: this.providers.size
       });
 
-      this.providers.set('deepseek', {
-        name: 'deepseek',
-        client: deepseekClient,
-        baseURL: 'https://api.deepseek.com',
-        maxTokens: 8192,
-        rateLimit: {
-          requests: 100,
-          window: 60 * 1000 // 1 minute
-        },
-        priority: 1,
-        isHealthy: true
-      });
-
-      console.log('🧠 DeepSeek AI provider initialized (Primary)');
-    } else {
-      console.warn('⚠️ DEEPSEEK_API_KEY not found - DeepSeek provider disabled');
-    }
-
-    // Gemini provider (temporarily disabled due to rate limiting)
-    if (geminiKey) {
-      // Temporarily disabled due to 429 rate limit errors
-      console.log('🤖 Gemini AI provider disabled (Rate limited - needs proper API key)');
-    } else {
-      console.warn('⚠️ GEMINI_API_KEY not found - Gemini provider disabled');
-    }
-
-    console.log(`🚀 AI Service initialized successfully with ${Array.from(this.providers.keys()).length} provider: ${Array.from(this.providers.keys()).join(', ')}`);
-    
-    if (this.providers.size === 0) {
-      console.error('🚨 No AI providers available! Please configure DEEPSEEK_API_KEY');
+    } catch (error) {
+      logger.error('Failed to initialize AI providers', error as Error);
+      throw error;
     }
   }
 
@@ -209,44 +308,77 @@ class UnifiedAIService {
     this.metrics.totalRequests++;
 
     try {
+      // Validate request
+      const validation = AIRequestSchema.safeParse(request);
+      if (!validation.success) {
+        throw new AIInvalidRequestError(`Invalid request: ${validation.error.errors.map(e => e.message).join(', ')}`);
+      }
+
+      // Sanitize input messages
+      const sanitizedMessages = request.messages.map(msg => ({
+        ...msg,
+        content: sanitizeInput(msg.content)
+      }));
+
+      const sanitizedRequest = { ...request, messages: sanitizedMessages };
+
+      logger.debug('AI completion request started', {
+        messageCount: sanitizedRequest.messages.length,
+        requestedProvider: sanitizedRequest.provider,
+        maxTokens: sanitizedRequest.maxTokens
+      });
+
       // Check cache first
-      const cacheKey = this.generateCacheKey(request);
+      const cacheKey = this.generateCacheKey(sanitizedRequest);
       const cached = this.responseCache.get(cacheKey);
       if (cached && cached.expiry > Date.now()) {
         this.metrics.successfulRequests++;
         this.updateCacheHitRate(true);
+
+        logger.debug('AI completion served from cache', {
+          cacheKey: cacheKey.substring(0, 16),
+          cacheAge: Date.now() - (cached.expiry - this.CACHE_TTL)
+        });
+
         return { ...cached.response, cacheHit: true };
       }
 
       // Select provider
-      const provider = this.selectProvider(request.provider);
+      const provider = this.selectProvider(sanitizedRequest.provider);
       if (!provider) {
-        throw new Error('No healthy AI providers available');
+        throw new AIUnavailableError('No healthy AI providers available');
       }
 
-      const maxRetries = request.retryAttempts || this.DEFAULT_RETRIES;
+      const maxRetries = sanitizedRequest.retryAttempts || this.DEFAULT_RETRIES;
       let lastError: Error | null = null;
 
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
-          const model = this.getModelForProvider(provider.name, request.model);
+          const model = this.getModelForProvider(provider.name, sanitizedRequest.model);
           const maxTokens = Math.min(
-            request.maxTokens || provider.maxTokens, 
+            sanitizedRequest.maxTokens || provider.maxTokens,
             provider.maxTokens
           );
+
+          logger.debug('AI completion attempt', {
+            provider: provider.name,
+            model,
+            attempt: attempt + 1,
+            maxRetries: maxRetries + 1
+          });
 
           const completion = await Promise.race([
             provider.client.chat.completions.create({
               model,
-              messages: request.messages,
-              temperature: request.temperature || 0.7,
+              messages: sanitizedRequest.messages,
+              temperature: sanitizedRequest.temperature || 0.7,
               max_tokens: maxTokens,
             }),
-            this.createTimeoutPromise(request.timeoutMs || this.DEFAULT_TIMEOUT)
+            this.createTimeoutPromise(sanitizedRequest.timeoutMs || this.DEFAULT_TIMEOUT)
           ]);
 
           if (!completion.choices?.[0]?.message?.content) {
-            throw new Error('Invalid response from AI provider');
+            throw new AIProviderError('Invalid response from AI provider', provider.name);
           }
 
           const response: AIResponse = {
@@ -270,37 +402,69 @@ class UnifiedAIService {
 
           // Update metrics
           this.metrics.successfulRequests++;
-          this.metrics.providerUsage[provider.name] = 
+          this.metrics.providerUsage[provider.name] =
             (this.metrics.providerUsage[provider.name] || 0) + 1;
           this.updateAverageResponseTime(Date.now() - startTime);
           this.updateCacheHitRate(false);
+
+          logger.info('AI completion successful', {
+            provider: provider.name,
+            model,
+            tokens: response.tokens,
+            processingTime: response.processingTime,
+            retryCount: attempt
+          });
 
           return response;
 
         } catch (error) {
           lastError = error as Error;
-          console.warn(`🔄 AI request attempt ${attempt + 1} failed:`, error);
-          
+
+          logger.warn('AI completion attempt failed', {
+            provider: provider.name,
+            attempt: attempt + 1,
+            maxRetries: maxRetries + 1,
+            error: lastError.message
+          });
+
           if (attempt < maxRetries) {
             // Exponential backoff
-            await this.delay(Math.pow(2, attempt) * 1000);
-            
+            const backoffMs = Math.pow(2, attempt) * 1000;
+            await this.delay(backoffMs);
+
             // Try different provider on next attempt
             const nextProvider = this.selectProvider();
             if (nextProvider && nextProvider.name !== provider.name) {
               Object.assign(provider, nextProvider);
+              logger.debug('Switching to different provider', {
+                from: provider.name,
+                to: nextProvider.name
+              });
             }
           }
         }
       }
 
-      throw lastError || new Error('All retry attempts failed');
+      // All retries failed
+      const finalError = lastError || new Error('All retry attempts failed');
+      throw new AIProviderError(`AI completion failed after ${maxRetries + 1} attempts: ${finalError.message}`, provider.name);
 
     } catch (error) {
       this.metrics.failedRequests++;
       this.updateErrorRate();
-      console.error('🚨 AI service error:', error);
-      throw error;
+
+      logger.error('AI completion failed', error as Error, {
+        totalRequests: this.metrics.totalRequests,
+        errorRate: this.metrics.errorRate
+      });
+
+      // Re-throw custom errors as-is
+      if (error instanceof AIServiceError) {
+        throw error;
+      }
+
+      // Wrap unknown errors
+      throw new AIServiceError('Unexpected AI service error', 'UNKNOWN_ERROR', error);
     }
   }
 
@@ -389,13 +553,16 @@ class UnifiedAIService {
           });
 
           if (!provider.isHealthy) {
-            console.log(`✅ Provider ${provider.name} is back online`);
+            logger.info('AI provider recovered', { provider: provider.name });
             provider.isHealthy = true;
           }
 
         } catch (error) {
           if (provider.isHealthy) {
-            console.warn(`🚨 Provider ${provider.name} is unhealthy:`, error);
+            logger.warn('AI provider became unhealthy', {
+              provider: provider.name,
+              error: (error as Error).message
+            });
             provider.isHealthy = false;
           }
         }
@@ -439,8 +606,9 @@ class UnifiedAIService {
    * Force clear cache (for testing/debugging)
    */
   public clearCache(): void {
+    const cacheSize = this.responseCache.size;
     this.responseCache.clear();
-    console.log('🧹 AI service cache cleared');
+    logger.info('AI service cache cleared', { entriesCleared: cacheSize });
   }
 
   /**
@@ -456,7 +624,7 @@ class UnifiedAIService {
       errorRate: 0,
       cacheHitRate: 0
     };
-    console.log('📊 AI service metrics reset');
+    logger.info('AI service metrics reset');
   }
 }
 
@@ -467,9 +635,25 @@ class UnifiedAIService {
 export const unifiedAIService = new UnifiedAIService();
 
 // Convenience methods for common use cases
-export const aiComplete = (request: AIRequest) => unifiedAIService.complete(request);
+export const aiComplete = withPerformanceMonitoring(async (request: AIRequest) => {
+  return unifiedAIService.complete(request);
+}, 'aiComplete');
 
-export const aiGenerateStartupData = async (prompt: string, country: string = 'Global') => {
+export const aiGenerateStartupData = withPerformanceMonitoring(async (prompt: string, country: string = 'Global') => {
+  // Validate inputs
+  if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+    throw new AIInvalidRequestError('Invalid prompt for startup data generation');
+  }
+
+  if (!country || typeof country !== 'string' || country.trim().length === 0) {
+    throw new AIInvalidRequestError('Invalid country for startup data generation');
+  }
+
+  const sanitizedPrompt = sanitizeInput(prompt);
+  const sanitizedCountry = sanitizeInput(country);
+
+  logger.info('Generating startup data', { country: sanitizedCountry, promptLength: sanitizedPrompt.length });
+
   return aiComplete({
     messages: [
       {
@@ -478,16 +662,29 @@ export const aiGenerateStartupData = async (prompt: string, country: string = 'G
       },
       {
         role: 'user',
-        content: `${prompt}\n\nFocus on ${country} if specified, otherwise provide global results. Return valid JSON only.`
+        content: `${sanitizedPrompt}\n\nFocus on ${sanitizedCountry} if specified, otherwise provide global results. Return valid JSON only.`
       }
     ],
     temperature: 0.3,
     maxTokens: 2048,
-    provider: 'gemini' // Prefer Gemini for data generation
+    provider: 'deepseek' // Use DeepSeek as Gemini is temporarily disabled
   });
-};
+}, 'aiGenerateStartupData');
+export const aiGenerateUniversityData = withPerformanceMonitoring(async (prompt: string, country: string = 'Global') => {
+  // Validate inputs
+  if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+    throw new AIInvalidRequestError('Invalid prompt for university data generation');
+  }
 
-export const aiGenerateUniversityData = async (prompt: string, country: string = 'Global') => {
+  if (!country || typeof country !== 'string' || country.trim().length === 0) {
+    throw new AIInvalidRequestError('Invalid country for university data generation');
+  }
+
+  const sanitizedPrompt = sanitizeInput(prompt);
+  const sanitizedCountry = sanitizeInput(country);
+
+  logger.info('Generating university data', { country: sanitizedCountry, promptLength: sanitizedPrompt.length });
+
   return aiComplete({
     messages: [
       {
@@ -496,16 +693,29 @@ export const aiGenerateUniversityData = async (prompt: string, country: string =
       },
       {
         role: 'user',
-        content: `${prompt}\n\nFocus on ${country} if specified, otherwise provide global results. Return valid JSON only.`
+        content: `${sanitizedPrompt}\n\nFocus on ${sanitizedCountry} if specified, otherwise provide global results. Return valid JSON only.`
       }
     ],
     temperature: 0.2,
     maxTokens: 2048,
     provider: 'gemini' // Prefer Gemini for data generation
   });
-};
+}, 'aiGenerateUniversityData');
 
-export const aiAnalyzeData = async (data: any, analysisType: string) => {
+export const aiAnalyzeData = withPerformanceMonitoring(async (data: any, analysisType: string) => {
+  // Validate inputs
+  if (!data) {
+    throw new AIInvalidRequestError('Invalid data for analysis');
+  }
+
+  if (!analysisType || typeof analysisType !== 'string' || analysisType.trim().length === 0) {
+    throw new AIInvalidRequestError('Invalid analysis type');
+  }
+
+  const sanitizedAnalysisType = sanitizeInput(analysisType);
+
+  logger.info('Analyzing data', { analysisType: sanitizedAnalysisType, dataType: typeof data });
+
   return aiComplete({
     messages: [
       {
@@ -514,13 +724,13 @@ export const aiAnalyzeData = async (data: any, analysisType: string) => {
       },
       {
         role: 'user',
-        content: `Analyze this ${analysisType} data and provide insights:\n\n${JSON.stringify(data, null, 2)}`
+        content: `Analyze this ${sanitizedAnalysisType} data and provide insights:\n\n${JSON.stringify(data, null, 2)}`
       }
     ],
     temperature: 0.4,
     maxTokens: 1024,
     provider: 'auto' // Let service choose best provider
   });
-};
+}, 'aiAnalyzeData');
 
 export default unifiedAIService;

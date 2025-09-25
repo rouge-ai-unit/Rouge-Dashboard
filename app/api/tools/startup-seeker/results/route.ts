@@ -48,19 +48,14 @@ export async function GET(request: NextRequest) {
 
     // Parse and validate query parameters
     const queryParams = {
-      limit: parseInt(searchParams.get('limit') || '20'),
-      offset: parseInt(searchParams.get('offset') || '0'),
-      minScore: searchParams.get('minScore') ? parseInt(searchParams.get('minScore')!) : undefined,
-      maxScore: searchParams.get('maxScore') ? parseInt(searchParams.get('maxScore')!) : undefined,
-      isPriority: searchParams.get('isPriority') ? searchParams.get('isPriority') === 'true' : undefined,
-      sortBy: searchParams.get('sortBy') || 'score',
-      order: searchParams.get('order') || 'desc',
-      search: searchParams.get('search') || undefined,
-      city: searchParams.get('city') || undefined,
-      includeMetadata: searchParams.get('includeMetadata') !== 'false',
-      format: searchParams.get('format') || 'json'
+      limit: Number(searchParams.get('limit')) || 20,
+      offset: Number(searchParams.get('offset')) || 0,
+      minScore: searchParams.get('minScore') ? Number(searchParams.get('minScore')) : undefined,
+      maxScore: searchParams.get('maxScore') ? Number(searchParams.get('maxScore')) : undefined,
+       isPriority: searchParams.get('isPriority') ? searchParams.get('isPriority') === 'true' : undefined,
+       sortBy: searchParams.get('sortBy') || 'score',
+       order: searchParams.get('order') || 'desc',
     };
-
     const validation = resultsQuerySchema.safeParse(queryParams);
     if (!validation.success) {
       return createErrorResponse(validation.error);
@@ -124,8 +119,8 @@ export async function GET(request: NextRequest) {
           totalStartups: totalCount,
           currentResults: startups.length,
           averageScore: startups.length > 0 ? 
-            Math.round(startups.reduce((sum, s) => sum + s.rougeScore, 0) / startups.length) : 0,
-          highQualityCount: startups.filter(s => s.rougeScore >= 80).length,
+            Math.round(startups.reduce((sum, s) => sum + s.rogueScore, 0) / startups.length) : 0,
+          highQualityCount: startups.filter(s => s.rogueScore >= 80).length,
           cities: [...new Set(startups.map(s => s.city).filter(Boolean))].slice(0, 10)
         }
       }, {
@@ -185,15 +180,15 @@ async function calculateAdvancedStatistics(userId: string, currentResults: any[]
     
     const totalCount = allUserStartups.length;
     const avgScore = allUserStartups.length > 0 
-      ? allUserStartups.reduce((sum, s) => sum + s.rougeScore, 0) / allUserStartups.length 
+      ? allUserStartups.reduce((sum, s) => sum + s.rogueScore, 0) / allUserStartups.length 
       : 0;
 
     // Calculate distribution statistics
     const scoreDistribution = {
-      excellent: currentResults.filter(s => s.rougeScore >= 90).length,
-      good: currentResults.filter(s => s.rougeScore >= 70 && s.rougeScore < 90).length,
-      fair: currentResults.filter(s => s.rougeScore >= 50 && s.rougeScore < 70).length,
-      poor: currentResults.filter(s => s.rougeScore < 50).length
+      excellent: currentResults.filter(s => s.rogueScore >= 90).length,
+      good: currentResults.filter(s => s.rogueScore >= 70 && s.rogueScore < 90).length,
+      fair: currentResults.filter(s => s.rogueScore >= 50 && s.rogueScore < 70).length,
+      poor: currentResults.filter(s => s.rogueScore < 50).length
     };
 
     // City distribution
@@ -222,9 +217,9 @@ async function calculateAdvancedStatistics(userId: string, currentResults: any[]
       },
       quality: {
         highQualityRate: totalCount > 0 ? 
-          Math.round((currentResults.filter(s => s.rougeScore >= 80).length / currentResults.length) * 100) : 0,
+          Math.round((currentResults.filter(s => s.rogueScore >= 80).length / currentResults.length) * 100) : 0,
         averageCurrentScore: currentResults.length > 0 ? 
-          Math.round(currentResults.reduce((sum, s) => sum + s.rougeScore, 0) / currentResults.length) : 0
+          Math.round(currentResults.reduce((sum, s) => sum + s.rogueScore, 0) / currentResults.length) : 0
       }
     };
   } catch (error) {

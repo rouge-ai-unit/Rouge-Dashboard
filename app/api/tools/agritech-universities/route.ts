@@ -472,8 +472,8 @@ export const GET = withMonitoring(async function GET(request: NextRequest) {
             successfulInserts: successfulCount,
             failedInserts: 0,
             averageQualityScore: successfulCount > 0 ? Math.round(((hasTtoCount * 25) + (websiteCount * 15)) / successfulCount) : 0,
-            processingTime: Math.floor(5000 + Math.random() * 15000), // Mock processing time in ms
-            processingTimeMs: Math.floor(5000 + Math.random() * 15000),
+            processingTime: 0, // No processing time for historical data retrieval
+            processingTimeMs: 0,
             requestedLimit: successfulCount,
             actualLimit: successfulCount,
             totalRequests: successfulCount,

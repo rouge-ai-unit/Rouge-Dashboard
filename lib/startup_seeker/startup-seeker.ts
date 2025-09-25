@@ -58,7 +58,7 @@ export interface StartupData {
   locationScore: number;
   readinessScore: number;
   feasibilityScore: number;
-  rougeScore: number;
+  rogueScore: number;
   justification: string;
   isPriority?: boolean;
   contactInfo?: any;
@@ -297,7 +297,7 @@ export class StartupGenerationEngine {
           if (convertedWithoutExclusion.length > 0) {
             console.log(`✅ Found ${convertedWithoutExclusion.length} startups with exclusion disabled`);
             finalStartups = convertedWithoutExclusion
-              .sort((a, b) => b.rougeScore - a.rougeScore)
+              .sort((a, b) => b.rogueScore - a.rogueScore)
               .slice(0, count);
           } else {
             console.log(`ℹ️ All ${scrapedData.length} discovered startups were existing and excluded per user preference`);
@@ -312,7 +312,7 @@ export class StartupGenerationEngine {
       } else {
         // Sort by quality and take the best ones
         finalStartups = convertedStartups
-          .sort((a, b) => b.rougeScore - a.rougeScore)
+          .sort((a, b) => b.rogueScore - a.rogueScore)
           .slice(0, count);
       }
 
@@ -321,7 +321,7 @@ export class StartupGenerationEngine {
       console.log(`   • Generated: ${finalStartups.length}/${count} requested startups`);
       console.log(`   • Mode: ${mode}`);
       console.log(`   • Processing time: ${processingTime}ms`);
-      console.log(`   • Average quality score: ${Math.round(finalStartups.reduce((sum, s) => sum + s.rougeScore, 0) / finalStartups.length)}`);
+      console.log(`   • Average quality score: ${Math.round(finalStartups.reduce((sum, s) => sum + s.rogueScore, 0) / finalStartups.length)}`);
 
       return finalStartups;
 
@@ -409,7 +409,7 @@ export class StartupGenerationEngine {
           locationScore: this.calculateLocationScore(scraped.city || scraped.location?.city, scraped.country),
           readinessScore: this.calculateReadinessScore(scraped),
           feasibilityScore: this.calculateFeasibilityScore(scraped.description),
-          rougeScore: scraped.qualityScore || this.calculateOverallScore(scraped),
+          rogueScore: scraped.qualityScore || this.calculateOverallScore(scraped),
           justification: `Real-world startup from ${scraped.country || 'web scraping'} (${scraped.dataSource || 'scraped'})`,
           isPriority: false,
           userId: '', // Will be set when saving
@@ -530,7 +530,7 @@ export class StartupGenerationEngine {
         locationScore: startup.locationScore,
         readinessScore: startup.readinessScore,
         feasibilityScore: startup.feasibilityScore,
-        rougeScore: startup.rougeScore,
+        rogueScore: startup.rogueScore,
         justification: startup.justification,
         isPriority: startup.isPriority || false,
         contactInfo: startup.contactInfo || null,
@@ -547,7 +547,7 @@ export class StartupGenerationEngine {
         locationScore: startup.locationScore,
         readinessScore: startup.readinessScore,
         feasibilityScore: startup.feasibilityScore,
-        rougeScore: startup.rougeScore,
+        rogueScore: startup.rogueScore,
         justification: startup.justification,
         isPriority: startup.isPriority || false,
         contactInfo: startup.contactInfo || null,
@@ -589,11 +589,11 @@ export class StartupGenerationEngine {
       }
 
       if (typeof filters?.minScore === 'number') {
-        conditions.push(gte(AgritechStartups.rougeScore, filters.minScore));
+        conditions.push(gte(AgritechStartups.rogueScore, filters.minScore));
       }
 
       if (typeof filters?.maxScore === 'number') {
-        conditions.push(lte(AgritechStartups.rougeScore, filters.maxScore));
+        conditions.push(lte(AgritechStartups.rogueScore, filters.maxScore));
       }
 
       if (filters?.city) {
@@ -626,7 +626,7 @@ export class StartupGenerationEngine {
         const sortCol = (() => {
           switch (filters.sortBy) {
             case 'score':
-              return AgritechStartups.rougeScore;
+              return AgritechStartups.rogueScore;
             case 'date':
               return AgritechStartups.createdAt;
             case 'name':
@@ -661,7 +661,7 @@ export class StartupGenerationEngine {
         locationScore: row.locationScore,
         readinessScore: row.readinessScore,
         feasibilityScore: row.feasibilityScore,
-        rougeScore: row.rougeScore,
+        rogueScore: row.rogueScore,
         justification: row.justification,
         isPriority: row.isPriority,
         contactInfo: row.contactInfo,

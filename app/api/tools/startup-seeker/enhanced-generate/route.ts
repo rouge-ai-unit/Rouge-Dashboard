@@ -146,8 +146,8 @@ export async function POST(request: NextRequest) {
     await startupGenerationEngine.saveStartupsToDatabase(startups, userId);
 
     // Calculate generation statistics
-    const avgScore = startups.reduce((sum, s) => sum + s.rougeScore, 0) / startups.length;
-    const highQualityCount = startups.filter(s => s.rougeScore >= 80).length;
+    const avgScore = startups.reduce((sum, s) => sum + s.rogueScore, 0) / startups.length;
+    const highQualityCount = startups.filter(s => s.rogueScore >= 80).length;
 
     const responseData = {
       startups,
@@ -220,17 +220,18 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     
     // Parse and validate query parameters
+    const minScoreParam = searchParams.get('minScore');
+    const maxScoreParam = searchParams.get('maxScore');
     const queryParams = {
-      limit: parseInt(searchParams.get('limit') || '20'),
-      offset: parseInt(searchParams.get('offset') || '0'),
-      minScore: searchParams.get('minScore') ? parseInt(searchParams.get('minScore')!) : undefined,
-      maxScore: searchParams.get('maxScore') ? parseInt(searchParams.get('maxScore')!) : undefined,
+      limit: parseInt(searchParams.get('limit') || '20', 10),
+      offset: parseInt(searchParams.get('offset') || '0', 10),
+      minScore: minScoreParam ? parseInt(minScoreParam, 10) : undefined,
+      maxScore: maxScoreParam ? parseInt(maxScoreParam, 10) : undefined,
       sortBy: searchParams.get('sortBy') || 'score',
       order: searchParams.get('order') || 'desc',
       search: searchParams.get('search') || undefined,
       city: searchParams.get('city') || undefined
     };
-
     const validation = getStartupsSchema.safeParse(queryParams);
     if (!validation.success) {
       return createErrorResponse(validation.error);
@@ -261,7 +262,7 @@ export async function GET(request: NextRequest) {
     });
     const totalCount = countList.length;
     const avgScore = countList.length > 0 
-      ? countList.reduce((sum, s) => sum + s.rougeScore, 0) / countList.length 
+      ? countList.reduce((sum, s) => sum + s.rogueScore, 0) / countList.length 
       : 0;
 
     const responseData = {
@@ -277,7 +278,7 @@ export async function GET(request: NextRequest) {
       statistics: {
         totalStartups: totalCount,
         averageScore: Math.round(avgScore),
-        highQualityCount: startups.filter((s: any) => s.rougeScore >= 80).length,
+        highQualityCount: startups.filter((s: any) => s.rogueScore >= 80).length,
         returningResults: startups.length
       }
     };

@@ -1038,15 +1038,38 @@ export class TraditionalStartupScrapingService {
   private async verifyStartup(startup: TraditionalStartupData): Promise<boolean> {
     try {
       const response = await fetch(startup.website, {
-        method: 'HEAD',
+        method: 'GET',
         signal: AbortSignal.timeout(5000)
       });
-      return response.ok;
+
+      if (response.ok) {
+        const contentType = response.headers.get('content-type');
+        if (!contentType?.includes('text/html')) return false;
+
+        // Limit download to 32KB
+        const reader = response.body?.getReader();
+        let totalRead = 0;
+        const sizeLimit = 32 * 1024; // 32KB
+
+        if (reader) {
+          while (totalRead < sizeLimit) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            totalRead += value?.length ?? 0;
+            if (totalRead >= sizeLimit) {
+              // Abort reading further
+              break;
+            }
+          }
+        }
+
+        return true;
+      }
+      return false;
     } catch {
       return false;
     }
   }
-
   /**
    * Generate LinkedIn search URL
    */

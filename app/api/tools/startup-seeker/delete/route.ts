@@ -163,7 +163,7 @@ export async function DELETE(request: NextRequest) {
         .select({
           id: AgritechStartups.id,
           name: AgritechStartups.name,
-          rougeScore: AgritechStartups.rougeScore
+          rogueScore: AgritechStartups.rogueScore
         })
         .from(AgritechStartups)
         .where(
@@ -186,18 +186,18 @@ export async function DELETE(request: NextRequest) {
       }
 
       const startup = existingStartup[0];
-      console.log(`✅ Found startup: ${startup.name} (score: ${startup.rougeScore})`);
+      console.log(`✅ Found startup: ${startup.name} (score: ${startup.rogueScore})`);
 
       // Safety check for high-value startups
-      if (startup.rougeScore >= 90 && !confirmDelete) {
-        console.log(`⚠️ High-value startup ${startup.name} (score: ${startup.rougeScore}) requires confirmation. confirmDelete: ${confirmDelete}`);
+      if (startup.rogueScore >= 90 && !confirmDelete) {
+        console.log(`⚠️ High-value startup ${startup.name} (score: ${startup.rogueScore}) requires confirmation. confirmDelete: ${confirmDelete}`);
         return createErrorResponse(
           'High-quality startup deletion requires confirmation',
           'HIGH_VALUE_CONFIRMATION_REQUIRED',
           400,
           {
             startupName: startup.name,
-            score: startup.rougeScore,
+            score: startup.rogueScore,
             requiresConfirmation: true
           }
         );
@@ -250,7 +250,7 @@ export async function DELETE(request: NextRequest) {
         deletedStartup: {
           id: startup.id,
           name: startup.name,
-          score: startup.rougeScore
+          score: startup.rogueScore
         },
         reason: reason || undefined
       }, {
@@ -314,7 +314,7 @@ export async function GET(request: NextRequest) {
       .select({
         id: AgritechStartups.id,
         name: AgritechStartups.name,
-        rougeScore: AgritechStartups.rougeScore,
+        rogueScore: AgritechStartups.rogueScore,
         createdAt: AgritechStartups.createdAt
       })
       .from(AgritechStartups)
@@ -354,7 +354,7 @@ export async function GET(request: NextRequest) {
       startup: {
         id: startupData.id,
         name: startupData.name,
-        score: startupData.rougeScore,
+        score: startupData.rogueScore,
         createdAt: startupData.createdAt
       },
       relatedData: {
@@ -366,7 +366,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Add warnings based on startup quality
-    if (startupData.rougeScore >= 90) {
+    if (startupData.rogueScore >= 90) {
       deletionImpact.warnings.push('This is a high-quality startup (score ≥ 90)');
       deletionImpact.recommendations.push('Consider exporting data before deletion');
     }

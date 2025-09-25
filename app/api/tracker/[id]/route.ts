@@ -69,7 +69,7 @@ export async function PUT(req: NextRequest) {
 // PATCH: Partial updates, e.g., status only
 export async function PATCH(req: NextRequest) {
   try {
-    // removed requireSession for public access
+    await requireSession();
     const url = new URL(req.url);
     const id = url.pathname.split("/").pop();
     const body = await req.json();
@@ -78,24 +78,35 @@ export async function PATCH(req: NextRequest) {
         unit: z.string().min(1).max(64).optional(),
         task: z.string().min(3).max(280).optional(),
         assignedTo: z.string().min(1).max(120).optional(),
-        status: z.enum(["To Do", "In Progress", "Done", "Blocked", "On Hold", "Canceled"]).optional(),
+        status: z
+          .enum(["To Do", "In Progress", "Done", "Blocked", "On Hold", "Canceled"])
+          .optional(),
         deadline: z.string().optional().nullable(),
         workStart: z.string().optional().nullable(),
         memberUpdate: z.string().optional().nullable(),
       })
       .refine((obj) => Object.keys(obj).length > 0, "No fields to update");
-  const parsed = PartialUpdate.parse(body);
-  const payload = { ...parsed, lastUpdated: new Date().toISOString().split("T")[0] } as Partial<Item> & { lastUpdated: string };
+    const parsed = PartialUpdate.parse(body);
+    const payload = {
+      ...parsed,
+      lastUpdated: new Date().toISOString().split("T")[0],
+    } as Partial<Item> & { lastUpdated: string };
+
     if (DEV_NO_DB) {
       const idx = mem.findIndex((x) => x._id === id);
       if (idx >= 0) {
-  mem[idx] = { ...mem[idx], ...payload } as Item;
+        mem[idx] = { ...mem[idx], ...payload } as Item;
         return NextResponse.json(mem[idx]);
       }
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
+
     const db = getDb();
-    const result = await db.update(WorkTracker).set(payload).where(eq(WorkTracker._id, id!)).returning();
+    const result = await db
+      .update(WorkTracker)
+      .set(payload)
+      .where(eq(WorkTracker._id, id!))
+      .returning();
     return NextResponse.json(result[0] ?? null);
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
@@ -105,7 +116,6 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
-
 // DELETE: Remove a specific work tracker item
 export async function DELETE(req: NextRequest) {
   try {

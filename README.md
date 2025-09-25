@@ -145,7 +145,7 @@ If you see SWC warnings on Windows but build succeeds, ensure 64-bit Node 20+, t
 
 - Providers
 	- Uses Google if GOOGLE_CLIENT_ID/SECRET are present
-	- Credentials provider is enabled in development; in production set `NEXT_PUBLIC_ENABLE_EMAIL_AUTH=true` to allow it
+	- Credentials provider activates when `NEXT_PUBLIC_ENABLE_EMAIL_AUTH=true` (or in dev bypass) **and** `EMAIL_AUTH_USERS` is populated. Passwords can be bcrypt hashes.
 - Allowlist
 	- If ALLOWED_* is not configured, any authenticated user can sign in. “.rouge@gmail.com” emails are explicitly allowed.
 	- Otherwise, allow by specific emails, domains, or patterns (see `lib/auth.ts`).

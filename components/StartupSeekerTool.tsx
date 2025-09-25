@@ -35,7 +35,7 @@ interface Startup {
   locationScore: number;
   readinessScore: number;
   feasibilityScore: number;
-  rougeScore: number;
+  rogueScore: number;
   justification: string;
   isPriority?: boolean;
   contactInfo?: ContactInfo | string | null;
@@ -140,7 +140,7 @@ export default function StartupSeekerTool() {
     // Score filter
     if (scoreFilter !== 'all') {
       filtered = filtered.filter(startup => {
-        const score = startup.rougeScore || 0;
+        const score = startup.rogueScore || 0;
         if (scoreFilter === 'high') return score >= 7;
         if (scoreFilter === 'medium') return score >= 4 && score < 7;
         if (scoreFilter === 'low') return score < 4;
@@ -727,7 +727,7 @@ export default function StartupSeekerTool() {
                       <p className="text-sm text-gray-600">Avg Rouge Score</p>
                       <p className="text-2xl font-bold">
                         {filteredStartups.length > 0 
-                          ? (filteredStartups.reduce((sum: number, s: Startup) => sum + (s.rougeScore || 0), 0) / filteredStartups.length).toFixed(1)
+                          ? (filteredStartups.reduce((sum: number, s: Startup) => sum + (s.rogueScore || 0), 0) / filteredStartups.length).toFixed(1)
                           : '0.0'
                         }
                       </p>
@@ -825,10 +825,10 @@ export default function StartupSeekerTool() {
                           <TableCell>{startup.city || 'N/A'}</TableCell>
                           <TableCell>
                             <Badge variant={
-                              startup.rougeScore >= 8 ? 'default' :
-                              startup.rougeScore >= 6 ? 'secondary' : 'outline'
+                              startup.rogueScore >= 8 ? 'default' :
+                              startup.rogueScore >= 6 ? 'secondary' : 'outline'
                             }>
-                              {startup.rougeScore?.toFixed(1) || 'N/A'}
+                              {startup.rogueScore?.toFixed(1) || 'N/A'}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -981,13 +981,13 @@ export default function StartupSeekerTool() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-400">Overall Rouge Score</span>
                     <div className="flex items-center gap-2">
-                      <div className={`text-xl font-bold ${getScoreColor(selectedStartup.rougeScore)}`}>
-                        {selectedStartup.rougeScore}
+                      <div className={`text-xl font-bold ${getScoreColor(selectedStartup.rogueScore)}`}>
+                        {selectedStartup.rogueScore}
                       </div>
-                      <Badge variant={selectedStartup.rougeScore >= 70 ? 'default' : 'secondary'}>
-                        {selectedStartup.rougeScore >= 80 ? 'Excellent' :
-                         selectedStartup.rougeScore >= 60 ? 'Good' :
-                         selectedStartup.rougeScore >= 40 ? 'Fair' : 'Needs Work'}
+                      <Badge variant={selectedStartup.rogueScore >= 70 ? 'default' : 'secondary'}>
+                        {selectedStartup.rogueScore >= 80 ? 'Excellent' :
+                         selectedStartup.rogueScore >= 60 ? 'Good' :
+                         selectedStartup.rogueScore >= 40 ? 'Fair' : 'Needs Work'}
                       </Badge>
                     </div>
                   </div>

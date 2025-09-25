@@ -45,10 +45,7 @@ export default function AgtechCompanyAutomation() {
       setCompanies(companies);
 
       const companyNames = companies.map((c) => c.companyName).join(", ");
-      setCompanyList((prev) =>
-        prev ? `${prev}, ${companyNames}` : companyNames
-      );
-    } catch (error) {
+      setCompanyList(companyNames);    } catch (error) {
       console.error(error);
       setError("Could not load company data.");
     }

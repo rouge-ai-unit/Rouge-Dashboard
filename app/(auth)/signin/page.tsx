@@ -1,12 +1,28 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { LoginError } from "@/components/LoginError";
 import { useSearchParams } from "next/navigation";
+
+const errorMessages: Record<string, string> = {
+  AccessDenied: "You are not authorized to access this app.",
+  OAuthSignin: "Could not start OAuth sign-in.",
+  OAuthCallback: "OAuth callback failed.",
+  OAuthAccountNotLinked: "Account not linked to the chosen provider.",
+  CredentialsSignin: "Invalid email or password.",
+  EmailSignInDisabled: "Email sign-in is disabled. Contact an admin to enable it.",
+  Configuration: "Authentication provider is not configured. Check server environment variables.",
+};
+
+function resolveErrorMessage(error?: string | null): string {
+  if (!error) return "";
+  return errorMessages[error] || error;
+}
 
 function SearchParamsEffect({
   onError,
@@ -17,13 +33,7 @@ function SearchParamsEffect({
   useEffect(() => {
     const err = searchParams?.get("error");
     if (err) {
-      const map: Record<string, string> = {
-        AccessDenied: "You are not authorized to access this app.",
-        OAuthSignin: "Could not start OAuth sign-in.",
-        OAuthCallback: "OAuth callback failed.",
-        OAuthAccountNotLinked: "Account not linked to the chosen provider.",
-      };
-      onError(map[err] || err);
+      onError(resolveErrorMessage(err));
     }
   }, [searchParams, onError]);
   return null;
@@ -51,11 +61,25 @@ export default function SignIn() {
 
   const handleGoogle = async () => {
     setLoading("google");
-    await signIn("google", { callbackUrl: "/home" });
-    setLoading(null);
+    setError(null);
+    try {
+      const res = await signIn("google", { callbackUrl: "/home", redirect: false });
+      if (res?.error) {
+        setError(resolveErrorMessage(res.error));
+        setDialogOpen(true);
+      } else if (res?.url) {
+        window.location.href = res.url;
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      setError(message);
+      setDialogOpen(true);
+    } finally {
+      setLoading(null);
+    }
   };
 
-  const handleEmail = async (e: React.FormEvent) => {
+  const handleEmail = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!email) return;
     setLoading("email");
@@ -63,16 +87,18 @@ export default function SignIn() {
     try {
       const res = await signIn("credentials", { email, password, redirect: false, callbackUrl: "/home" });
       if (res?.error) {
-        setError(res.error);
+        setError(resolveErrorMessage(res.error));
         setDialogOpen(true);
       } else if (res?.ok && res?.url) {
         window.location.href = "/home";
       }
-    } catch (err: any) {
-      setError(err?.message || "Unknown error");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      setError(message);
       setDialogOpen(true);
+    } finally {
+      setLoading(null);
     }
-    setLoading(null);
   };
 
   if (!hydrated) {

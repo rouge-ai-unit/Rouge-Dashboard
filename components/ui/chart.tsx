@@ -232,12 +232,11 @@ function ChartTooltipContent({
                         {itemConfig?.label || item.name}
                       </span>
                     </div>
-                    {item.value !== undefined && (
+                    {item.value !== undefined && typeof item.value === 'number' && (
                       <span className="text-foreground font-mono font-medium tabular-nums">
                         {item.value.toLocaleString()}
                       </span>
-                    )}
-                  </div>
+                    )}                  </div>
                 </>
               )}
             </div>

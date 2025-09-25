@@ -55,6 +55,11 @@ const navItems = [
     href: "/tools/content-idea-automation",
   },
   {
+      title: "Cold Connect Automator",
+      icon: Mail,
+      href: "/tools/cold-connect-automator",
+    },
+  {
     title: "Contact Us",
     icon: Mail,
     href: "/tools/contact",

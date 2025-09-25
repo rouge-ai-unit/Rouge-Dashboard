@@ -73,9 +73,9 @@ async function calculatePortfolioStatistics(db: any, userId: string, timeRange: 
   // Score statistics
   const [scoreStats] = await db
     .select({
-      averageScore: avg(AgritechStartups.rougeScore),
-      minScore: min(AgritechStartups.rougeScore),
-      maxScore: max(AgritechStartups.rougeScore)
+      averageScore: avg(AgritechStartups.rogueScore),
+      minScore: min(AgritechStartups.rogueScore),
+      maxScore: max(AgritechStartups.rogueScore)
     })
     .from(AgritechStartups)
     .where(whereClause);
@@ -86,29 +86,29 @@ async function calculatePortfolioStatistics(db: any, userId: string, timeRange: 
       excellent: count(),
     })
     .from(AgritechStartups)
-    .where(and(whereClause, gte(AgritechStartups.rougeScore, 90)));
+    .where(and(whereClause, gte(AgritechStartups.rogueScore, 90)));
 
   const [good] = await db
     .select({ count: count() })
     .from(AgritechStartups)
-    .where(and(whereClause, gte(AgritechStartups.rougeScore, 70), lte(AgritechStartups.rougeScore, 89)));
+    .where(and(whereClause, gte(AgritechStartups.rogueScore, 70), lte(AgritechStartups.rogueScore, 89)));
 
   const [fair] = await db
     .select({ count: count() })
     .from(AgritechStartups)
-    .where(and(whereClause, gte(AgritechStartups.rougeScore, 50), lte(AgritechStartups.rougeScore, 69)));
+    .where(and(whereClause, gte(AgritechStartups.rogueScore, 50), lte(AgritechStartups.rogueScore, 69)));
 
   const [poor] = await db
     .select({ count: count() })
     .from(AgritechStartups)
-    .where(and(whereClause, lte(AgritechStartups.rougeScore, 49)));
+    .where(and(whereClause, lte(AgritechStartups.rogueScore, 49)));
 
   // Recent activity
   const recentStartups = await db
     .select({
       id: AgritechStartups.id,
       name: AgritechStartups.name,
-      rougeScore: AgritechStartups.rougeScore,
+      rogueScore: AgritechStartups.rogueScore,
       createdAt: AgritechStartups.createdAt
     })
     .from(AgritechStartups)
@@ -297,14 +297,14 @@ export async function GET(request: NextRequest) {
         .select({
           id: AgritechStartups.id,
           name: AgritechStartups.name,
-          rougeScore: AgritechStartups.rougeScore,
+          rogueScore: AgritechStartups.rogueScore,
           city: AgritechStartups.city,
           description: AgritechStartups.description,
           createdAt: AgritechStartups.createdAt
         })
         .from(AgritechStartups)
         .where(eq(AgritechStartups.userId, userId))
-        .orderBy(desc(AgritechStartups.rougeScore))
+        .orderBy(desc(AgritechStartups.rogueScore))
         .limit(10);
 
       // Geographic distribution (using city field)
@@ -324,7 +324,7 @@ export async function GET(request: NextRequest) {
         .select({
           isPriority: AgritechStartups.isPriority,
           count: count(),
-          averageScore: avg(AgritechStartups.rougeScore)
+          averageScore: avg(AgritechStartups.rogueScore)
         })
         .from(AgritechStartups)
         .where(eq(AgritechStartups.userId, userId))
@@ -449,9 +449,9 @@ export async function POST(request: NextRequest) {
       startup: {
         ...startupData,
         age: startupData.createdAt ? Math.floor((Date.now() - new Date(startupData.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0,
-        qualityRating: startupData.rougeScore >= 90 ? 'Excellent' :
-                      startupData.rougeScore >= 70 ? 'Good' :
-                      startupData.rougeScore >= 50 ? 'Fair' : 'Poor'
+        qualityRating: startupData.rogueScore >= 90 ? 'Excellent' :
+                      startupData.rogueScore >= 70 ? 'Good' :
+                      startupData.rogueScore >= 50 ? 'Fair' : 'Poor'
       },
       relatedData: {
         contactResearchJobs: contactJobs.length,

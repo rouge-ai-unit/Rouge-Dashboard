@@ -1,4 +1,7 @@
 import { withAuth } from "next-auth/middleware";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { logger } from './lib/client-utils';
 
 const devBypass = process.env.NODE_ENV === "development" || process.env.NEXT_PUBLIC_DISABLE_AUTH === "true";
 
@@ -15,7 +18,58 @@ const patternRegex = envPatterns
   })
   .filter(Boolean);
 
-export default withAuth({
+// Production middleware wrapper
+function withProductionMiddleware(handler: any) {
+  return async (request: NextRequest) => {
+    const startTime = Date.now();
+    const url = request.url;
+    const method = request.method;
+    const userAgent = request.headers.get('user-agent') || 'unknown';
+
+    // Log incoming requests in production
+    if (process.env.NODE_ENV === 'production') {
+      const clientIP = request.headers.get('x-forwarded-for') ||
+                      request.headers.get('x-real-ip') ||
+                      request.headers.get('cf-connecting-ip') ||
+                      'unknown';
+
+      logger.info('Incoming request', {
+        method,
+        url,
+        userAgent: userAgent.substring(0, 200),
+        ip: clientIP
+      });
+    }
+
+    // Environment validation removed (production.ts deleted)
+
+    // Call the auth middleware
+    const response = await handler(request);
+
+    // Apply security headers if response exists
+    if (response) {
+      // Security headers removed (production.ts deleted)
+
+      // Add request timing header
+      const processingTime = Date.now() - startTime;
+      response.headers.set('X-Response-Time', `${processingTime}ms`);
+
+      // Log response in production
+      if (process.env.NODE_ENV === 'production') {
+        logger.info('Request completed', {
+          method,
+          url,
+          status: response.status,
+          processingTime
+        });
+      }
+    }
+
+    return response;
+  };
+}
+
+const authMiddleware = withAuth({
   pages: {
     signIn: "/signin",
   },
@@ -24,8 +78,8 @@ export default withAuth({
       if (devBypass) return true; // allow all locally
       const email = token?.email?.toLowerCase().trim() ?? "";
       if (!email) return false;
-  // Special-case allow: emails whose local-part ends with '.rouge' at gmail
-  if (email.endsWith('.rouge@gmail.com')) return true;
+      // Special-case allow: emails whose local-part ends with '.rouge' at gmail
+      if (email.endsWith('.rouge@gmail.com')) return true;
       // If no allowlist configured, allow any authenticated email
       if (envEmails.length === 0 && envDomains.length === 0 && patternRegex.length === 0) return true;
       if (envEmails.includes(email)) return true;
@@ -35,6 +89,8 @@ export default withAuth({
     },
   },
 });
+
+export default withProductionMiddleware(authMiddleware);
 
 export const config = {
   matcher: [

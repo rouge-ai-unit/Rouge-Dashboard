@@ -86,11 +86,7 @@ interface EnhancedUniversityData {
 }
 
 interface ProcessingMetadata {
-  totalExtracted: number;
-  successfulInserts: number;
-  failedInserts: number;
   averageQualityScore: number;
-  processingTime: number; // Keep this to match component usage
   processingTimeMs: number;
   requestedLimit: number;
   actualLimit: number;
@@ -103,7 +99,6 @@ interface ProcessingMetadata {
   totalProcessed: number;
   mode: string;
 }
-
 interface ExtractionResponse {
   success: boolean;
   data: EnhancedUniversityData[];
@@ -429,8 +424,7 @@ export default function AgritechUniversitiesPage() {
     if (session?.user) {
       loadHistoricalResults();
     }
-  }, [session, loadHistoricalResults]);
-
+  }, [session?.user]); // Only depend on the actual data we're checking
   // ============================================================================
   // DIALOG HANDLERS
   // ============================================================================
@@ -713,7 +707,11 @@ export default function AgritechUniversitiesPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {(() => {
+                  const processingTime = (processingMetadata as any)?.processingTimeMs ?? (processingMetadata as any)?.processingTime ?? 0;
+                  return (
+                  <>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="text-center">
                     <p className="text-2xl font-bold text-blue-600">{processingMetadata.totalProcessed || 0}</p>
                     <p className="text-sm text-gray-600">Total Processed</p>
@@ -731,26 +729,29 @@ export default function AgritechUniversitiesPage() {
                     <p className="text-sm text-gray-600">Avg Quality Score</p>
                   </div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">Processing Time:</span>
-                      <span className="ml-2 font-medium">{processingMetadata.processingTime || 0}ms</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Mode:</span>
-                      <span className="ml-2 font-medium">{processingMetadata.mode || 'Unknown'}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Requested:</span>
-                      <span className="ml-2 font-medium">{processingMetadata.requestedLimit || 0}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Actual:</span>
-                      <span className="ml-2 font-medium">{processingMetadata.actualLimit || 0}</span>
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600">Processing Time:</span>
+                        <span className="ml-2 font-medium">{processingTime}ms</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Mode:</span>
+                        <span className="ml-2 font-medium">{processingMetadata.mode || 'Unknown'}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Requested:</span>
+                        <span className="ml-2 font-medium">{processingMetadata.requestedLimit || 0}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Actual:</span>
+                        <span className="ml-2 font-medium">{processingMetadata.actualLimit || 0}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                  </>
+                  );
+                })()}
               </CardContent>
             </Card>
           )}
@@ -876,26 +877,45 @@ export default function AgritechUniversitiesPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredResults.map((university, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="font-medium">{university.name || university.university}</TableCell>
-                          <TableCell>{university.location?.country || university.country || 'N/A'}</TableCell>
-                          <TableCell>{university.location?.city || university.region || 'N/A'}</TableCell>
+                      {filteredResults.map((university) => (
+                        <TableRow key={university.id}>
+                          <TableCell className="font-medium">
+                            {university.name || university.university}
+                          </TableCell>
+                          <TableCell>
+                            {university.location?.country || university.country || 'N/A'}
+                          </TableCell>
+                          <TableCell>
+                            {university.location?.city || university.region || 'N/A'}
+                          </TableCell>
                           <TableCell>
                             <Badge variant={university.hasTto ? 'default' : 'outline'}>
                               {university.hasTto ? 'Yes' : 'No'}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={university.incubationRecord && university.incubationRecord !== 'Unknown' ? 'default' : 'outline'}>
-                              {university.incubationRecord && university.incubationRecord !== 'Unknown' ? 'Yes' : 'No'}
+                            <Badge
+                              variant={
+                                university.incubationRecord && university.incubationRecord !== 'Unknown'
+                                  ? 'default'
+                                  : 'outline'
+                              }
+                            >
+                              {university.incubationRecord && university.incubationRecord !== 'Unknown'
+                                ? 'Yes'
+                                : 'No'}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={
-                              (university.qualityScore || 0) >= 8 ? 'default' :
-                              (university.qualityScore || 0) >= 6 ? 'secondary' : 'outline'
-                            }>
+                            <Badge
+                              variant={
+                                (university.qualityScore || 0) >= 8
+                                  ? 'default'
+                                  : (university.qualityScore || 0) >= 6
+                                  ? 'secondary'
+                                  : 'outline'
+                              }
+                            >
                               {university.qualityScore?.toFixed(1) || 'N/A'}
                             </Badge>
                           </TableCell>
@@ -923,8 +943,7 @@ export default function AgritechUniversitiesPage() {
                             </Button>
                           </TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
+                      ))}                    </TableBody>
                   </Table>
                 </div>
               </CardContent>
@@ -978,7 +997,7 @@ export default function AgritechUniversitiesPage() {
                             {new Date(result.createdAt).toLocaleString()}
                           </p>
                           <p className="text-xs text-gray-500 mt-1">
-                            Processing time: {result.metadata.processingTime}ms | 
+                            Processing time: {(result.metadata as any)?.processingTimeMs ?? (result.metadata as any)?.processingTime ?? 0}ms | 
                             Success rate: {result.metadata.successRate}%
                           </p>
                         </div>
@@ -988,7 +1007,7 @@ export default function AgritechUniversitiesPage() {
                           onClick={() => {
                             // Show session details in a toast or modal
                             toast.info(`Session Details: ${result.metadata.successfulCount} universities extracted on ${new Date(result.createdAt).toLocaleDateString()}`, {
-                              description: `Processing time: ${result.metadata.processingTime}ms | Success rate: ${result.metadata.successRate}%`
+                              description: `Processing time: ${(result.metadata as any)?.processingTimeMs ?? (result.metadata as any)?.processingTime ?? 0}ms | Success rate: ${result.metadata.successRate}%`
                             });
                           }}
                         >
