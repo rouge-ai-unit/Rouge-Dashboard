@@ -73,7 +73,7 @@ export default function DateField({
             disabled={disabled}
             className={cn(
               // Match app input height/padding; leave left space for icon
-              "w-full relative flex h-9 items-center rounded-md bg-[#2b2b2b] text-white placeholder-gray-400 px-3 pl-9 text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-700 text-left",
+              "w-full relative flex h-9 items-center rounded-lg bg-gray-800/50 backdrop-blur-sm text-white placeholder-gray-400 px-3 pl-9 text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-700/50 text-left transition-all",
               disabled && "opacity-60 cursor-not-allowed"
             )}
             aria-haspopup="dialog"
@@ -84,7 +84,7 @@ export default function DateField({
             <span className={cn("block w-full truncate", !value && "text-gray-400")}>{value || placeholder}</span>
           </button>
         </DialogTrigger>
-  <DialogContent className="bg-[#1b1d1e] border-gray-700 text-gray-100 p-0 sm:max-w-md w-[min(92vw,420px)]">
+  <DialogContent className="bg-gray-900/95 backdrop-blur-md border-gray-700/50 text-gray-100 p-0 sm:max-w-md w-[min(92vw,420px)] shadow-2xl">
           <DialogHeader className="p-4 pb-2">
             <DialogTitle>{title || label || "Select date"}</DialogTitle>
           </DialogHeader>
@@ -101,7 +101,7 @@ export default function DateField({
                 if (maxDate && cur > toMid(maxDate)) return true;
                 return false;
               }}
-              className="rounded-md border border-gray-700 bg-[#1f1f1f] text-gray-100 mx-auto"
+              className="rounded-lg border border-gray-700/50 bg-gray-800/50 backdrop-blur-sm text-gray-100 mx-auto"
             />
             <div className="mt-4 flex items-center justify-between">
               <Button variant="light" onClick={() => onValueChangeAction(null)}>

@@ -309,7 +309,7 @@ export default function WorkTracker() {
           placeholder="Search by unit, task, assignee, status..."
           value={searchTerm}
           onChange={(e) => { setPage(1); setSearchTerm(e.target.value); }}
-          className="pl-9 w-full bg-[#1f1f1f] text-white border-gray-700"
+          className="pl-9 w-full bg-gray-800/50 backdrop-blur-sm text-white border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           aria-label="Search work items"
         />
       </div>
@@ -318,14 +318,14 @@ export default function WorkTracker() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.05 }}
-        className="bg-[#1a1a1a] p-4 sm:p-6 rounded-xl mb-8 sm:mb-10 shadow-lg border border-gray-700"
+        className="bg-gray-900/50 backdrop-blur-sm p-4 sm:p-6 rounded-2xl mb-8 sm:mb-10 shadow-2xl border border-gray-700/50"
         ref={formRef}
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <Label className="mb-1 block text-gray-300">Unit <span className="text-red-400" aria-hidden>*</span><span className="sr-only">Required</span></Label>
             <Select value={form.watch("unit") || ""} onValueChange={(v) => setValue("unit", v)}>
-            <SelectTrigger className="bg-[#2b2b2b] text-gray-100 border-gray-700">
+            <SelectTrigger className="bg-gray-800/50 backdrop-blur-sm text-gray-100 border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
               <SelectValue placeholder="Select Unit" />
             </SelectTrigger>
             <SelectContent className="bg-[#1b1d1e] border-gray-700 text-gray-100">
@@ -337,15 +337,15 @@ export default function WorkTracker() {
           </div>
           <div>
             <Label className="mb-1 block text-gray-300">Task <span className="text-red-400" aria-hidden>*</span><span className="sr-only">Required</span></Label>
-            <Input id="wt-task" {...register("task")} placeholder="Task" className="bg-[#2b2b2b] text-white border-gray-700" />
+            <Input id="wt-task" {...register("task")} placeholder="Task" className="bg-gray-800/50 backdrop-blur-sm text-white border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
           </div>
           <div>
             <Label className="mb-1 block text-gray-300">Assigned To <span className="text-red-400" aria-hidden>*</span><span className="sr-only">Required</span></Label>
-            <Input {...register("assignedTo")} placeholder="Assigned To" className="bg-[#2b2b2b] text-white border-gray-700" />
+            <Input {...register("assignedTo")} placeholder="Assigned To" className="bg-gray-800/50 backdrop-blur-sm text-white border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
           </div>
           <div>
             <Label className="mb-1 block text-gray-300">Update</Label>
-            <Input {...register("memberUpdate")} placeholder="Update" className="bg-[#2b2b2b] text-white border-gray-700" />
+            <Input {...register("memberUpdate")} placeholder="Update" className="bg-gray-800/50 backdrop-blur-sm text-white border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
           </div>
           <div className="min-w-0">
             <DateField
@@ -368,7 +368,7 @@ export default function WorkTracker() {
           <div>
             <Label className="mb-1 block text-gray-300">Status</Label>
             <Select value={form.watch("status") || "To Do"} onValueChange={(v) => setValue("status", v as FormValues["status"])}>
-            <SelectTrigger className="bg-[#2b2b2b] text-gray-100 border-gray-700">
+            <SelectTrigger className="bg-gray-800/50 backdrop-blur-sm text-gray-100 border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-[#1b1d1e] border-gray-700 text-gray-100">
@@ -395,7 +395,7 @@ export default function WorkTracker() {
   <div className="mb-3 flex items-center gap-2 flex-wrap justify-between">
         <div className="flex items-center gap-2 flex-wrap">
   <Select value={filterUnit} onValueChange={(v) => { setPage(1); setFilterUnit(v); }}>
-            <SelectTrigger className="h-8 bg-[#191A1A] text-gray-100 border-gray-700">
+            <SelectTrigger className="h-8 bg-gray-800/50 backdrop-blur-sm text-gray-100 border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
               <SelectValue placeholder="Filter unit" />
             </SelectTrigger>
             <SelectContent className="bg-[#1b1d1e] border-gray-700 text-gray-100">
@@ -406,7 +406,7 @@ export default function WorkTracker() {
             </SelectContent>
           </Select>
   <Select value={filterStatus} onValueChange={(v) => { setPage(1); setFilterStatus(v); }}>
-            <SelectTrigger className="h-8 bg-[#191A1A] text-gray-100 border-gray-700">
+            <SelectTrigger className="h-8 bg-gray-800/50 backdrop-blur-sm text-gray-100 border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
               <SelectValue placeholder="Filter status" />
             </SelectTrigger>
             <SelectContent className="bg-[#1b1d1e] border-gray-700 text-gray-100">
@@ -417,7 +417,7 @@ export default function WorkTracker() {
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={(v) => { setPage(1); setSortBy(v as ColumnKey | typeof sortBy); }}>
-            <SelectTrigger className="h-8 bg-[#191A1A] text-gray-100 border-gray-700">
+            <SelectTrigger className="h-8 bg-gray-800/50 backdrop-blur-sm text-gray-100 border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent className="bg-[#1b1d1e] border-gray-700 text-gray-100">
@@ -436,7 +436,7 @@ export default function WorkTracker() {
             <DropdownMenuTrigger asChild>
               <Button variant="light" className="h-8">Columns</Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-[#1b1d1e] border-gray-700 text-gray-100 p-2">
+            <DropdownMenuContent className="bg-gray-900/95 backdrop-blur-md border-gray-700/50 text-gray-100 p-2 shadow-2xl">
               {columns.map((c) => (
                 <div key={c.key} className="flex items-center gap-2 px-1 py-1.5">
                   <Checkbox checked={!hiddenCols[c.key]} onCheckedChange={(v) => setHiddenCols((prev) => ({ ...prev, [c.key]: !v }))} id={`col-${c.key}`} />
@@ -446,7 +446,7 @@ export default function WorkTracker() {
             </DropdownMenuContent>
           </DropdownMenu>
           <Select value={String(pollMs)} onValueChange={(v) => setPollMs(parseInt(v, 10))}>
-            <SelectTrigger className="h-8 bg-[#191A1A] text-gray-100 border-gray-700">
+            <SelectTrigger className="h-8 bg-gray-800/50 backdrop-blur-sm text-gray-100 border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
               <SelectValue placeholder="Polling" />
             </SelectTrigger>
             <SelectContent className="bg-[#1b1d1e] border-gray-700 text-gray-100">
@@ -467,13 +467,22 @@ export default function WorkTracker() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.2 }}
         transition={{ duration: 0.3 }}
-        className="hidden md:block overflow-x-auto rounded-xl border border-gray-700"
+        className="hidden md:block overflow-hidden rounded-xl border border-gray-700"
       >
-        <table className="min-w-full text-sm text-left text-white">
-          <thead className="bg-[#1f1f1f] text-gray-300 sticky top-0 z-10">
+        <table className="w-full text-sm text-left text-white table-fixed">
+          <thead className="bg-gray-800/50 backdrop-blur-sm text-gray-300 sticky top-0 z-10">
             <tr>
               {columns.filter(c => !hiddenCols[c.key]).map(({ key, label }) => (
-                <th key={key} className="px-4 py-3 relative" style={{ width: colWidths[key] ? `${colWidths[key]}px` : undefined }}>
+                <th key={key} className={`px-2 py-3 relative ${
+                  key === 'task' ? 'w-1/3' : 
+                  key === 'unit' ? 'w-20' : 
+                  key === 'assignedTo' ? 'w-32' : 
+                  key === 'status' ? 'w-24' : 
+                  key === 'deadline' ? 'w-28' : 
+                  key === 'workStart' ? 'w-28' : 
+                  key === 'memberUpdate' ? 'w-32' : 
+                  key === 'lastUpdated' ? 'w-36' : 'w-24'
+                }`} style={{ width: colWidths[key] ? `${colWidths[key]}px` : undefined }}>
                   <button
                     className="inline-flex items-center gap-1 text-left hover:text-white text-gray-300"
                     onClick={() => {
@@ -515,12 +524,12 @@ export default function WorkTracker() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
                 transition={{ duration: 0.2, delay: idx * 0.02 }}
-                className="border-t border-gray-800 hover:bg-[#232323]"
+                className="border-t border-gray-800 hover:bg-gray-800/30 transition-colors"
               >
-                {!hiddenCols.unit && <td className="px-4 py-3">{item.unit}</td>}
-                {!hiddenCols.task && <td className="px-4 py-3">{item.task}</td>}
-                {!hiddenCols.assignedTo && <td className="px-4 py-3">{item.assignedTo}</td>}
-                {!hiddenCols.status && <td className="px-4 py-3">
+                {!hiddenCols.unit && <td className="px-2 py-3 truncate">{item.unit}</td>}
+                {!hiddenCols.task && <td className="px-2 py-3"><div className="truncate" title={item.task}>{item.task}</div></td>}
+                {!hiddenCols.assignedTo && <td className="px-2 py-3 truncate">{item.assignedTo}</td>}
+                {!hiddenCols.status && <td className="px-2 py-3">
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       item.status === "Done"
@@ -539,8 +548,8 @@ export default function WorkTracker() {
                     {item.status}
                   </span>
                 </td>}
-                {!hiddenCols.workStart && <td className="px-4 py-3">{item.workStart}</td>}
-                {!hiddenCols.deadline && <td className="px-4 py-3">
+                {!hiddenCols.workStart && <td className="px-2 py-3 truncate">{item.workStart}</td>}
+                {!hiddenCols.deadline && <td className="px-2 py-3">
                   <span
                     className={
                       isDeadlineOver(item.deadline)
@@ -551,11 +560,11 @@ export default function WorkTracker() {
                     {item.deadline}
                   </span>
                 </td>}
-                {!hiddenCols.memberUpdate && <td className="px-4 py-3">{item.memberUpdate}</td>}
-                {!hiddenCols.lastUpdated && <td className="px-4 py-3">
+                {!hiddenCols.memberUpdate && <td className="px-2 py-3 truncate">{item.memberUpdate}</td>}
+                {!hiddenCols.lastUpdated && <td className="px-2 py-3 truncate">
                   {new Date(item.lastUpdated).toLocaleString()}
                 </td>}
-                <td className="px-4 py-3">
+                <td className="px-2 py-3">
                   <div className="flex justify-center">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -563,7 +572,7 @@ export default function WorkTracker() {
                           <MoreVertical className="h-4 w-4" />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent className="bg-[#1b1d1e] border-gray-700 text-gray-100">
+                      <DropdownMenuContent className="bg-gray-900/95 backdrop-blur-md border-gray-700/50 text-gray-100 shadow-2xl">
                         <DropdownMenuItem onClick={() => setEditing(item)}>Edit</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleStatus(item._id!, "In Progress")}>Mark In Progress</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleStatus(item._id!, "Done")}>Mark Done</DropdownMenuItem>
@@ -592,7 +601,7 @@ export default function WorkTracker() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.25, delay: idx * 0.03 }}
-            className="bg-[#1f1f1f] p-4 rounded-lg shadow-md border border-gray-700"
+            className="bg-gray-900/50 backdrop-blur-sm p-4 rounded-2xl shadow-2xl border border-gray-700/50"
           >
             <div className="flex justify-between items-start">
               <div>
@@ -669,7 +678,7 @@ export default function WorkTracker() {
           <Button variant="light" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>Prev</Button>
           <Button variant="light" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>Next</Button>
           <Select value={String(pageSize)} onValueChange={(v) => { setPage(1); setPageSize(parseInt(v, 10)); }}>
-            <SelectTrigger className="h-8 bg-[#191A1A] text-gray-100 border-gray-700">
+            <SelectTrigger className="h-8 bg-gray-800/50 backdrop-blur-sm text-gray-100 border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
               <SelectValue placeholder="Rows" />
             </SelectTrigger>
             <SelectContent className="bg-[#1b1d1e] border-gray-700 text-gray-100">
@@ -680,7 +689,7 @@ export default function WorkTracker() {
       </div>
       {/* Edit dialog */}
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="bg-[#1b1d1e] border-gray-700 text-gray-100">
+        <DialogContent className="bg-gray-900/95 backdrop-blur-md border-gray-700/50 text-gray-100 shadow-2xl">
           <DialogHeader>
             <DialogTitle>Edit Task</DialogTitle>
           </DialogHeader>
@@ -753,7 +762,7 @@ function EditForm({ item, onClose, onSaved }: { item: WorkItem; onClose: () => v
         <div>
           <Label className="mb-1 block text-gray-300">Unit</Label>
           <Select value={form.watch("unit") || ""} onValueChange={(v) => setValue("unit", v)}>
-            <SelectTrigger className="bg-[#2b2b2b] text-gray-100 border-gray-700">
+            <SelectTrigger className="bg-gray-800/50 backdrop-blur-sm text-gray-100 border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-[#1b1d1e] border-gray-700 text-gray-100">
@@ -766,7 +775,7 @@ function EditForm({ item, onClose, onSaved }: { item: WorkItem; onClose: () => v
         <div>
           <Label className="mb-1 block text-gray-300">Status</Label>
           <Select value={form.watch("status") || "To Do"} onValueChange={(v) => setValue("status", v as FormValues["status"]) }>
-            <SelectTrigger className="bg-[#2b2b2b] text-gray-100 border-gray-700">
+            <SelectTrigger className="bg-gray-800/50 backdrop-blur-sm text-gray-100 border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-[#1b1d1e] border-gray-700 text-gray-100">
@@ -778,15 +787,15 @@ function EditForm({ item, onClose, onSaved }: { item: WorkItem; onClose: () => v
         </div>
         <div className="sm:col-span-2">
           <Label className="mb-1 block text-gray-300">Task</Label>
-          <Input {...register("task")} className="bg-[#2b2b2b] text-white border-gray-700" />
+          <Input {...register("task")} className="bg-gray-800/50 backdrop-blur-sm text-white border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
         </div>
         <div>
           <Label className="mb-1 block text-gray-300">Assigned To</Label>
-          <Input {...register("assignedTo")} className="bg-[#2b2b2b] text-white border-gray-700" />
+          <Input {...register("assignedTo")} className="bg-gray-800/50 backdrop-blur-sm text-white border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
         </div>
         <div>
           <Label className="mb-1 block text-gray-300">Update</Label>
-          <Input {...register("memberUpdate")} className="bg-[#2b2b2b] text-white border-gray-700" />
+          <Input {...register("memberUpdate")} className="bg-gray-800/50 backdrop-blur-sm text-white border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
         </div>
       </div>
       {Object.values(errors).length > 0 && (

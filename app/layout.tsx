@@ -72,7 +72,14 @@ export default function RootLayout({
             >
               <GlobalDialogProvider>
                 <ErrorBoundary>
-                  <div className="bg-[#202222]">{children}</div>
+                  <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+                    {/* Background gradient/blur effects */}
+                    <div className="pointer-events-none fixed inset-0 -z-10">
+                      <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl opacity-10 bg-blue-500" />
+                      <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full blur-3xl opacity-10 bg-purple-500" />
+                    </div>
+                    {children}
+                  </div>
                 </ErrorBoundary>
               </GlobalDialogProvider>
             </ThemeProvider>

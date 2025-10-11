@@ -98,6 +98,7 @@ export const config = {
     "/help",
     "/work-tracker",
     "/settings",
+    "/agtech-events",
     "/tools/:path*",
   ],
 };

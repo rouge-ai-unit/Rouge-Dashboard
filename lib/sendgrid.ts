@@ -4,7 +4,7 @@ import { logger, AppError, ValidationError, withPerformanceMonitoring } from './
 // Enterprise-grade SendGrid setup for production
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL;
-const AI_TEAM_EMAIL = process.env.AI_TEAM_EMAIL || 'ai-team@example.com';
+const AI_TEAM_EMAIL = process.env.AI_TEAM_EMAIL || 'ai@rougevc.com';
 
 // Configuration validation
 interface SendGridConfig {

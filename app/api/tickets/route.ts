@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
       notifySlack(created).catch(() => {});
       // Fire-and-forget SendGrid email
       sendTicketNotification({
-        to: process.env.AI_TEAM_EMAIL || 'ai-team@example.com',
+        to: process.env.AI_TEAM_EMAIL || 'ai@rougevc.com',
         subject: `New AI Team Ticket: ${created.title}`,
         text: `A new business support request has been submitted.\n\nTitle: ${created.title}\nRequested By: ${created.requestedBy}\nTeam: ${created.team || ''}\nDepartment: ${created.department || ''}\nBusiness Goal: ${created.businessGoal || ''}\nBusiness Steps: ${created.businessSteps || ''}\nDescription: ${created.description}\nDue Date: ${created.dueDate || ''}\n\nProblem Statement: ${created.problemStatement || ''}\nExpected Outcome: ${created.expectedOutcome || ''}\nData Sources: ${created.dataSources || ''}\nConstraints: ${created.constraints || ''}\nManual Steps: ${created.manualSteps || ''}`,
         html: `
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
     notifySlack(created as unknown as TicketItem).catch(() => {});
     // Fire-and-forget SendGrid email
     sendTicketNotification({
-      to: process.env.AI_TEAM_EMAIL || 'ai-team@example.com',
+      to: process.env.AI_TEAM_EMAIL || 'ai@rougevc.com',
       subject: `New AI Team Ticket: ${created.title}`,
       text: `A new business support request has been submitted.\n\nTitle: ${created.title}\nRequested By: ${created.requestedBy}\nTeam: ${created.team || ''}\nDepartment: ${created.department || ''}\nBusiness Goal: ${created.businessGoal || ''}\nBusiness Steps: ${created.businessSteps || ''}\nDescription: ${created.description}\nDue Date: ${created.dueDate || ''}\n\nProblem Statement: ${created.problemStatement || ''}\nExpected Outcome: ${created.expectedOutcome || ''}\nData Sources: ${created.dataSources || ''}\nConstraints: ${created.constraints || ''}\nManual Steps: ${created.manualSteps || ''}`,
       html: `

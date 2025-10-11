@@ -410,7 +410,7 @@ export default function AIToolsRequestFormPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className="lg:col-span-9 bg-[#232526] rounded-xl p-8 shadow-lg border border-gray-700 transition-transform duration-300 hover:-translate-y-0.5"
+            className="lg:col-span-9 bg-gray-900/50 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-gray-700/50 transition-all duration-300 hover:shadow-blue-500/10 hover:border-gray-600/50"
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-white flex items-center gap-2"><ClipboardList className="h-6 w-6 text-blue-400" /> Submit AI Tools Request</h2>
@@ -429,7 +429,7 @@ export default function AIToolsRequestFormPage() {
                   <Label className="block text-sm font-semibold mb-2 text-gray-300">Team</Label>
                   <Input
                     required
-                    className="bg-[#191A1A] border-gray-600 text-white"
+                    className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     {...register("team")}
                     value={watch("team")}
                     readOnly
@@ -440,7 +440,7 @@ export default function AIToolsRequestFormPage() {
                   <Label className="block text-sm font-semibold mb-2 text-gray-300">Department</Label>
                   <Input
                     required
-                    className="bg-[#191A1A] border-gray-600 text-white"
+                    className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     {...register("department")}
                     value={watch("department")}
                     readOnly
@@ -455,10 +455,10 @@ export default function AIToolsRequestFormPage() {
                   control={form.control}
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger className="bg-[#191A1A] border-gray-600 text-white">
+                      <SelectTrigger className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                         <SelectValue placeholder="Select the type of AI tool you need" />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#232526] border-gray-700 text-white">
+                      <SelectContent className="bg-gray-900/95 backdrop-blur-md border-gray-700/50 text-white shadow-2xl">
                         <SelectItem value="chatbot">Chatbot / Conversational AI</SelectItem>
                         <SelectItem value="data-analysis">Data Analysis & Insights</SelectItem>
                         <SelectItem value="automation">Process Automation</SelectItem>
@@ -492,7 +492,7 @@ export default function AIToolsRequestFormPage() {
                     <Label className="block text-sm font-semibold mb-2 text-gray-300">Problem Statement</Label>
                     <Textarea
                       placeholder="Describe the main problem or challenge. (Optional)"
-                      className="bg-[#191A1A] border-gray-600 text-white min-h-[60px]"
+                      className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white min-h-[60px] focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       {...register("problemStatement")}
                     />
                   </div>
@@ -500,7 +500,7 @@ export default function AIToolsRequestFormPage() {
                     <Label className="block text-sm font-semibold mb-2 text-gray-300">Expected Outcome</Label>
                     <Textarea
                       placeholder="What outcome or result do you expect? (Optional)"
-                      className="bg-[#191A1A] border-gray-600 text-white min-h-[60px]"
+                      className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white min-h-[60px] focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       {...register("expectedOutcome")}
                     />
                   </div>
@@ -508,7 +508,7 @@ export default function AIToolsRequestFormPage() {
                     <Label className="block text-sm font-semibold mb-2 text-gray-300">Data Sources</Label>
                     <Textarea
                       placeholder="List any data sources or systems involved. (Optional)"
-                      className="bg-[#191A1A] border-gray-600 text-white min-h-[60px]"
+                      className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white min-h-[60px] focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       {...register("dataSources")}
                     />
                   </div>
@@ -516,7 +516,7 @@ export default function AIToolsRequestFormPage() {
                     <Label className="block text-sm font-semibold mb-2 text-gray-300">Constraints</Label>
                     <Textarea
                       placeholder="Any business or process constraints? (Optional)"
-                      className="bg-[#191A1A] border-gray-600 text-white min-h-[60px]"
+                      className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white min-h-[60px] focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       {...register("constraints")}
                     />
                   </div>
@@ -524,7 +524,7 @@ export default function AIToolsRequestFormPage() {
                     <Label className="block text-sm font-semibold mb-2 text-gray-300">Manual Steps Today</Label>
                     <Textarea
                       placeholder="Describe any manual steps currently performed. (Optional)"
-                      className="bg-[#191A1A] border-gray-600 text-white min-h-[60px]"
+                      className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white min-h-[60px] focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       {...register("manualSteps")}
                     />
                   </div>
@@ -535,7 +535,7 @@ export default function AIToolsRequestFormPage() {
                   <Input
                     required
                     placeholder="E.g. &#39;Automated Sales Insights Generator&#39;, &#39;Customer Sentiment Chatbot&#39;"
-                    className="bg-[#191A1A] border-gray-600 text-white"
+                    className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     aria-invalid={!!errors.title}
                     {...register("title")}
                   />
@@ -548,7 +548,7 @@ export default function AIToolsRequestFormPage() {
                   <Input
                     required
                     placeholder="name@company.com"
-                    className="bg-[#191A1A] border-gray-600 text-white"
+                    className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     aria-invalid={!!errors.requestedBy}
                     {...register("requestedBy")}
                   />
@@ -560,7 +560,7 @@ export default function AIToolsRequestFormPage() {
                   <Textarea
                     required
                     placeholder="Describe the AI tool you need and the business context. What should it do? How will it help your work?"
-                    className="bg-[#191A1A] border-gray-600 text-white min-h-[80px]"
+                    className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white min-h-[80px] focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     aria-invalid={!!errors.description}
                     {...register("description")}
                   />
@@ -573,7 +573,7 @@ export default function AIToolsRequestFormPage() {
                   <Textarea
                     required
                     placeholder="Describe how the AI tool should work from a business perspective. E.g. 'Analyze sales data', 'Generate insights report', 'Send recommendations to manager'"
-                    className="bg-[#191A1A] border-gray-600 text-white min-h-[80px]"
+                    className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white min-h-[80px] focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     aria-invalid={!!errors.businessSteps}
                     {...register("businessSteps")}
                   />
@@ -585,7 +585,7 @@ export default function AIToolsRequestFormPage() {
                   <Input
                     required
                     placeholder="E.g. 'Reduce time spent on manual reporting by 50%', 'Improve forecast accuracy', 'Automate customer insights generation'"
-                    className="bg-[#191A1A] border-gray-600 text-white"
+                    className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     aria-invalid={!!errors.businessGoal}
                     {...register("businessGoal")}
                   />
@@ -596,7 +596,7 @@ export default function AIToolsRequestFormPage() {
                 <Label className="block text-sm font-semibold mb-2 text-gray-300">Due Date</Label>
                 <Input
                   type="date"
-                  className="bg-[#191A1A] border-gray-600 text-white"
+                  className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   aria-invalid={!!errors.dueDate}
                   {...register("dueDate")}
                 />
@@ -625,16 +625,16 @@ export default function AIToolsRequestFormPage() {
                 <h3 className="text-lg font-semibold text-white flex items-center gap-2"><ListChecks className="h-5 w-5 text-green-400" /> Submitted Requests</h3>
                 <div className="flex items-center gap-2 text-sm flex-wrap justify-end">
                   <div className="relative">
-                    <Input value={ticketsSearch} onChange={(e) => setTicketsSearch(e.target.value)} placeholder="Search…" className="h-8 bg-[#191A1A] text-gray-100 border-gray-700 pr-8" />
+                    <Input value={ticketsSearch} onChange={(e) => setTicketsSearch(e.target.value)} placeholder="Search…" className="h-8 bg-gray-800/50 backdrop-blur-sm text-gray-100 border-gray-700/50 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-gray-500">/</span>
                   </div>
                   <span className="text-gray-400 hidden sm:inline">Filter</span>
                   <Select value={ticketsFilter} onValueChange={(v) => setTicketsFilter(v as typeof ticketsFilter)}>
-                    <SelectTrigger className="bg-[#232526] text-gray-100 border-2 border-blue-500 h-9 rounded-lg shadow-sm hover:border-blue-400 focus:ring-2 focus:ring-blue-400 transition-all duration-150">
+                    <SelectTrigger className="bg-gray-800/50 backdrop-blur-sm text-gray-100 border-2 border-blue-500/50 h-9 rounded-lg shadow-sm hover:border-blue-400/50 focus:ring-2 focus:ring-blue-500 transition-all duration-150">
                       <SelectValue placeholder="Filter by status" />
                       <span className="ml-2 text-blue-400"><svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
                     </SelectTrigger>
-                    <SelectContent className="bg-[#232526] border-blue-500 text-gray-100 rounded-lg shadow-lg animate-fade-in">
+                    <SelectContent className="bg-gray-900/95 backdrop-blur-md border-blue-500/50 text-gray-100 rounded-lg shadow-2xl animate-fade-in">
                       <SelectItem value="All">All</SelectItem>
                       <SelectItem value="Open">Open</SelectItem>
                       <SelectItem value="In Progress">In Progress</SelectItem>
@@ -652,7 +652,7 @@ export default function AIToolsRequestFormPage() {
               </div>
               <div className="overflow-x-auto rounded-lg border border-gray-700">
                 <table className="w-full text-sm">
-                  <thead className="bg-[#191A1A] text-gray-300">
+                  <thead className="bg-gray-800/50 backdrop-blur-sm text-gray-300">
                     <tr>
                       <th className="p-3">Title</th>
                       <th className="p-3">AI Tool Category</th>
@@ -691,7 +691,7 @@ export default function AIToolsRequestFormPage() {
                                       <MoreVertical className="h-4 w-4" />
                                     </button>
                                   </DropdownMenuTrigger>
-                                  <DropdownMenuContent className="bg-[#1b1d1e] border-gray-700 text-gray-100">
+                                  <DropdownMenuContent className="bg-gray-900/95 backdrop-blur-md border-gray-700/50 text-gray-100 shadow-2xl">
                                     <DropdownMenuItem onClick={() => updateTicketStatus(ticket.id, "In Progress")}> 
                                       <Play className="h-4 w-4" /> Mark In Progress
                                     </DropdownMenuItem>
@@ -723,7 +723,7 @@ export default function AIToolsRequestFormPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className="lg:col-span-3 bg-[#232526] rounded-xl p-6 shadow-lg border border-gray-700 flex flex-col max-h-[500px] min-h-[300px] overflow-y-auto"
+            className="lg:col-span-3 bg-gray-900/50 backdrop-blur-sm rounded-2xl p-6 shadow-2xl border border-gray-700/50 flex flex-col max-h-[500px] min-h-[300px] overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-2xl font-bold text-white flex items-center gap-2"><ListChecks className="h-6 w-6 text-green-400" /> Past Submissions</h2>
@@ -761,7 +761,7 @@ export default function AIToolsRequestFormPage() {
         {/* ...existing code... */}
         {/* Modal for viewing ticket details */}
         <Dialog open={!!selectedTicket} onOpenChange={() => setSelectedTicket(null)}>
-          <DialogContent className="max-w-lg w-full bg-[#232526] border border-gray-700 text-white">
+          <DialogContent className="max-w-lg w-full bg-gray-900/95 backdrop-blur-md border border-gray-700/50 text-white shadow-2xl">
             <DialogHeader>
               <DialogTitle>Submission Details</DialogTitle>
               <DialogDescription className="text-gray-400">

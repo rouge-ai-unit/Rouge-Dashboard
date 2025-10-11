@@ -24,7 +24,7 @@ export default function GlobalDialogProvider({ children }: { children: React.Rea
     <Ctx.Provider value={{ open }}>
       {children}
       <Dialog open={state.open} onOpenChange={(o) => setState((s) => ({ ...s, open: o }))}>
-        <DialogContent className="bg-[#1b1d1e] text-gray-100 border-gray-700">
+        <DialogContent className="bg-gray-900/95 backdrop-blur-md text-gray-100 border-gray-700/50 shadow-2xl">
           <DialogHeader>
             <DialogTitle>{state.title}</DialogTitle>
             {state.description ? <DialogDescription>{state.description}</DialogDescription> : null}

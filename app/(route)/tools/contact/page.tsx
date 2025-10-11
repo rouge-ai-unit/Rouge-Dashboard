@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Sparkles, UploadCloud, X } from "lucide-react";
+import { Sparkles, UploadCloud, X, Mail, MessageSquare, Clock, Zap, Lightbulb, CheckCircle, Calendar, FileText, Camera } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Select,
@@ -291,7 +291,7 @@ export default function ContactPage() {
       </div>
 
   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 bg-[#1b1d1e] border-gray-700">
+        <Card className="lg:col-span-2 bg-gray-900/50 backdrop-blur-sm border-gray-700/50 shadow-2xl">
           <CardHeader>
             <CardTitle>Submit a Request</CardTitle>
           </CardHeader>
@@ -300,13 +300,13 @@ export default function ContactPage() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="contact-title" className="flex items-center gap-1">Title <RequiredMark /></Label>
-                  <Input id="contact-title" placeholder="e.g. Access to analytics dashboard" required aria-invalid={!!errors.title} className="mt-1 bg-gray-800 text-gray-100 border-gray-700" {...register("title")} />
+                  <Input id="contact-title" placeholder="e.g. Access to analytics dashboard" required aria-invalid={!!errors.title} className="mt-1 bg-gray-800/50 backdrop-blur-sm text-gray-100 border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" {...register("title")} />
                   <div className="mt-1 text-right text-[11px] text-gray-400">{(form.watch("title")?.length || 0)}/{MAX_TITLE}</div>
                   {errors.title && <p className="mt-1 text-sm text-red-400">{errors.title.message}</p>}
                 </div>
                 <div>
                   <Label htmlFor="requestedBy" className="flex items-center gap-1">Your Email <RequiredMark /></Label>
-                  <Input id="requestedBy" placeholder="name@company.com" required aria-invalid={!!errors.requestedBy} className="mt-1 bg-gray-800 text-gray-100 border-gray-700" disabled={!!session?.user?.email} defaultValue={session?.user?.email ?? ""} {...register("requestedBy")} />
+                  <Input id="requestedBy" placeholder="name@company.com" required aria-invalid={!!errors.requestedBy} className="mt-1 bg-gray-800/50 backdrop-blur-sm text-gray-100 border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" disabled={!!session?.user?.email} defaultValue={session?.user?.email ?? ""} {...register("requestedBy")} />
                   {errors.requestedBy && <p className="mt-1 text-sm text-red-400">{errors.requestedBy.message}</p>}
                 </div>
               </div>
@@ -356,7 +356,7 @@ export default function ContactPage() {
 
               <div>
                 <Label htmlFor="description" className="flex items-center gap-1">Description <RequiredMark /></Label>
-                <Textarea id="description" rows={4} placeholder="Describe your request or question" required aria-invalid={!!errors.description} className="mt-1 bg-gray-800 text-gray-100 border-gray-700" {...register("description")} />
+                <Textarea id="description" rows={4} placeholder="Describe your request or question" required aria-invalid={!!errors.description} className="mt-1 bg-gray-800/50 backdrop-blur-sm text-gray-100 border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" {...register("description")} />
                 <div className="mt-1 text-right text-[11px] text-gray-400">
                   {(form.watch("description")?.length || 0)}/{MAX_DESC}
                 </div>
@@ -459,16 +459,6 @@ export default function ContactPage() {
                 </div>
               </div>
 
-              {/* Character counter for Title */}
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <div className="mt-1 text-right text-[11px] text-gray-400">
-                    {(form.watch("title")?.length || 0)}/{MAX_TITLE}
-                  </div>
-                </div>
-                <div />
-              </div>
-
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="dueDate">Due Date</Label>
@@ -494,27 +484,83 @@ export default function ContactPage() {
         </Card>
 
         <div className="space-y-6">
-          <Card className="bg-[#1b1d1e] border-gray-700">
+          <Card className="bg-gray-900/50 backdrop-blur-sm border-gray-700/50 shadow-2xl">
             <CardHeader>
-              <CardTitle>Other ways to reach us</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-blue-400">
+                <Mail className="w-5 h-5" />
+                Other ways to reach us
+              </CardTitle>
             </CardHeader>
-            <CardContent className="text-sm text-gray-300 space-y-3">
-              <p>Email: support@yourcompany.com</p>
-              <p>Slack: #ai-unit-support</p>
-              <p>Office hours: Mon–Fri, 9:00–17:00</p>
+            <CardContent className="text-sm text-gray-300 space-y-4">
+              <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                <Mail className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-white">Email Support</p>
+                  <p className="text-gray-400">ai@rougevc.com</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                <MessageSquare className="w-4 h-4 text-green-400 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-white">Slack Channel</p>
+                  <p className="text-gray-400">#ai-unit-support</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                <Clock className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-white">Office Hours</p>
+                  <p className="text-gray-400">Mon–Fri, 9:00–17:00 PST</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                <Zap className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-white">Response Time</p>
+                  <p className="text-gray-400">Usually within 2-4 hours</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-[#1b1d1e] border-gray-700">
+          <Card className="bg-gray-900/50 backdrop-blur-sm border-gray-700/50 shadow-2xl">
             <CardHeader>
-              <CardTitle>Tips</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-green-400">
+                <Lightbulb className="w-5 h-5" />
+                Pro Tips for Better Support
+              </CardTitle>
             </CardHeader>
-            <CardContent className="text-sm text-gray-300 space-y-2">
-              <ul className="list-disc list-inside space-y-1">
-                <li>Include specific data sources and constraints.</li>
-                <li>Add due date and impact to help us prioritize.</li>
-                <li>If possible, outline current manual steps.</li>
-              </ul>
+            <CardContent className="text-sm text-gray-300 space-y-3">
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 p-3 bg-green-900/20 rounded-lg border border-green-500/30">
+                  <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-green-300">Be Specific</p>
+                    <p className="text-gray-400 text-xs">Include data sources, constraints, and expected outcomes</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-blue-900/20 rounded-lg border border-blue-500/30">
+                  <Calendar className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-blue-300">Set Priorities</p>
+                    <p className="text-gray-400 text-xs">Add due dates and impact to help us prioritize your request</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-purple-900/20 rounded-lg border border-purple-500/30">
+                  <FileText className="w-4 h-4 text-purple-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-purple-300">Document Workflows</p>
+                    <p className="text-gray-400 text-xs">Outline current manual steps and desired automation</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-orange-900/20 rounded-lg border border-orange-500/30">
+                  <Camera className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-orange-300">Add Screenshots</p>
+                    <p className="text-gray-400 text-xs">Visual examples help us understand your needs faster</p>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
 

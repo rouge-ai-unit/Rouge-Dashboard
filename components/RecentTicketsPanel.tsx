@@ -35,7 +35,7 @@ export default function RecentTicketsPanel({ title = "Recent Tickets" }: { title
   }, []);
 
   return (
-  <Card className="bg-[#1b1d1e] border-gray-700">
+  <Card className="bg-gray-900/50 backdrop-blur-sm border-gray-700/50 shadow-2xl">
       <CardHeader>
     <CardTitle>{title}</CardTitle>
       </CardHeader>

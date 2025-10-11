@@ -85,13 +85,13 @@ export default function SettingsSheet({ open, onOpenChangeAction }: Props) {
 
   return (
     <Drawer open={open} onOpenChange={onOpenChangeAction}>
-      <DrawerContent className="bg-[#1b1d1e] text-gray-100 border-gray-700">
+      <DrawerContent className="bg-gray-900/95 backdrop-blur-md text-gray-100 border-gray-700/50 shadow-2xl">
         <DrawerHeader>
           <DrawerTitle className="text-2xl">Settings</DrawerTitle>
           <DrawerDescription>Control how notifications surface and behave.</DrawerDescription>
         </DrawerHeader>
         <div className="px-4 pb-2 max-h-[60vh] overflow-auto">
-          <Card className="bg-[#191a1a] border-gray-700">
+          <Card className="bg-gray-800/50 backdrop-blur-sm border-gray-700/50">
             <CardHeader>
               <CardTitle>Notifications</CardTitle>
               <CardDescription>Control how and what gets surfaced in the top bar.</CardDescription>

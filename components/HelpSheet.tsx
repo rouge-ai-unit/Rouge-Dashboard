@@ -10,13 +10,13 @@ type Props = { open: boolean; onOpenChangeAction: (open: boolean) => void };
 export default function HelpSheet({ open, onOpenChangeAction }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChangeAction}>
-      <SheetContent side="bottom" className="bg-[#1b1d1e] text-gray-100 border-gray-700">
+      <SheetContent side="bottom" className="bg-gray-900/95 backdrop-blur-md text-gray-100 border-gray-700/50 shadow-2xl">
         <SheetHeader>
           <SheetTitle className="text-2xl">Help &amp; Documentation</SheetTitle>
           <SheetDescription>Quick guides, FAQs, and helpful links.</SheetDescription>
         </SheetHeader>
         <div className="px-4 pb-2 max-h-[60vh] overflow-auto space-y-4">
-          <Card className="bg-[#191a1a] border-gray-700">
+          <Card className="bg-gray-800/50 backdrop-blur-sm border-gray-700/50">
             <CardHeader>
               <CardTitle>Getting Started</CardTitle>
               <CardDescription>Learn the basics and key concepts of the dashboard.</CardDescription>
@@ -78,7 +78,7 @@ export default function HelpSheet({ open, onOpenChangeAction }: Props) {
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Link className="flex items-center gap-2 text-blue-400 hover:underline" href="/tools/about"><FileText className="w-4 h-4"/> About</Link>
               <Link className="flex items-center gap-2 text-blue-400 hover:underline" href="/settings"><Settings className="w-4 h-4"/> Settings</Link>
-              <a className="flex items-center gap-2 text-blue-400 hover:underline" href="mailto:support@example.com"><Mail className="w-4 h-4"/> Contact support</a>
+              <a className="flex items-center gap-2 text-blue-400 hover:underline" href="mailto:ai@rougevc.com"><Mail className="w-4 h-4"/> Contact support</a>
               <a className="flex items-center gap-2 text-blue-400 hover:underline" target="_blank" rel="noreferrer" href="https://lookerstudio.google.com/"><ExternalLink className="w-4 h-4"/> Looker Studio</a>
               <a className="flex items-center gap-2 text-blue-400 hover:underline" target="_blank" rel="noreferrer" href="https://analytics.google.com/"><ExternalLink className="w-4 h-4"/> Google Analytics</a>
               <Link className="flex items-center gap-2 text-blue-400 hover:underline" href="/tools/ai-news-daily"><Newspaper className="w-4 h-4"/> AI News</Link>

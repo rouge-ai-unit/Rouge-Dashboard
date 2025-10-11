@@ -109,7 +109,7 @@ const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 const NewsSkeleton = () => (
   <div className="grid gap-4">
     {[...Array(6)].map((_, index) => (
-      <div key={index} className="bg-gray-800/60 animate-pulse rounded-2xl p-5 h-28" />
+      <div key={index} className="bg-gray-900/50 backdrop-blur-sm animate-pulse rounded-2xl p-5 h-28 border border-gray-700/50" />
     ))}
   </div>
 );
@@ -184,7 +184,7 @@ function ArticleCard({ article }: { article: NewsArticle }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -6 }}
       transition={{ duration: 0.25 }}
-      className="bg-gray-800/70 rounded-2xl border border-gray-700 overflow-hidden hover:shadow-lg hover:border-gray-600 transition"
+      className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 overflow-hidden hover:shadow-2xl hover:shadow-blue-500/10 hover:border-gray-600/50 transition-all duration-300"
     >
       {/* Image header */}
       {preview?.image && !imgError ? (
@@ -381,7 +381,7 @@ export default function AiNewsPage() {
   }, [lastUpdated]);
 
   return (
-    <main className="min-h-screen bg-gray-900 py-8 sm:py-10 px-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen py-8 sm:py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <header className="mb-6 sm:mb-8">
           <div className="flex items-center justify-between gap-4">
@@ -424,7 +424,7 @@ export default function AiNewsPage() {
                   setPage(1);
                 }}
                 placeholder="Search headlines..."
-                className="w-full bg-gray-800 text-gray-100 placeholder:text-gray-400 pl-9 pr-3 py-2 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full bg-gray-800/50 backdrop-blur-sm text-gray-100 placeholder:text-gray-400 pl-9 pr-3 py-2 rounded-lg border border-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 ref={searchRef}
               />
             </div>
@@ -434,7 +434,7 @@ export default function AiNewsPage() {
                 setPageSize(Number(e.target.value));
                 setPage(1);
               }}
-              className="bg-gray-800 text-gray-100 px-3 py-2 rounded-lg border border-gray-700"
+              className="bg-gray-800/50 backdrop-blur-sm text-gray-100 px-3 py-2 rounded-lg border border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             >
               <option value={6}>6 / page</option>
               <option value={10}>10 / page</option>

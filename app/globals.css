@@ -39,6 +39,14 @@
   font-style: normal;
 }
 
+/* Line clamp utilities */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* Removed Tailwind-specific @theme mapping to avoid IDE warnings; runtime CSS vars below remain available. */
 
 :root {
@@ -117,4 +125,46 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
+}
+
+/* Custom Scrollbar Styles */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-track-gray-800 {
+  scrollbar-color: #374151 #1f2937;
+}
+
+.scrollbar-thumb-gray-600 {
+  scrollbar-color: #4b5563 #1f2937;
+}
+
+.hover\:scrollbar-thumb-gray-500:hover {
+  scrollbar-color: #6b7280 #1f2937;
+}
+
+/* Webkit scrollbar styles for better browser support */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1f2937;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+  border: 1px solid #374151;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+::-webkit-scrollbar-corner {
+  background: #1f2937;
 }

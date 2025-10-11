@@ -1,4 +1,4 @@
-import { boolean, date, decimal, integer, jsonb, pgTable, text, uuid, varchar } from "drizzle-orm/pg-core";
+import { boolean, date, decimal, integer, jsonb, pgTable, text, uuid, varchar, timestamp, index } from "drizzle-orm/pg-core";
 import { z } from "zod";
 
 export const Companies = pgTable("companyDetails", {
@@ -917,3 +917,92 @@ export const templateSchema = z.object({
 });
 
 // Removed hybrid table - using simple startup generation only
+
+
+// ============================================================================
+// AGTECH EVENT FINDER TABLES
+// ============================================================================
+
+// AgTech Events - Store discovered events
+export const AgTechEvents = pgTable("agtech_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  eventName: varchar("event_name").notNull(),
+  date: varchar("date").notNull(),
+  location: varchar("location").notNull(),
+  description: text("description").notNull(),
+  price: varchar("price").notNull(),
+  registrationLink: varchar("registration_link").notNull(),
+  
+  // Search metadata
+  searchLocation: varchar("search_location").notNull(), // Original search query
+  
+  // User tracking
+  userId: varchar("user_id").notNull(),
+  
+  // Timestamps
+  createdAt: date("created_at").defaultNow(),
+  updatedAt: date("updated_at").defaultNow(),
+});
+
+// AgTech Event Search History - Track user searches
+export const AgTechEventSearchHistory = pgTable("agtech_event_search_history", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: varchar("user_id").notNull(),
+  location: varchar("location").notNull(),
+  resultsCount: integer("results_count").notNull(),
+  
+  // Timestamps
+  searchedAt: date("searched_at").defaultNow(),
+});
+
+// AgTech Event Favorites - User saved events
+export const AgTechEventFavorites = pgTable("agtech_event_favorites", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: varchar("user_id").notNull(),
+  eventId: uuid("event_id").notNull().references(() => AgTechEvents.id),
+  
+  // Notes
+  notes: text("notes"),
+  
+  // Timestamps
+  createdAt: date("created_at").defaultNow(),
+});
+
+// Validation schemas for AgTech Events
+export const agTechEventSchema = z.object({
+  id: z.string().optional(),
+  eventName: z.string().min(1, 'Event name is required'),
+  date: z.string().min(1, 'Date is required'),
+  location: z.string().min(1, 'Location is required'),
+  description: z.string().min(1, 'Description is required'),
+  price: z.string().min(1, 'Price is required'),
+  registrationLink: z.string().url('Must be a valid URL'),
+  searchLocation: z.string().min(1, 'Search location is required'),
+  userId: z.string().min(1, 'User ID is required'),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+export const agTechEventSearchHistorySchema = z.object({
+  id: z.string().optional(),
+  userId: z.string().min(1, 'User ID is required'),
+  location: z.string().min(1, 'Location is required'),
+  resultsCount: z.number().min(0, 'Results count must be non-negative'),
+  searchedAt: z.date().optional(),
+});
+
+export const agTechEventFavoriteSchema = z.object({
+  id: z.string().optional(),
+  userId: z.string().min(1, 'User ID is required'),
+  eventId: z.string().min(1, 'Event ID is required'),
+  notes: z.string().optional(),
+  createdAt: z.date().optional(),
+});
+
+
+// ============================================================================
+// AUTHENTICATION TABLES (Enterprise-Grade)
+// ============================================================================
+
+// Import from auth-schema
+export * from './auth-schema';

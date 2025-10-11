@@ -182,7 +182,7 @@ export default function Topbar({ title }: Props) {
 
   return (
     <div
-      className="sticky top-0 z-30 md:ml-[var(--sidebar-width)] rounded-b-2xl shadow-lg ring-1 ring-gray-800 supports-[backdrop-filter]:bg-[#191A1A]/90 bg-[#191A1A] backdrop-blur-md transition-all"
+      className="sticky top-0 z-30 md:ml-[var(--sidebar-width)] rounded-b-2xl shadow-2xl ring-1 ring-gray-700/50 supports-[backdrop-filter]:bg-gray-900/90 bg-gray-900/90 backdrop-blur-md transition-all"
     >
       <div className="flex w-full items-center gap-3 px-3 sm:px-4 py-2.5">
         {/* Title only (brand/logo removed) */}
@@ -206,7 +206,7 @@ export default function Topbar({ title }: Props) {
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 bg-[#1b1d1e] text-gray-100 border-gray-700">
+            <DropdownMenuContent align="end" className="w-80 bg-gray-900/95 backdrop-blur-md text-gray-100 border-gray-700/50 shadow-2xl">
               <div className="flex items-center justify-between px-2 py-2">
                 <DropdownMenuLabel>Notifications</DropdownMenuLabel>
                 <div className="flex items-center gap-2">
@@ -229,7 +229,7 @@ export default function Topbar({ title }: Props) {
                           localStorage.setItem("notifs:seenIds", JSON.stringify([...seen]));
                         } catch {}
                         router.push(n.href);
-                      }} className="w-full text-left px-3 py-2 hover:bg-[#242728] transition flex items-start gap-2">
+                      }} className="w-full text-left px-3 py-2 hover:bg-gray-800/50 transition flex items-start gap-2">
                         <span className={`mt-1 h-2 w-2 rounded-full ${n.type === "ticket" ? "bg-blue-500" : "bg-emerald-500"}`} />
                         <div className="flex-1">
                           <div className="text-sm text-gray-100 truncate">{n.title}</div>
@@ -253,19 +253,19 @@ export default function Topbar({ title }: Props) {
                 <ChevronDown className="size-3.5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-[#1b1d1e] text-gray-100 border-gray-700">
+            <DropdownMenuContent align="end" className="w-56 bg-gray-900/95 backdrop-blur-md text-gray-100 border-gray-700/50 shadow-2xl">
               <DropdownMenuLabel className="flex items-center gap-2">
                 <User className="size-4" /> {session?.user?.name ?? "User"}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="data-[highlighted]:bg-[#242728] data-[highlighted]:text-gray-100" title="Open settings" onClick={() => setSettingsOpen(true)}>
+              <DropdownMenuItem className="data-[highlighted]:bg-gray-800/50 data-[highlighted]:text-gray-100" title="Open settings" onClick={() => setSettingsOpen(true)}>
                 <Settings className="size-4 mr-2" /> Settings
               </DropdownMenuItem>
-              <DropdownMenuItem className="data-[highlighted]:bg-[#242728] data-[highlighted]:text-gray-100" title="View help & docs" onClick={() => setHelpOpen(true)}>
+              <DropdownMenuItem className="data-[highlighted]:bg-gray-800/50 data-[highlighted]:text-gray-100" title="View help & docs" onClick={() => setHelpOpen(true)}>
                 <HelpCircle className="size-4 mr-2" /> Help
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="data-[highlighted]:bg-[#242728] data-[highlighted]:text-gray-100" title="Sign out of your account" onClick={async () => {
+              <DropdownMenuItem className="data-[highlighted]:bg-gray-800/50 data-[highlighted]:text-gray-100" title="Sign out of your account" onClick={async () => {
                 setSigningOut(true);
                 await signOut({ callbackUrl: '/signin', redirect: false });
                 window.location.href = '/signin';

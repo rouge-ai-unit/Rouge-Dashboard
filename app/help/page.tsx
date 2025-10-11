@@ -70,7 +70,7 @@ export default function HelpPage() {
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Link className="flex items-center gap-2 text-blue-400 hover:underline" href="/tools/about"><FileText className="w-4 h-4"/> About</Link>
             <Link className="flex items-center gap-2 text-blue-400 hover:underline" href="/settings"><Settings className="w-4 h-4"/> Settings</Link>
-            <a className="flex items-center gap-2 text-blue-400 hover:underline" href="mailto:support@example.com"><Mail className="w-4 h-4"/> Contact support</a>
+            <a className="flex items-center gap-2 text-blue-400 hover:underline" href="mailto:ai@rougevc.com"><Mail className="w-4 h-4"/> Contact support</a>
             <a className="flex items-center gap-2 text-blue-400 hover:underline" target="_blank" rel="noreferrer" href="https://lookerstudio.google.com/"><ExternalLink className="w-4 h-4"/> Looker Studio</a>
             <a className="flex items-center gap-2 text-blue-400 hover:underline" target="_blank" rel="noreferrer" href="https://analytics.google.com/"><ExternalLink className="w-4 h-4"/> Google Analytics</a>
             <Link className="flex items-center gap-2 text-blue-400 hover:underline" href="/tools/ai-news-daily"><Newspaper className="w-4 h-4"/> AI News</Link>

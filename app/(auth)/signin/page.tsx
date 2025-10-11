@@ -6,17 +6,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import { LoginError } from "@/components/LoginError";
 import { useSearchParams } from "next/navigation";
 
 const errorMessages: Record<string, string> = {
-  AccessDenied: "You are not authorized to access this app.",
+  AccessDenied: "Access restricted to Rouge team members only. Please use your Rouge email address (ending with .rouge@gmail.com)",
   OAuthSignin: "Could not start OAuth sign-in.",
   OAuthCallback: "OAuth callback failed.",
   OAuthAccountNotLinked: "Account not linked to the chosen provider.",
   CredentialsSignin: "Invalid email or password.",
   EmailSignInDisabled: "Email sign-in is disabled. Contact an admin to enable it.",
   Configuration: "Authentication provider is not configured. Check server environment variables.",
+  AccountLocked: "Your account has been locked due to too many failed login attempts. Please try again in 15 minutes or reset your password.",
+  AccountInactive: "Your account is inactive. Please contact support.",
 };
 
 function resolveErrorMessage(error?: string | null): string {
@@ -107,11 +110,11 @@ export default function SignIn() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       {/* Background gradient/blur */}
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full blur-3xl opacity-25 bg-blue-500" />
-        <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full blur-3xl opacity-20 bg-purple-500" />
+        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl opacity-10 bg-blue-500" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full blur-3xl opacity-10 bg-purple-500" />
       </div>
 
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center px-[5vw] py-[5vh] md:grid md:grid-cols-2 md:px-0 md:py-0">
@@ -128,17 +131,15 @@ export default function SignIn() {
           </div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-white">Welcome back</h1>
           <p className="mt-3 text-base text-gray-300">
-            Sign in to access your AI tools, analytics, and work tracker. Modern, fast, and delightful.
+            Access your AI-powered operations platform for AgTech research, startup discovery, and content automation.
           </p>
           <div className="mt-8 hidden md:block">
             <ul className="space-y-3 text-gray-300">
-              <li>• Real-time dashboards</li>
-              <li>• Tool requests and progress tracking</li>
-              <li>• Content Idea Automation & AI News Daily</li>
-              <li>• University & Startup Data Extractors</li>
-              <li>• Integrated support and contact system</li>
-              <li>• Beautiful dark theme with smooth transitions</li>
-               
+              <li>• AgTech event discovery & startup analysis</li>
+              <li>• AI-powered content generation & outreach</li>
+              <li>• University research database & TTO insights</li>
+              <li>• Project tracking & ticketing system</li>
+              <li>• Enterprise security with audit logging</li>
             </ul>
           </div>
         </motion.div>
@@ -148,11 +149,11 @@ export default function SignIn() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="flex w-full items-center justify-center bg-[#141516]/60 p-4 md:p-12"
+          className="flex w-full items-center justify-center p-4 md:p-12"
         >
-          <div className="w-full max-w-md rounded-2xl border border-gray-700 bg-[#1b1d1e]/80 p-4 md:p-6 shadow-xl backdrop-blur">
-            <h2 className="mb-2 text-2xl font-bold text-white">Sign in</h2>
-            <p className="mb-6 text-sm text-gray-400">Choose a method to continue</p>
+          <div className="w-full max-w-md rounded-2xl border border-gray-700 bg-white dark:bg-gray-800 p-4 md:p-6 shadow-2xl">
+            <h2 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">Sign in</h2>
+            <p className="mb-6 text-sm text-gray-600 dark:text-gray-400">Choose a method to continue</p>
 
             <button
               onClick={handleGoogle}
@@ -177,26 +178,33 @@ export default function SignIn() {
                   <div className="h-px flex-1 bg-gray-700" />
                 </div>
                 <form onSubmit={handleEmail} className="space-y-4">
-                  <label className="block text-sm text-gray-300">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@company.com"
                     autoComplete="email"
-                    className="w-full rounded-lg border border-gray-700 bg-[#121314] px-3 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600 min-h-[48px] text-base"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-3 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[48px] text-base transition-colors"
                     style={{ touchAction: 'manipulation' }}
                   />
-                  <label className="block text-sm text-gray-300">Password</label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Password"
-                    autoComplete="current-password"
-                    className="w-full rounded-lg border border-gray-700 bg-[#121314] px-3 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600 min-h-[48px] text-base"
-                    style={{ touchAction: 'manipulation' }}
-                  />
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                      <Link href="/forgot-password" className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                        Forgot password?
+                      </Link>
+                    </div>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Password"
+                      autoComplete="current-password"
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-3 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[48px] text-base transition-colors"
+                      style={{ touchAction: 'manipulation' }}
+                    />
+                  </div>
                   <button
                     type="submit"
                     className="w-full rounded-lg bg-blue-600 px-4 py-3 font-bold text-white transition hover:bg-blue-700 disabled:opacity-60 min-h-[48px] text-base"
@@ -221,7 +229,17 @@ export default function SignIn() {
               </p>
             )}
 
-            <p className="mt-6 text-center text-xs text-gray-500">By continuing, you agree to our Terms and Privacy Policy.</p>
+            {/* Sign Up Link */}
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Don&apos;t have an account?{" "}
+                <Link href="/signup" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-semibold">
+                  Sign up
+                </Link>
+              </p>
+            </div>
+
+            <p className="mt-4 text-center text-xs text-gray-500 dark:text-gray-400">By continuing, you agree to our Terms and Privacy Policy.</p>
             {/* Global top toast for error (optional) */}
             {error && (
               <LoginError

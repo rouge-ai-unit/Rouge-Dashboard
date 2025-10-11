@@ -230,8 +230,11 @@ class UnifiedAIService {
       }
 
       if (providersInitialized === 0) {
-        logger.error('No AI providers available - service will not function');
-        throw new AIUnavailableError('No AI providers configured');
+        logger.error(
+          'No AI providers available - service will not function',
+          undefined,
+          { expectedEnvVars: ['DEEPSEEK_API_KEY', 'GEMINI_API_KEY'] }
+        );
       }
 
       logger.info('AI providers initialization completed', {
@@ -346,6 +349,11 @@ class UnifiedAIService {
       // Select provider
       const provider = this.selectProvider(sanitizedRequest.provider);
       if (!provider) {
+        if (this.providers.size === 0) {
+          throw new AIUnavailableError(
+            'No AI providers configured. Please set DEEPSEEK_API_KEY or GEMINI_API_KEY.'
+          );
+        }
         throw new AIUnavailableError('No healthy AI providers available');
       }
 

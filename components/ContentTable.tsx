@@ -260,24 +260,37 @@ export function ContentTable({ data, refreshDataAction: refreshData }: ContentTa
         </Button>
       </div>
 
-      <div className="rounded-md border border-gray-600 bg-[#1a1a1a]">
-        <Table className="min-w-full text-xs">
-          <TableHeader className="bg-[#2c2e2e]">
+      {/* Status Filter for Mobile */}
+      <div className="mb-4 md:hidden">
+        <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
+          <SelectTrigger className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All">All Status</SelectItem>
+            <SelectItem value="Draft">Draft</SelectItem>
+            <SelectItem value="Approved">Approved</SelectItem>
+            <SelectItem value="Scheduled">Scheduled</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block rounded-2xl border border-gray-700/50 bg-gray-900/50 backdrop-blur-sm shadow-2xl overflow-hidden">
+        <Table className="w-full text-xs">
+          <TableHeader className="bg-gray-800/50 backdrop-blur-sm">
             <TableRow>
               <TableHead className="text-gray-300 w-8 px-2 py-2"> </TableHead>
               <TableHead className="text-gray-300 px-2 py-2">Actions</TableHead>
-              <TableHead className="text-gray-300 px-2 py-2">Day</TableHead>
-              <TableHead className="text-gray-300 px-2 py-2">Week</TableHead>
               <TableHead className="text-gray-300 px-2 py-2">Date</TableHead>
               <TableHead className="text-gray-300 px-2 py-2">Occasion</TableHead>
               <TableHead className="text-gray-300 px-2 py-2">Theme</TableHead>
-              <TableHead className="text-gray-300 px-2 py-2">Ideas</TableHead>
-              <TableHead className="text-gray-300 px-2 py-2">Caption</TableHead>
-              <TableHead className="text-gray-300 px-2 py-2">Hashtags</TableHead>
+              <TableHead className="text-gray-300 px-2 py-2 max-w-xs">Ideas</TableHead>
+              <TableHead className="text-gray-300 px-2 py-2 max-w-xs">Caption</TableHead>
               <TableHead className="text-gray-300 px-2 py-2">Status
                 <div className="mt-1">
                   <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
-                    <SelectTrigger className="h-7 bg-[#1a1a1a] border-gray-600 text-gray-300">
+                    <SelectTrigger className="h-7 bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -291,57 +304,41 @@ export function ContentTable({ data, refreshDataAction: refreshData }: ContentTa
               </TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody className="bg-[#1a1a1a] text-white text-xs">
+          <TableBody className="bg-gray-900/30 text-white text-xs">
             {data.length ? (
               data
                 .filter(row => statusFilter === "All" ? true : (row.status ?? "Draft") === statusFilter)
                 .map((item) => (
-                <TableRow key={item.id} className="hover:bg-[#2a2a2a]">
+                <TableRow key={item.id} className="hover:bg-gray-800/30 transition-colors">
                   <TableCell className="w-8 px-2 py-2">
                     <button onClick={() => setSelected(s => ({ ...s, [item.id]: !s[item.id] }))} aria-label="select row">
                       {selected[item.id] ? <CheckSquare className="h-4 w-4 text-cyan-400" /> : <Square className="h-4 w-4 text-gray-400" />}
                     </button>
                   </TableCell>
                   <TableCell className="px-2 py-2">
-                    <div className="flex gap-2">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleEdit(item)}
-                      >
-                        <Pencil className="h-4 w-4 text-blue-400" />
+                    <div className="flex gap-1">
+                      <Button size="icon" variant="ghost" onClick={() => handleEdit(item)} className="h-8 w-8">
+                        <Pencil className="h-3 w-3 text-blue-400" />
                       </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleDelete(item)}
-                      >
-                        <Trash className="h-4 w-4 text-red-400" />
+                      <Button size="icon" variant="ghost" onClick={() => handleDelete(item)} className="h-8 w-8">
+                        <Trash className="h-3 w-3 text-red-400" />
                       </Button>
-                      <Button size="icon" variant="ghost" onClick={() => copyCaption(`${item.caption}\n\n${item.hashtags}`)} aria-label="Copy caption">
-                        <Copy className="h-4 w-4 text-emerald-400" />
+                      <Button size="icon" variant="ghost" onClick={() => copyCaption(`${item.caption}\n\n${item.hashtags}`)} className="h-8 w-8">
+                        <Copy className="h-3 w-3 text-emerald-400" />
                       </Button>
-                      <Button size="icon" variant="ghost" onClick={() => openLinkedIn(item.caption, item.hashtags)} aria-label="Open LinkedIn">
-                        <ExternalLink className="h-4 w-4 text-purple-400" />
+                      <Button size="icon" variant="ghost" onClick={() => openLinkedIn(item.caption, item.hashtags)} className="h-8 w-8">
+                        <ExternalLink className="h-3 w-3 text-purple-400" />
                       </Button>
                     </div>
                   </TableCell>
-                  <TableCell className="px-2 py-2">{item.dayOfMonth}</TableCell>
-                  <TableCell className="px-2 py-2">{item.weekOfMonth}</TableCell>
                   <TableCell className="px-2 py-2">{item.date}</TableCell>
                   <TableCell className="px-2 py-2">{item.specialOccasion || "N/A"}</TableCell>
                   <TableCell className="px-2 py-2">{item.generalTheme}</TableCell>
-                  <TableCell className="px-2 py-2 max-w-[180px] truncate whitespace-pre-line">{item.postIdeas}</TableCell>
-                  <TableCell className="px-2 py-2 max-w-[180px] truncate whitespace-pre-line">{item.caption}</TableCell>
-                  <TableCell className="flex flex-wrap gap-1 px-2 py-2">
-                    {item.hashtags?.split(",").map((tag, i) => (
-                      <Badge
-                        key={i}
-                        className="rounded-full text-white bg-blue-600"
-                      >
-                        {tag.trim()}
-                      </Badge>
-                    ))}
+                  <TableCell className="px-2 py-2 max-w-xs">
+                    <div className="truncate" title={item.postIdeas}>{item.postIdeas}</div>
+                  </TableCell>
+                  <TableCell className="px-2 py-2 max-w-xs">
+                    <div className="truncate" title={item.caption}>{item.caption}</div>
                   </TableCell>
                   <TableCell className="px-2 py-2">
                     <Select value={item.status ?? "Draft"} onValueChange={async (v: any) => {
@@ -353,7 +350,7 @@ export function ContentTable({ data, refreshDataAction: refreshData }: ContentTa
                         toast.error("Could not update status");
                       }
                     }}>
-                      <SelectTrigger className="h-7 w-[130px] bg-[#1a1a1a] border-gray-600 text-gray-300">
+                      <SelectTrigger className="h-7 w-[100px] bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -368,7 +365,7 @@ export function ContentTable({ data, refreshDataAction: refreshData }: ContentTa
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={11}
+                  colSpan={8}
                   className="text-center text-gray-400 py-4 text-xs"
                 >
                   No content found.
@@ -379,9 +376,106 @@ export function ContentTable({ data, refreshDataAction: refreshData }: ContentTa
         </Table>
       </div>
 
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {data.length ? (
+          data
+            .filter(row => statusFilter === "All" ? true : (row.status ?? "Draft") === statusFilter)
+            .map((item) => (
+              <div key={item.id} className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-4 shadow-2xl">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setSelected(s => ({ ...s, [item.id]: !s[item.id] }))} aria-label="select row">
+                      {selected[item.id] ? <CheckSquare className="h-4 w-4 text-cyan-400" /> : <Square className="h-4 w-4 text-gray-400" />}
+                    </button>
+                    <div className="text-sm font-medium text-white">{item.date}</div>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button size="icon" variant="ghost" onClick={() => handleEdit(item)} className="h-8 w-8">
+                      <Pencil className="h-3 w-3 text-blue-400" />
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => handleDelete(item)} className="h-8 w-8">
+                      <Trash className="h-3 w-3 text-red-400" />
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => copyCaption(`${item.caption}\n\n${item.hashtags}`)} className="h-8 w-8">
+                      <Copy className="h-3 w-3 text-emerald-400" />
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => openLinkedIn(item.caption, item.hashtags)} className="h-8 w-8">
+                      <ExternalLink className="h-3 w-3 text-purple-400" />
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  {item.specialOccasion && (
+                    <div>
+                      <div className="text-xs text-gray-400 mb-1">Occasion</div>
+                      <div className="text-sm text-white">{item.specialOccasion}</div>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">Theme</div>
+                    <div className="text-sm text-white">{item.generalTheme}</div>
+                  </div>
+                  
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">Ideas</div>
+                    <div className="text-sm text-white line-clamp-3">{item.postIdeas}</div>
+                  </div>
+                  
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">Caption</div>
+                    <div className="text-sm text-white line-clamp-3">{item.caption}</div>
+                  </div>
+                  
+                  {item.hashtags && (
+                    <div>
+                      <div className="text-xs text-gray-400 mb-2">Hashtags</div>
+                      <div className="flex flex-wrap gap-1">
+                        {item.hashtags.split(",").map((tag, i) => (
+                          <Badge key={i} className="rounded-full text-white bg-blue-600 text-xs">
+                            {tag.trim()}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-700/50">
+                    <div className="text-xs text-gray-400">Status</div>
+                    <Select value={item.status ?? "Draft"} onValueChange={async (v: any) => {
+                      try {
+                        const res = await fetch(`/api/contents/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: v }) });
+                        if (!res.ok) throw new Error("status");
+                        refreshData();
+                      } catch {
+                        toast.error("Could not update status");
+                      }
+                    }}>
+                      <SelectTrigger className="h-8 w-[120px] bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Draft">Draft</SelectItem>
+                        <SelectItem value="Approved">Approved</SelectItem>
+                        <SelectItem value="Scheduled">Scheduled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            ))
+        ) : (
+          <div className="text-center text-gray-400 py-8">
+            No content found.
+          </div>
+        )}
+      </div>
+
       {/* ✏️ Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto bg-[#1a1a1a] text-white border border-gray-600">
+        <DialogContent className="max-h-[90vh] overflow-y-auto bg-gray-900/95 backdrop-blur-md text-white border border-gray-700/50 shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-white">Edit Content</DialogTitle>
             <DialogDescription className="text-gray-400">
@@ -416,7 +510,7 @@ export function ContentTable({ data, refreshDataAction: refreshData }: ContentTa
                   onChange={(e) =>
                     setEditData({ ...editData, [id]: e.target.value })
                   }
-                  className="bg-[#2c2e2e] text-white border border-gray-600 focus:ring-cyan-500"
+                  className="bg-gray-800/50 backdrop-blur-sm text-white border border-gray-600/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
               </div>
             ))}
@@ -494,7 +588,7 @@ export function ContentTable({ data, refreshDataAction: refreshData }: ContentTa
                     }
                   }}
                   placeholder="Add hashtag"
-                  className="flex-1 bg-[#2c2e2e] text-white border border-gray-600 focus:ring-cyan-500"
+                  className="flex-1 bg-gray-800/50 backdrop-blur-sm text-white border border-gray-600/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
                 <Button
                   type="button"
@@ -530,7 +624,7 @@ export function ContentTable({ data, refreshDataAction: refreshData }: ContentTa
 
       {/* 🗑️ Delete Dialog */}
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <DialogContent className="max-w-md bg-[#1a1a1a] text-white border border-gray-600">
+        <DialogContent className="max-w-md bg-gray-900/95 backdrop-blur-md text-white border border-gray-700/50 shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-white">Confirm Delete</DialogTitle>
             <DialogDescription className="text-gray-400">

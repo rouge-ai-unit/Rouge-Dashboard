@@ -10,7 +10,7 @@ export default function UnauthorizedPage() {
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.25 }}
-        className="max-w-md text-center bg-[#1b1d1e] border border-gray-700 rounded-2xl p-6 shadow-lg"
+        className="max-w-md text-center bg-gray-900/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-2xl"
       >
         <div className="flex justify-center mb-3">
           <ShieldAlert className="h-10 w-10 text-red-400" />

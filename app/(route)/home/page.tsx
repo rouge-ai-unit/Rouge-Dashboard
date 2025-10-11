@@ -1,56 +1,13 @@
 "use client";
 
-// Hydration-safe LastUpdatedFooter component
 // app/(route)/home/page.tsx
-
-import { Switch } from "../../../components/ui/switch";
-import React from "react";
-
-function LastUpdatedFooter({ lastRefresh, autoRefresh, setAutoRefresh }: {
-  lastRefresh: Date;
-  autoRefresh: boolean;
-  setAutoRefresh: (v: boolean) => void;
-}) {
-  const [timeAgo, setTimeAgo] = useState("just now");
-
-  useEffect(() => {
-    function updateTimeAgo() {
-      const now = new Date();
-      const diff = Math.floor((now.getTime() - lastRefresh.getTime()) / 1000);
-      if (diff < 60) setTimeAgo("just now");
-      else if (diff < 3600) setTimeAgo(`${Math.floor(diff / 60)} min ago`);
-      else if (diff < 86400) setTimeAgo(`${Math.floor(diff / 3600)} hr ago`);
-      else setTimeAgo(`${Math.floor(diff / 86400)}d ago`);
-    }
-    updateTimeAgo();
-    const interval = setInterval(updateTimeAgo, 10000);
-    return () => clearInterval(interval);
-  }, [lastRefresh]);
-
-  return (
-    <div className="flex items-center justify-center gap-4 mt-2 flex-wrap">
-      <span className="text-xs text-gray-400">Last updated: {timeAgo}</span>
-      <div className="flex items-center gap-2">
-        <label htmlFor="auto-refresh" className="text-xs text-gray-400">
-          Auto-refresh
-        </label>
-        <Switch
-          id="auto-refresh"
-          checked={autoRefresh}
-          onCheckedChange={setAutoRefresh}
-          aria-label="Toggle auto-refresh"
-        />
-      </div>    </div>
-  );
-}
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
-// Dynamically import ChatbotWidget to avoid SSR issues
-const ChatbotWidget = dynamic(() => import("../../../components/ChatbotWidget"), { ssr: false });
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+// Removed ChatbotWidget to avoid duplicate chat icons
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
 import { Input } from "../../../components/ui/input";
@@ -104,13 +61,7 @@ export default function Page() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
-  // Set lastRefresh to current date on client only to avoid hydration mismatch
-  useEffect(() => {
-    if (lastRefresh === null) {
-      setLastRefresh(new Date());
-    }
-  }, [lastRefresh]);
+  // Removed refresh functionality as requested
 
   // Static tools data
   const staticTools: Tool[] = [
@@ -163,6 +114,13 @@ export default function Page() {
       description: "Automate personalized cold outreach campaigns with AI-powered message generation. Sync contacts with Notion CRM or Google Sheets, personalize messages with recipient context, and track campaign performance. Boost your productivity and never miss a follow-up.",
       status: "Available",
     },
+    {
+      id: "/agtech-events",
+      name: "AgTech Event Finder",
+      href: "/agtech-events",
+      description: "Discover upcoming AgTech startup conventions, expos, and networking events powered by AI. Search by location, filter by price, export results to CSV, and never miss an opportunity to connect with the agricultural technology ecosystem. Features advanced filters, multiple view modes, and real-time event discovery.",
+      status: "Available",
+    },
   ];
 
   // Set static tools on mount
@@ -171,7 +129,7 @@ export default function Page() {
     setLoading(false);
     setError(null);
   }, []);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  // Removed auto-refresh functionality
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -183,43 +141,10 @@ export default function Page() {
 
 
 
-  // --- Tools In Progress Table Logic (cleaned) ---
-  type ProgressTool = {
-    name: string;
-    href: string;
-    unit: string | null;
-    progress: number;
-    criticality: string | null;
-    status: string;
-    owner: string | null;
-    eta: string | null;
-  };
-
-  const progressTools = useMemo<ProgressTool[]>(
-    () =>
-      tools
-        .filter((t: Tool) => ["Planning", "In Progress", "Testing"].includes(t.status))
-        .map((t: Tool) => ({
-          name: t.name,
-          href: t.href,
-          unit: t.unit ?? null,
-          progress: Math.max(0, Math.min(100, Number(t.progress ?? 0))),
-          criticality: t.criticality ?? null,
-          status: t.status,
-          owner: t.owner ?? null,
-          eta: t.eta ?? null,
-        })),
-    [tools]
-  );
-
-  const filteredSortedProgressTools = useMemo<ProgressTool[]>(() => {
-    return progressTools;
-  }, [progressTools]);
-  // --- End Tools In Progress Table Logic ---
+  // Removed Tools In Progress logic as requested
   
   // Refs
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const refreshIntervalRef = useRef<NodeJS.Timeout>();
 
   // Helper Functions
   const getToolIcon = useCallback((toolName: string, category: string) => {
@@ -489,7 +414,7 @@ export default function Page() {
         Skip to main content
       </a>
       
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <div className="min-h-screen">
         <div className="container mx-auto px-4 py-8 max-w-7xl">
           {/* Header Section */}
           <motion.div 
@@ -627,7 +552,7 @@ export default function Page() {
               >
                 <Tabs defaultValue="available" className="w-full" aria-labelledby="tools-section">
                   <h2 id="tools-section" className="sr-only">Tools Collection</h2>
-                  <TabsList className="grid w-full grid-cols-4 bg-gray-800/50 border border-gray-700/50 rounded-lg p-1">
+                  <TabsList className="grid w-full grid-cols-3 bg-gray-800/50 border border-gray-700/50 rounded-lg p-1">
                     <TabsTrigger 
                       value="available" 
                       className="flex items-center gap-2 data-[state=active]:bg-blue-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:font-bold transition-all duration-200 focus:ring-2 focus:ring-blue-500/50"
@@ -652,14 +577,7 @@ export default function Page() {
                       <Clock className="w-4 h-4" />
                       Upcoming ({inProgressTools.length})
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="progress" 
-                      className="flex items-center gap-2 data-[state=active]:bg-yellow-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:font-bold transition-all duration-200 focus:ring-2 focus:ring-blue-500/50"
-                      aria-label="Tools in progress"
-                    >
-                      <Wrench className="w-4 h-4" />
-                      Tools In Progress
-                    </TabsTrigger>
+
                   </TabsList>
 
                   <TabsContent value="available" className="mt-6">
@@ -738,77 +656,7 @@ export default function Page() {
                     )}
                   </TabsContent>
 
-                  <TabsContent value="progress" className="mt-6">
-                    {/* Tools In Progress Table (cleaned) */}
-                    <motion.section
-                      initial={{ opacity: 0, y: 8 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, amount: 0.2 }}
-                      transition={{ duration: 0.35 }}
-                      className="mb-16 bg-[#232526] rounded-xl p-8 shadow-lg border border-gray-700 transition-transform duration-300 hover:-translate-y-0.5"
-                    >
-                      <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-2"><Wrench className="h-6 w-6 text-yellow-400" /> Tools In Progress
-                          <span className="ml-2 text-xs font-normal text-gray-400">{filteredSortedProgressTools.length} items</span>
-                          <span className="ml-2 inline-flex items-center gap-1 text-[11px] text-green-400"><span className="inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse" /> live</span>
-                        </h2>
-                      </div>
-                      <div className="overflow-x-auto rounded-lg border border-gray-700">
-                        <table className="w-full text-sm">
-                          <thead className="bg-[#191A1A] text-gray-300 sticky top-0 z-10">
-                            <tr>
-                              <th className="p-3 font-semibold text-left">Name</th>
-                              <th className="p-3 font-semibold text-left">Unit</th>
-                              <th className="p-3 font-semibold text-left">Owner</th>
-                              <th className="p-3 font-semibold text-left">ETA</th>
-                              <th className="p-3 font-semibold text-left">Progress</th>
-                              <th className="p-3 font-semibold text-left">Criticality</th>
-                              <th className="p-3 font-semibold text-left">Status</th>
-                              <th className="p-3 font-semibold text-left">Action</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {filteredSortedProgressTools
-                              .map((tool, idx) => (
-                                <motion.tr key={`${tool.name}-${idx}`} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.25, delay: idx * 0.03 }} className="border-b border-gray-700 hover:bg-[#1d2021]">
-                                  <td className="p-3 text-white font-semibold">{tool.name}</td>
-                                  <td className="p-3 text-gray-300">{tool.unit ?? "—"}</td>
-                                  <td className="p-3 text-gray-300">{tool.owner ?? "—"}</td>
-                                  <td className="p-3 text-gray-300">{tool.eta ?? "—"}</td>
-                                  <td className="p-3">
-                                    <div className="w-full bg-gray-800 rounded-full h-3 relative overflow-hidden">
-                                      <div
-                                        className={`h-3 rounded-full transition-all duration-500 ${tool.progress > 80 ? "bg-green-500" : tool.progress > 50 ? "bg-yellow-400" : "bg-blue-500"}`}
-                                        style={{ width: `${tool.progress}%` }}
-                                      />
-                                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-white font-bold">{tool.progress}%</span>
-                                    </div>
-                                  </td>
-                                  <td className="p-3">
-                                    <span className={`px-2 py-1 rounded-md text-xs font-bold border ${(tool.criticality === "Critical" || tool.criticality === "Urgent") ? "text-red-400 border-red-400/40 bg-red-900/20" : tool.criticality === "High" ? "text-yellow-300 border-yellow-300/40 bg-yellow-900/10" : "text-blue-300 border-blue-300/40 bg-blue-900/10"}`}>{tool.criticality}</span>
-                                  </td>
-                                  <td className={`p-3 font-semibold ${tool.status === "In Progress" ? "text-yellow-400" : tool.status === "Testing" ? "text-green-400" : "text-blue-400"}`}>{tool.status}</td>
-                                  <td className="p-3">
-                                    <div className="flex justify-end">
-                                      {tool.href ? (
-                                        <Link href={tool.href} className="text-xs bg-black text-white px-3 py-1 rounded hover:bg-gray-800">Open</Link>
-                                      ) : (
-                                        <span className="text-xs text-gray-500">—</span>
-                                      )}
-                                    </div>
-                                  </td>
-                                </motion.tr>
-                              ))}
-                            {progressTools.length === 0 && (
-                              <tr>
-                                <td className="p-4 text-gray-400" colSpan={8}>No tools in progress.</td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    </motion.section>
-                  </TabsContent>
+
 
                 </Tabs>
               </motion.div>
@@ -830,17 +678,8 @@ export default function Page() {
             <p className="text-gray-400 text-xs">
               Built with ❤️ for productivity and innovation
             </p>
-            {/* Hydration-safe last updated time */}
-              {lastRefresh && (
-                <LastUpdatedFooter lastRefresh={lastRefresh} autoRefresh={autoRefresh} setAutoRefresh={setAutoRefresh} />
-              )}
           </motion.div>
-
-
-
         </div>
-        {/* Chatbot AI Agent floating widget */}
-        <ChatbotWidget />
       </div>
     </TooltipProvider>
   );

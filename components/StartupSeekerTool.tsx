@@ -800,15 +800,16 @@ export default function StartupSeekerTool() {
                     )}
                   </div>
 
-                  <div className="w-full overflow-auto">
-                    <Table className="min-w-[1000px]">
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block w-full overflow-hidden">
+                    <Table className="w-full">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Company</TableHead>
-                        <TableHead>Location</TableHead>
-                        <TableHead>Rouge Score</TableHead>
-                        <TableHead>Contacts</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead className="w-2/5">Company</TableHead>
+                        <TableHead className="w-1/6">Location</TableHead>
+                        <TableHead className="w-1/6">Rouge Score</TableHead>
+                        <TableHead className="w-1/6">Contacts</TableHead>
+                        <TableHead className="w-1/6">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -816,8 +817,8 @@ export default function StartupSeekerTool() {
                         <TableRow key={startup.id}>
                           <TableCell>
                             <div>
-                              <div className="font-medium truncate max-w-[300px]">{startup.name}</div>
-                              <div className="text-sm text-muted-foreground truncate max-w-[300px]">
+                              <div className="font-medium truncate" title={startup.name}>{startup.name}</div>
+                              <div className="text-sm text-muted-foreground truncate" title={startup.description}>
                                 {startup.description.substring(0, 100)}...
                               </div>
                             </div>
@@ -839,22 +840,24 @@ export default function StartupSeekerTool() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-1">
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setSelectedStartup(startup)}
                                 aria-label={`View details for ${startup.name}`}
+                                className="h-8 w-8 p-0"
                               >
-                                View
+                                <Search className="h-3 w-3" />
                               </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => window.open(startup.website, '_blank')}
                                 aria-label={`Open website for ${startup.name}`}
+                                className="h-8 w-8 p-0"
                               >
-                                <ExternalLink className="h-4 w-4" />
+                                <ExternalLink className="h-3 w-3" />
                               </Button>
                               {!startup.contactInfo && (
                                 <Button
@@ -863,11 +866,12 @@ export default function StartupSeekerTool() {
                                   onClick={() => researchContacts(startup)}
                                   disabled={contactResearching === startup.id}
                                   aria-label={`Research contacts for ${startup.name}`}
+                                  className="h-8 w-8 p-0"
                                 >
                                   {contactResearching === startup.id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <Loader2 className="h-3 w-3 animate-spin" />
                                   ) : (
-                                    <Users className="h-4 w-4" />
+                                    <Users className="h-3 w-3" />
                                   )}
                                 </Button>
                               )}
@@ -877,12 +881,12 @@ export default function StartupSeekerTool() {
                                 onClick={() => deleteStartup(startup.id)}
                                 disabled={deletingStartup === startup.id}
                                 aria-label={`Delete ${startup.name}`}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                               >
                                 {deletingStartup === startup.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  <Loader2 className="h-3 w-3 animate-spin" />
                                 ) : (
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className="h-3 w-3" />
                                 )}
                               </Button>
                             </div>
@@ -891,6 +895,93 @@ export default function StartupSeekerTool() {
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
+
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-4">
+                    {filteredStartups.map((startup: Startup) => (
+                      <div key={startup.id} className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-4 shadow-2xl">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-white truncate" title={startup.name}>
+                              {startup.name}
+                            </h3>
+                            <p className="text-sm text-muted-foreground line-clamp-2 mt-1" title={startup.description}>
+                              {startup.description}
+                            </p>
+                          </div>
+                          <Badge variant={
+                            startup.rogueScore >= 8 ? 'default' :
+                            startup.rogueScore >= 6 ? 'secondary' : 'outline'
+                          } className="ml-2 flex-shrink-0">
+                            {startup.rogueScore?.toFixed(1) || 'N/A'}
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                          <div>
+                            <div className="text-xs text-gray-400 mb-1">Location</div>
+                            <div className="text-sm text-white">{startup.city || 'N/A'}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-400 mb-1">Contacts</div>
+                            {startup.contactInfo ? (
+                              <Badge variant="secondary" className="text-xs">Available</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs">Not Available</Badge>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 pt-2 border-t border-gray-700/50">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedStartup(startup)}
+                            className="flex-1"
+                          >
+                            <Search className="h-4 w-4 mr-2" />
+                            View Details
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(startup.website, '_blank')}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </Button>
+                          {!startup.contactInfo && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => researchContacts(startup)}
+                              disabled={contactResearching === startup.id}
+                              className="h-8 w-8 p-0"
+                            >
+                              {contactResearching === startup.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <Users className="h-3 w-3" />
+                              )}
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deleteStartup(startup.id)}
+                            disabled={deletingStartup === startup.id}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            {deletingStartup === startup.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3 w-3" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </>
               )}
@@ -901,7 +992,7 @@ export default function StartupSeekerTool() {
 
       {/* Startup Details Dialog */}
       <Dialog open={!!selectedStartup} onOpenChange={() => setSelectedStartup(null)}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-[#1a1b1e] text-white border border-gray-700 shadow-2xl">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-gray-900/95 backdrop-blur-md text-white border border-gray-700/50 shadow-2xl">
           <DialogHeader>
             <DialogTitle>{selectedStartup?.name}</DialogTitle>
             <DialogDescription>

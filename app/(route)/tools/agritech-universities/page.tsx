@@ -862,7 +862,8 @@ export default function AgritechUniversitiesPage() {
                 <CardTitle>Universities ({filteredResults.length})</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-hidden">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -879,8 +880,10 @@ export default function AgritechUniversitiesPage() {
                     <TableBody>
                       {filteredResults.map((university) => (
                         <TableRow key={university.id}>
-                          <TableCell className="font-medium">
-                            {university.name || university.university}
+                          <TableCell className="font-medium max-w-xs">
+                            <div className="truncate" title={university.name || university.university}>
+                              {university.name || university.university}
+                            </div>
                           </TableCell>
                           <TableCell>
                             {university.location?.country || university.country || 'N/A'}
@@ -925,8 +928,9 @@ export default function AgritechUniversitiesPage() {
                                 href={university.contactInfo.website}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline"
+                                className="text-blue-600 hover:underline flex items-center gap-1"
                               >
+                                <ExternalLink className="h-3 w-3" />
                                 Visit
                               </a>
                             ) : (
@@ -943,8 +947,88 @@ export default function AgritechUniversitiesPage() {
                             </Button>
                           </TableCell>
                         </TableRow>
-                      ))}                    </TableBody>
+                      ))}
+                    </TableBody>
                   </Table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-4">
+                  {filteredResults.map((university) => (
+                    <div key={university.id} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                            {university.name || university.university}
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {university.location?.city || university.region || 'N/A'}, {university.location?.country || university.country || 'N/A'}
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openUniversityDialog(university)}
+                          className="ml-2 flex-shrink-0"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">TTO</div>
+                          <Badge variant={university.hasTto ? 'default' : 'outline'} className="text-xs">
+                            {university.hasTto ? 'Yes' : 'No'}
+                          </Badge>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Incubation</div>
+                          <Badge
+                            variant={
+                              university.incubationRecord && university.incubationRecord !== 'Unknown'
+                                ? 'default'
+                                : 'outline'
+                            }
+                            className="text-xs"
+                          >
+                            {university.incubationRecord && university.incubationRecord !== 'Unknown'
+                              ? 'Yes'
+                              : 'No'}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Quality Score</div>
+                          <Badge
+                            variant={
+                              (university.qualityScore || 0) >= 8
+                                ? 'default'
+                                : (university.qualityScore || 0) >= 6
+                                ? 'secondary'
+                                : 'outline'
+                            }
+                            className="text-xs"
+                          >
+                            {university.qualityScore?.toFixed(1) || 'N/A'}
+                          </Badge>
+                        </div>
+                        {university.contactInfo?.website && (
+                          <a
+                            href={university.contactInfo.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline flex items-center gap-1 text-sm"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            Visit Website
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>

@@ -26,7 +26,7 @@ export default function RouteGroupLayout({
       <Suspense fallback={<div className="h-12 w-full" />}> 
         <Topbar title={getTitle(pathname)} />
       </Suspense>
-      <div className="flex flex-col md:flex-row bg-[#202222] min-h-screen w-full">
+      <div className="flex flex-col md:flex-row min-h-screen w-full">
         {/* Mobile Sidebar */}
         <div className="block md:hidden">
           <MobileSidebar />
@@ -39,7 +39,7 @@ export default function RouteGroupLayout({
         <main
           className={`flex-1 w-full transition-all duration-300 ${
             isSidebarCollapsed ? "md:ml-[5rem]" : "md:ml-[15rem]"
-          } md:mt-4 md:mb-4 md:mr-4 min-h-[calc(90vh)] bg-[#191A1A] md:rounded-lg border-[0.1px] border-slate-600 overflow-x-auto p-[5vw] md:p-4 text-white text-justify`}
+          } md:mt-4 md:mb-4 md:mr-4 min-h-[calc(90vh)] bg-gray-900/50 backdrop-blur-sm md:rounded-2xl border border-gray-700/50 shadow-2xl overflow-x-auto p-[5vw] md:p-6 text-white text-justify`}
           style={{ minHeight: 'calc(100vh - 3rem)' }}
         >
           {children}

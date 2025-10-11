@@ -17,6 +17,7 @@ import {
   ListChecks,
   GraduationCap,
   Target,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -42,6 +43,11 @@ const navItems = [
     title: "Agritech Startup Seeker",
     icon: Target,
     href: "/tools/startup-seeker",
+  },
+  {
+    title: "AgTech Event Finder",
+    icon: Sparkles,
+    href: "/agtech-events",
   },
   {
     title: "Agritech Universities",
@@ -80,7 +86,7 @@ export default function MobileSidebar() {
       <div className="sm:hidden fixed top-4 left-4 z-50">
         <button
           onClick={toggleSidebar}
-          className="bg-[#202222] p-2 rounded-md text-white shadow-md"
+          className="bg-gray-900/95 backdrop-blur-md p-2 rounded-lg text-white shadow-2xl border border-gray-700/50"
         >
           {open ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -96,7 +102,7 @@ export default function MobileSidebar() {
 
       {/* Sidebar Drawer */}
       <div
-        className={`fixed top-0 left-0 h-full w-[75%] max-w-xs bg-[#202222] text-white z-50 transform transition-transform duration-300 ${
+        className={`fixed top-0 left-0 h-full w-[75%] max-w-xs bg-gray-900/95 backdrop-blur-md border-r border-gray-700/50 text-white z-50 transform transition-transform duration-300 shadow-2xl ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -120,7 +126,7 @@ export default function MobileSidebar() {
             <Link
               key={item.title}
               href={item.href}
-              className="flex items-center gap-4 px-3 py-2 rounded-md hover:bg-[#2a2c2c] transition"
+              className="flex items-center gap-4 px-3 py-2 rounded-lg hover:bg-gray-800/50 transition"
               onClick={toggleSidebar}
             >
               <item.icon size={20} />
@@ -144,7 +150,7 @@ export default function MobileSidebar() {
                   toggleSidebar();
                 }}
                 disabled={signingOut}
-                className="w-full bg-red-600 hover:bg-red-700 text-sm py-2 rounded-md transition flex items-center justify-center"
+                className="w-full bg-red-600 hover:bg-red-700 text-sm py-2 rounded-lg transition flex items-center justify-center"
               >
                 {signingOut ? (
                   <svg className="animate-spin h-5 w-5 text-white mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
@@ -156,7 +162,7 @@ export default function MobileSidebar() {
             </>
           ) : (
             <Link href="/signin" onClick={toggleSidebar}>
-              <button className="w-full bg-cyan-500 hover:bg-cyan-700 text-sm py-2 rounded-md transition">
+              <button className="w-full bg-blue-600 hover:bg-blue-700 text-sm py-2 rounded-lg transition">
                 <LogIn className="inline mr-2" />
                 Sign In
               </button>

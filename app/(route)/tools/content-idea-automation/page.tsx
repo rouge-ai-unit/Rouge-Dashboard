@@ -167,7 +167,7 @@ export default function ContentIdeaAutomation() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.05 }}
             >
-              <Card className="bg-[#202222] border-gray-700">
+              <Card className="bg-gray-900/50 backdrop-blur-sm border-gray-700/50 shadow-2xl">
                 <CardContent className="mt-5">
                   <ContentTable data={content} refreshDataAction={refreshData} />
                   {content.length === 0 && (
@@ -182,18 +182,18 @@ export default function ContentIdeaAutomation() {
 
           {/* Custom range dialog */}
           <Dialog open={rangeOpen} onOpenChange={setRangeOpen}>
-            <DialogContent className="bg-[#202222] border-gray-700 text-white">
+            <DialogContent className="bg-gray-900/95 backdrop-blur-md border-gray-700/50 text-white shadow-2xl">
               <DialogHeader>
                 <DialogTitle>Generate for date range</DialogTitle>
               </DialogHeader>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-gray-300">From (YYYY-MM-DD)</label>
-                  <Input value={from} onChange={(e) => setFrom(e.target.value)} placeholder="2025-08-11" className="bg-[#2c2e2e] border-gray-600" />
+                  <Input value={from} onChange={(e) => setFrom(e.target.value)} placeholder="2025-08-11" className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-300">To (optional)</label>
-                  <Input value={to} onChange={(e) => setTo(e.target.value)} placeholder="2025-08-16" className="bg-[#2c2e2e] border-gray-600" />
+                  <Input value={to} onChange={(e) => setTo(e.target.value)} placeholder="2025-08-16" className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
                 </div>
               </div>
               <DialogFooter>
@@ -210,7 +210,7 @@ export default function ContentIdeaAutomation() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <Card className="bg-[#202222] border-gray-700 text-white">
+              <Card className="bg-gray-900/50 backdrop-blur-sm border-gray-700/50 text-white shadow-2xl">
                 <CardHeader>
                   <CardTitle>Article Summarizer</CardTitle>
                 </CardHeader>

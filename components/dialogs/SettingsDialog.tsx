@@ -102,13 +102,13 @@ export default function SettingsDialog({ open, onOpenChangeAction }: SettingsDia
 
   return (
     <Dialog open={open} onOpenChange={onOpenChangeAction}>
-      <DialogContent className="bg-[#1b1d1e] text-gray-100 border-gray-700 sm:max-w-2xl">
+      <DialogContent className="bg-gray-900/95 backdrop-blur-md text-gray-100 border-gray-700/50 sm:max-w-2xl shadow-2xl">
         <DialogHeader>
           <DialogTitle className="text-2xl">Settings</DialogTitle>
           <DialogDescription>Control how notifications surface and behave.</DialogDescription>
         </DialogHeader>
         <div className="px-1 pb-2 max-h-[60vh] overflow-auto">
-          <Card className="bg-[#191a1a] border-gray-700">
+          <Card className="bg-gray-800/50 backdrop-blur-sm border-gray-700/50">
             <CardHeader>
               <CardTitle>Notifications</CardTitle>
               <CardDescription>Control how and what gets surfaced in the top bar.</CardDescription>

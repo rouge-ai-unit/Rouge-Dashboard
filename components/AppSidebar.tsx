@@ -17,6 +17,7 @@ import {
   Target,
   GraduationCap,
   HelpCircle,
+  Sparkles,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -56,6 +57,11 @@ const publicNavItems = [
     title: "Agritech Startup Seeker",
     icon: Target,
     href: "/tools/startup-seeker",
+  },
+  {
+    title: "AgTech Event Finder",
+    icon: Sparkles,
+    href: "/agtech-events",
   },
   {
     title: "Agritech Universities",
@@ -128,9 +134,9 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
 
   return (
     <aside
-      className={`fixed top-0 left-0 h-screen bg-[#202222] text-white transition-all duration-300 ${
+      className={`fixed top-0 left-0 h-screen bg-gray-900/95 backdrop-blur-md border-r border-gray-700/50 text-white transition-all duration-300 ${
         collapsed ? "w-[5rem]" : "w-[15rem]"
-      } flex flex-col`}
+      } flex flex-col shadow-2xl`}
       style={{ width: collapsed ? "5rem" : "15rem" }}
     >
       {/* Sidebar Header */}
@@ -158,7 +164,7 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
             alt="Collapse"
             width={30}
             height={30}
-            className="p-1 cursor-pointer mr-3 hover:bg-[#2c2e2e] rounded-full transition-all duration-500"
+            className="p-1 cursor-pointer mr-3 hover:bg-gray-800/50 rounded-full transition-all duration-500"
           />
         )}
       </div>
@@ -171,26 +177,28 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div
-                      className={`flex items-center gap-4 w-full px-4 py-3 rounded-md transition-all duration-200 cursor-pointer justify-center ${pathname === item.href ? "bg-[#2c2e2e] text-white" : "text-gray-300 hover:bg-[#2c2e2e] hover:text-white"}`}
+                      className={`flex items-center gap-4 w-full px-4 py-3 rounded-full transition-all duration-200 cursor-pointer justify-center ${pathname === item.href ? "bg-blue-600/20 text-blue-400 border border-blue-500/30" : "text-gray-300 hover:bg-gray-700/60 hover:text-white hover:backdrop-blur-sm"}`}
                       role="link"
                       tabIndex={0}
                     >
                       <item.icon size={22} aria-hidden="true" />
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent side="right">
-                    {item.title}
+                  <TooltipContent side="right" className="bg-gray-800/95 backdrop-blur-sm border-gray-600/50 text-white">
+                    <span className="px-2 py-1 bg-gray-700/80 rounded-full text-sm font-medium">
+                      {item.title}
+                    </span>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             ) : (
               <div
-                className={`flex items-center gap-4 w-full px-4 py-3 rounded-md transition-all duration-200 cursor-pointer ${pathname === item.href ? "bg-[#2c2e2e] text-white" : "text-gray-300 hover:bg-[#2c2e2e] hover:text-white"}`}
+                className={`flex items-center gap-4 w-full px-4 py-3 rounded-lg transition-all duration-200 cursor-pointer group ${pathname === item.href ? "bg-blue-600/20 text-blue-400 border border-blue-500/30" : "text-gray-300 hover:bg-gray-700/60 hover:text-white hover:backdrop-blur-sm"}`}
                 role="link"
                 tabIndex={0}
               >
                 <item.icon size={22} aria-hidden="true" />
-                <span className="ml-2 text-[15px] leading-[22px]">
+                <span className={`ml-2 text-[15px] leading-[22px] px-2 py-1 rounded-full transition-all duration-200 ${pathname === item.href ? "" : "group-hover:bg-gray-600/50 group-hover:backdrop-blur-sm"}`}>
                   {item.title}
                 </span>
               </div>
@@ -200,19 +208,20 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
       </nav>
 
   {/* Footer */}
-  <div className="mt-auto px-4 py-4 w-full border-t border-[#2c2e2e]">
+  <div className="mt-auto px-4 py-4 w-full border-t border-gray-700/50">
         {!collapsed ? (
           session ? (
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               {!collapsed && (
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-white">
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <p className="text-sm font-semibold text-white truncate">
                     {session.user?.name}
                   </p>
-                  <p className="text-xs text-gray-400">{session.user?.email}</p>
+                  <p className="text-xs text-gray-400 truncate">{session.user?.email}</p>
                 </div>
               )}
-              <TooltipProvider>
+              <div className="flex-shrink-0">
+                <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
@@ -222,13 +231,13 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
                         window.location.href = '/signin';
                       }}
                       disabled={signingOut}
-                      className={`text-white hover:bg-[#2A2A2A] rounded-md p-2 transition-colors cursor-pointer inline-flex items-center justify-center w-10 h-10`}
+                      className={`text-red-400 hover:text-white hover:bg-red-600/30 bg-red-600/10 border border-red-500/40 hover:border-red-400/60 rounded-full p-2.5 transition-all duration-200 cursor-pointer inline-flex items-center justify-center w-11 h-11 shadow-lg hover:shadow-red-500/20`}
                       aria-label="Sign out"
                     >
                       {signingOut ? (
                         <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
                       ) : (
-                        <LogOut />
+                        <LogOut size={20} />
                       )}
                     </button>
                   </TooltipTrigger>
@@ -237,12 +246,13 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+              </div>
             </div>
           ) : (
-            <button className="w-full py-2 bg-cyan-500 hover:bg-cyan-700 rounded-md text-black transition-all duration-300">
+            <button className="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-all duration-300">
               <Link
                 href="/signin"
-                className={`flex items-center text-white rounded-md p-2 transition-colors ${
+                className={`flex items-center text-white rounded-lg p-2 transition-colors ${
                   !collapsed && "justify-center"
                 }`}
               >
@@ -266,7 +276,7 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
                       alt="Expand"
                       width={60}
                       height={60}
-                      className="p-2 rotate-180 bg-[#2c2e2e] rounded-full hover:bg-[#2c2e2e]/50 transition-all duration-500 hover:scale-90"
+                      className="p-2 rotate-180 bg-gray-800/50 rounded-full hover:bg-gray-700/50 transition-all duration-500 hover:scale-90"
                     />
                   </button>
                 </TooltipTrigger>
@@ -286,13 +296,13 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
                         window.location.href = '/signin';
                       }}
                       disabled={signingOut}
-                      className="text-white hover:bg-[#2A2A2A] rounded-md p-2 transition-colors cursor-pointer inline-flex items-center justify-center w-10 h-10"
+                      className="text-red-400 hover:text-white hover:bg-red-600/30 bg-red-600/10 border border-red-500/40 hover:border-red-400/60 rounded-full p-2.5 transition-all duration-200 cursor-pointer inline-flex items-center justify-center w-11 h-11 shadow-lg hover:shadow-red-500/20"
                       aria-label="Sign out"
                     >
                       {signingOut ? (
                         <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
                       ) : (
-                        <LogOut />
+                        <LogOut size={20} />
                       )}
                     </button>
                   </TooltipTrigger>
@@ -305,10 +315,10 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button className="w-full py-1 rounded-full bg-cyan-500 hover:bg-cyan-700 text-black transition-all duration-300 cursor-pointer">
+                    <button className="w-full py-1 rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-all duration-300 cursor-pointer">
                       <Link
                         href="/signin"
-                        className={`flex items-center text-white rounded-md p-2 transition-colors ${
+                        className={`flex items-center text-white rounded-lg p-2 transition-colors ${
                           !collapsed && "justify-center"
                         }`}
                       >
