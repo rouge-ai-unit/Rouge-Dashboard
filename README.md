@@ -77,31 +77,42 @@ Rouge Dashboard is a production-ready, enterprise-grade internal operations plat
    - Contact research and CRM integration
    - Batch processing with job queue
 
-3. **AI News Daily** 📰
+3. **Sentiment Analyzer** 📊
+   - Analyze public sentiment about companies using AI-powered news analysis
+   - Real-time news article search via Google Custom Search API
+   - AI sentiment classification with Gemini or DeepSeek models
+   - Sentiment types: Positive, Negative, Neutral with detailed reasoning
+   - Advanced filtering, sorting, and export to CSV
+   - Search history tracking with clear functionality
+   - Country-specific search (US, UK, CA, AU, IN) or worldwide
+   - Usage monitoring with 100 searches per day limit per user
+   - Automatic data cleanup (90+ days old articles removed)
+
+4. **AI News Daily** 📰
    - Curated daily AI news and insights
    - Smart filtering and bookmarking
    - Article preview and summarization
    - Share and export capabilities
 
-4. **Content Idea Automation** 💡
+5. **Content Idea Automation** 💡
    - AI-powered content calendar generation
    - LinkedIn post ideas and captions
    - Hashtag suggestions
    - Editorial calendar management
 
-5. **Cold Connect Automator** 📧
+6. **Cold Connect Automator** 📧
    - Personalized cold outreach campaigns
    - Notion and Google Sheets integration
    - AI message generation
    - Campaign analytics and tracking
 
-6. **Agritech Universities** 🎓
+7. **Agritech Universities** 🎓
    - Database of agritech research institutions
    - TTO (Technology Transfer Office) information
    - Incubation records and LinkedIn profiles
    - Export and filtering capabilities
 
-7. **AI Tools Request Form** 📋
+8. **AI Tools Request Form** 📋
    - Submit custom AI tool requests
    - Structured requirement gathering
    - Ticket tracking and status updates

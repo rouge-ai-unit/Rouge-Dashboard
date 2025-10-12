@@ -18,6 +18,7 @@ import {
   GraduationCap,
   HelpCircle,
   Sparkles,
+  TrendingUp,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -67,6 +68,11 @@ const publicNavItems = [
     title: "Agritech Universities",
     icon: GraduationCap,
     href: "/tools/agritech-universities",
+  },
+  {
+    title: "Sentiment Analyzer",
+    icon: TrendingUp,
+    href: "/tools/sentiment-analyzer",
   },
   {
     title: "Content Idea Automation",

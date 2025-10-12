@@ -188,6 +188,24 @@ export default function HelpDialog({ open, onOpenChangeAction }: HelpDialogProps
                   </AccordionContent>
                 </AccordionItem>
 
+                <AccordionItem value="sentiment-analyzer" className="border-gray-700/50">
+                  <AccordionTrigger className="text-blue-400 hover:text-blue-300">
+                    <div className="flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4" />
+                      Sentiment Analyzer
+                      <Badge variant="outline" className="border-pink-500/30 text-pink-400">AI Analysis</Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-gray-300 space-y-2">
+                    <p><strong>Purpose:</strong> Analyze public sentiment about companies using AI-powered news analysis</p>
+                    <p><strong>Features:</strong> Real-time news search, AI sentiment classification (Positive/Negative/Neutral), detailed reasoning, country-specific search, CSV export, search history</p>
+                    <p><strong>AI Models:</strong> Gemini (fast, accurate) or DeepSeek (cost-effective)</p>
+                    <p><strong>Usage:</strong> Enter company name → Select country (optional) → Choose AI model → Analyze sentiment → Filter/sort results → Export data</p>
+                    <p><strong>Limits:</strong> 100 searches per day per user (resets at midnight)</p>
+                    <p><strong>Route:</strong> <code className="bg-gray-700/50 px-2 py-1 rounded">/tools/sentiment-analyzer</code></p>
+                  </AccordionContent>
+                </AccordionItem>
+
                 <AccordionItem value="universities" className="border-gray-700/50">
                   <AccordionTrigger className="text-blue-400 hover:text-blue-300">
                     <div className="flex items-center gap-2">

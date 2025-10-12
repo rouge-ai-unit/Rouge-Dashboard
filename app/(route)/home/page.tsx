@@ -121,6 +121,13 @@ export default function Page() {
       description: "Discover upcoming AgTech startup conventions, expos, and networking events powered by AI. Search by location, filter by price, export results to CSV, and never miss an opportunity to connect with the agricultural technology ecosystem. Features advanced filters, multiple view modes, and real-time event discovery.",
       status: "Available",
     },
+    {
+      id: "/tools/sentiment-analyzer",
+      name: "Sentiment Analyzer",
+      href: "/tools/sentiment-analyzer",
+      description: "Analyze public sentiment about companies using AI-powered news analysis. Search recent articles, get sentiment insights (positive, negative, neutral), and understand public perception. Features include real-time analysis, search history, usage tracking, and detailed reasoning for each sentiment classification.",
+      status: "Available",
+    },
   ];
 
   // Set static tools on mount

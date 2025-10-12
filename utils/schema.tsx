@@ -1001,6 +1001,91 @@ export const agTechEventFavoriteSchema = z.object({
 
 
 // ============================================================================
+// SENTIMENT ANALYZER TABLES (Enterprise-Grade)
+// ============================================================================
+
+// Sentiment Articles - Stores analyzed articles with sentiment data
+export const SentimentArticles = pgTable("sentiment_articles", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  companyQuery: varchar("company_query", { length: 255 }).notNull(),
+  descriptionQuery: varchar("description_query", { length: 255 }),
+  title: varchar("title", { length: 500 }).notNull(),
+  link: varchar("link", { length: 1000 }).notNull().unique(),
+  snippet: text("snippet"),
+  sentiment: varchar("sentiment", { length: 20 }).notNull(), // 'positive', 'negative', 'neutral'
+  reasoning: text("reasoning").notNull(),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  companyQueryIdx: index("sentiment_articles_company_query_idx").on(table.companyQuery),
+  userIdIdx: index("sentiment_articles_user_id_idx").on(table.userId),
+  linkIdx: index("sentiment_articles_link_idx").on(table.link),
+  createdAtIdx: index("sentiment_articles_created_at_idx").on(table.createdAt),
+  sentimentIdx: index("sentiment_articles_sentiment_idx").on(table.sentiment),
+}));
+
+// Sentiment Search History - Tracks user search history
+export const SentimentSearchHistory = pgTable("sentiment_search_history", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  companyQuery: varchar("company_query", { length: 255 }).notNull(),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  resultsCount: integer("results_count").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("sentiment_search_history_user_id_idx").on(table.userId),
+  createdAtIdx: index("sentiment_search_history_created_at_idx").on(table.createdAt),
+  companyQueryIdx: index("sentiment_search_history_company_query_idx").on(table.companyQuery),
+}));
+
+// Sentiment API Usage - Tracks daily API usage per user (100/day limit)
+export const SentimentApiUsage = pgTable("sentiment_api_usage", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  date: date("date").notNull(),
+  count: integer("count").default(0).notNull(),
+  resetAt: timestamp("reset_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  userDateIdx: index("sentiment_api_usage_user_date_idx").on(table.userId, table.date),
+}));
+
+// Validation schemas for Sentiment Analyzer
+export const sentimentArticleSchema = z.object({
+  id: z.string().optional(),
+  companyQuery: z.string().min(1, 'Company query is required').max(255),
+  descriptionQuery: z.string().max(255).optional(),
+  title: z.string().min(1, 'Title is required').max(500),
+  link: z.string().url('Must be a valid URL').max(1000),
+  snippet: z.string().optional(),
+  sentiment: z.enum(['positive', 'negative', 'neutral'], {
+    errorMap: () => ({ message: 'Sentiment must be positive, negative, or neutral' })
+  }),
+  reasoning: z.string().min(1, 'Reasoning is required'),
+  userId: z.string().min(1, 'User ID is required'),
+  createdAt: z.date().optional(),
+});
+
+export const sentimentSearchHistorySchema = z.object({
+  id: z.string().optional(),
+  companyQuery: z.string().min(1, 'Company query is required').max(255),
+  userId: z.string().min(1, 'User ID is required'),
+  resultsCount: z.number().min(0, 'Results count must be non-negative'),
+  createdAt: z.date().optional(),
+});
+
+export const sentimentApiUsageSchema = z.object({
+  id: z.string().optional(),
+  userId: z.string().min(1, 'User ID is required'),
+  date: z.string().min(1, 'Date is required'),
+  count: z.number().min(0, 'Count must be non-negative').max(100, 'Daily limit is 100'),
+  resetAt: z.date(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+
+// ============================================================================
 // AUTHENTICATION TABLES (Enterprise-Grade)
 // ============================================================================
 

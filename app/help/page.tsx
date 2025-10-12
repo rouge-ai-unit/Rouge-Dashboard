@@ -64,6 +64,62 @@ export default function HelpPage() {
 
         <Card>
           <CardHeader>
+            <CardTitle>Tools Guide</CardTitle>
+            <CardDescription>Learn how to use our AI-powered tools effectively.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="sentiment">
+                <AccordionTrigger>Sentiment Analyzer</AccordionTrigger>
+                <AccordionContent className="space-y-2 text-sm">
+                  <p><strong>What it does:</strong> Analyzes public sentiment about companies using AI-powered news analysis from recent articles.</p>
+                  <p><strong>How to use:</strong></p>
+                  <ul className="list-disc list-inside space-y-1 ml-2">
+                    <li>Enter a company name (e.g., Apple, Tesla, Microsoft)</li>
+                    <li>Optionally specify a country (US, UK, CA, AU, IN) or leave blank for worldwide</li>
+                    <li>Choose AI model: Gemini (fast, accurate) or DeepSeek (cost-effective)</li>
+                    <li>Click &quot;Analyze Sentiment&quot; to search and analyze articles</li>
+                  </ul>
+                  <p><strong>Features:</strong></p>
+                  <ul className="list-disc list-inside space-y-1 ml-2">
+                    <li>Real-time news article search via Google Custom Search</li>
+                    <li>AI sentiment classification: Positive, Negative, or Neutral</li>
+                    <li>Detailed reasoning for each sentiment score</li>
+                    <li>Filter by sentiment type</li>
+                    <li>Sort by date or sentiment</li>
+                    <li>Switch between grid and list view</li>
+                    <li>Export results to CSV</li>
+                    <li>View and clear search history</li>
+                    <li>Usage tracking with daily limits</li>
+                  </ul>
+                  <p><strong>Limits:</strong> 100 searches per day per user (resets at midnight)</p>
+                  <p><strong>Data Cleanup:</strong> Articles and search history older than 90 days are automatically removed</p>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="startup">
+                <AccordionTrigger>Startup Seeker</AccordionTrigger>
+                <AccordionContent>
+                  Discover innovative agritech startups with AI-powered search and scoring. Filter by location, technology, and market readiness.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="content">
+                <AccordionTrigger>Content Idea Automation</AccordionTrigger>
+                <AccordionContent>
+                  Generate content ideas automatically using AI. Perfect for social media, blogs, and marketing campaigns.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="cold">
+                <AccordionTrigger>Cold Connect Automator</AccordionTrigger>
+                <AccordionContent>
+                  Automate personalized cold outreach campaigns. Sync with Notion or Google Sheets, generate AI messages, and track performance.
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Resources</CardTitle>
             <CardDescription>Additional links and support.</CardDescription>
           </CardHeader>

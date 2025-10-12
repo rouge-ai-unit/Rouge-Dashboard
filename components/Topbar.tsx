@@ -248,7 +248,9 @@ export default function Topbar({ title }: Props) {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="border-gray-700 text-white pl-2 pr-2">
                 <Avatar className="size-6 mr-2">
-                  <AvatarFallback className="text-xs">{session?.user?.name?.[0]?.toUpperCase() ?? "U"}</AvatarFallback>
+                  <AvatarFallback className="text-xs" suppressHydrationWarning>
+                    {session?.user?.name?.[0]?.toUpperCase() ?? "U"}
+                  </AvatarFallback>
                 </Avatar>
                 <ChevronDown className="size-3.5" />
               </Button>
