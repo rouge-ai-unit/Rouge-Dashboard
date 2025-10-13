@@ -346,7 +346,7 @@ export default function HelpDialog({ open, onOpenChangeAction }: HelpDialogProps
                 <AccordionItem value="access" className="border-gray-700/50">
                   <AccordionTrigger className="text-orange-400">How do I get access to the platform?</AccordionTrigger>
                   <AccordionContent className="text-gray-300">
-                    Access is restricted to Rouge email addresses (.rouge@gmail.com). Contact the AI team at ai@rougevc.com for account setup and onboarding.
+                    Access is restricted to Rouge email addresses (.rouge@gmail.com or @rougevc.com). Contact the AI team at ai@rougevc.com for account setup and onboarding.
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="tools" className="border-gray-700/50">

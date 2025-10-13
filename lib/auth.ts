@@ -26,9 +26,9 @@ export const allowedEmailPatterns = envPatterns.map(p => {
 
 export function isAllowedEmail(email: string): boolean {
   const e = email.toLowerCase().trim();
-  // Special-case allow: emails whose local-part ends with '.rouge' at gmail
-  // Example: john.rouge@gmail.com
-  if (e.endsWith('.rouge@gmail.com')) return true;
+  // Special-case allow: emails whose local-part ends with '.rouge' at gmail and @rougevc.com
+  // Example: john.rouge@gmail.com, admin@rougevc.com
+  if (e.endsWith('.rouge@gmail.com') || e.endsWith('@rougevc.com')) return true;
   // If no allowlist configured, allow any authenticated email (production will set envs)
   if (allowedEmails.length === 0 && allowedDomains.length === 0 && allowedEmailPatterns.length === 0) {
     return true;

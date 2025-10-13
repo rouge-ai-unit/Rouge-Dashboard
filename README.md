@@ -728,7 +728,7 @@ See `utils/schema.tsx` for complete schema definitions.
 
 Rouge Dashboard uses **database-backed authentication** with comprehensive security features:
 
-- ✅ **Rouge Email Restriction** - Only `.rouge@gmail.com` emails allowed
+- ✅ **Rouge Email Restriction** - Only `.rouge@gmail.com` and `@rougevc.com` emails allowed
 - ✅ **Strong Password Requirements** - 8+ chars, uppercase, lowercase, number, special character
 - ✅ **Account Lockout** - Automatic lockout after 5 failed attempts (15 minutes)
 - ✅ **Password Reset** - Secure token-based reset via email
@@ -753,7 +753,7 @@ Rouge Dashboard uses **database-backed authentication** with comprehensive secur
 
 #### Sign Up
 1. Visit `/signup`
-2. Enter first name, last name, Rouge email, password
+2. Enter first name, last name, Rouge email (.rouge@gmail.com or @rougevc.com), password
 3. Account created in database
 4. Welcome email sent (if SendGrid configured)
 5. Redirect to sign in
@@ -1154,7 +1154,7 @@ The Rouge Dashboard is **fully complete and production-ready** with all features
 
 **Authentication & Security**
 - ✅ Database-backed authentication system
-- ✅ Rouge email restriction (.rouge@gmail.com)
+- ✅ Rouge email restriction (.rouge@gmail.com and @rougevc.com)
 - ✅ Google OAuth integration
 - ✅ Email/password authentication with bcrypt
 - ✅ Account lockout after 5 failed attempts

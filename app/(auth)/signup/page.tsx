@@ -196,10 +196,10 @@ export default function SignUpPage() {
                   value={formData.email}
                   onChange={handleChange}
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-colors"
-                  placeholder="john.rouge@gmail.com"
+                  placeholder="john.rouge@gmail.com or admin@rougevc.com"
                 />
                 <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  Must end with .rouge@gmail.com
+                  Must end with .rouge@gmail.com or @rougevc.com
                 </p>
               </div>
 

@@ -16,11 +16,11 @@ import type { User, NewUser, NewSession, NewAuditLog } from '@/utils/auth-schema
 
 /**
  * Check if email is allowed to register/login
- * Only Rouge emails (.rouge@gmail.com) are allowed
+ * Rouge emails (.rouge@gmail.com) and @rougevc.com are allowed
  */
 export function isRougeEmail(email: string): boolean {
   const normalizedEmail = email.toLowerCase().trim();
-  return normalizedEmail.endsWith('.rouge@gmail.com');
+  return normalizedEmail.endsWith('.rouge@gmail.com') || normalizedEmail.endsWith('@rougevc.com');
 }
 
 /**
@@ -32,7 +32,7 @@ export function getEmailRejectionReason(email: string): string {
   }
   
   if (!isRougeEmail(email)) {
-    return 'Access restricted to Rouge team members only. Please use your Rouge email address (ending with .rouge@gmail.com)';
+    return 'Access restricted to Rouge team members only. Please use your Rouge email address (ending with .rouge@gmail.com or @rougevc.com)';
   }
   
   return '';

@@ -11,7 +11,7 @@ import { LoginError } from "@/components/LoginError";
 import { useSearchParams } from "next/navigation";
 
 const errorMessages: Record<string, string> = {
-  AccessDenied: "Access restricted to Rouge team members only. Please use your Rouge email address (ending with .rouge@gmail.com)",
+  AccessDenied: "Access restricted to Rouge team members only. Please use your Rouge email address (ending with .rouge@gmail.com or @rougevc.com)",
   OAuthSignin: "Could not start OAuth sign-in.",
   OAuthCallback: "OAuth callback failed.",
   OAuthAccountNotLinked: "Account not linked to the chosen provider.",

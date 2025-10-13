@@ -17,9 +17,9 @@ export default function UnauthorizedPage() {
         </div>
         <h1 className="text-3xl font-bold mb-3">Access Restricted</h1>
         <p className="text-base mb-5 text-gray-300">
-          Access is restricted. Please sign in with an allowed company email as configured by the administrator.
+          Access is restricted to Rouge team members only. Please sign in with your Rouge email address (ending with .rouge@gmail.com or @rougevc.com).
         </p>
-        <p className="text-sm text-gray-400 mb-4">Please sign in with a valid company email or contact the admin for access.</p>
+        <p className="text-sm text-gray-400 mb-4">Contact the AI team at ai@rougevc.com for account setup and onboarding.</p>
         <Link href="/signin" className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Go to sign in</Link>
       </motion.div>
     </main>

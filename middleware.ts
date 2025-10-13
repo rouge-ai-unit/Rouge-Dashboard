@@ -78,8 +78,8 @@ const authMiddleware = withAuth({
       if (devBypass) return true; // allow all locally
       const email = token?.email?.toLowerCase().trim() ?? "";
       if (!email) return false;
-      // Special-case allow: emails whose local-part ends with '.rouge' at gmail
-      if (email.endsWith('.rouge@gmail.com')) return true;
+      // Special-case allow: emails whose local-part ends with '.rouge' at gmail and @rougevc.com
+      if (email.endsWith('.rouge@gmail.com') || email.endsWith('@rougevc.com')) return true;
       // If no allowlist configured, allow any authenticated email
       if (envEmails.length === 0 && envDomains.length === 0 && patternRegex.length === 0) return true;
       if (envEmails.includes(email)) return true;

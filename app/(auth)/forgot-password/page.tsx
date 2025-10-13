@@ -127,11 +127,11 @@ export default function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-colors"
-                    placeholder="john.rouge@gmail.com"
+                    placeholder="john.rouge@gmail.com or admin@rougevc.com"
                   />
                 </div>
                 <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  Enter your Rouge email address
+                  Enter your Rouge email address (.rouge@gmail.com or @rougevc.com)
                 </p>
               </div>
 
