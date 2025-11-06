@@ -210,16 +210,19 @@ export const authOptions: NextAuthOptions = {
             dbUser = await findUserByEmail(email);
             
             if (!dbUser) {
-              // Create new user
+              // Create new user - automatically creates account for new Google sign-ins
               const nameParts = user.name?.split(" ") || [];
-              await createUser({
+              console.log(`[Auth] Creating new user account for Google OAuth: ${email}`);
+              dbUser = await createUser({
                 email,
                 password: randomUUID(), // Random password for OAuth users
                 firstName: nameParts[0] || "User",
                 lastName: nameParts.slice(1).join(" ") || "",
+                avatar: user.image || undefined,
                 oauthProvider: "google",
                 googleId: user.id,
               });
+              console.log(`[Auth] Successfully created user account: ${dbUser.id}`);
             } else {
               // Update existing user with Google ID
               const { updateUser } = await import("./auth/auth-service");
@@ -230,7 +233,7 @@ export const authOptions: NextAuthOptions = {
             }
           }
           
-          // Update last login
+          // Update last login - now dbUser is guaranteed to exist
           if (dbUser) {
             await updateLastLogin(dbUser.id);
           }
@@ -243,16 +246,30 @@ export const authOptions: NextAuthOptions = {
           });
         } catch (error) {
           console.error("[Auth] Error handling Google sign-in:", error);
+          // Log the actual error for debugging
+          if (error instanceof Error) {
+            console.error("[Auth] Error details:", error.message);
+          }
           return "/unauthorized";
         }
       }
       
       return true;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      // On initial sign in, set the user ID
       if (user?.id) {
         token.sub = user.id;
       }
+      
+      // For Google OAuth, ensure we have the database user ID
+      if (account?.provider === "google" && token.email) {
+        const dbUser = await findUserByEmail(token.email as string);
+        if (dbUser) {
+          token.sub = dbUser.id;
+        }
+      }
+      
       return token;
     },
     async session({ session, token }) {

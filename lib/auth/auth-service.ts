@@ -79,6 +79,7 @@ export async function createUser(data: {
   lastName: string;
   oauthProvider?: string;
   googleId?: string;
+  avatar?: string;
 }): Promise<User> {
   const db = getDb();
   
@@ -104,6 +105,7 @@ export async function createUser(data: {
     firstName: data.firstName,
     lastName: data.lastName,
     displayName: `${data.firstName} ${data.lastName}`,
+    avatar: data.avatar || null,
     oauthProvider: data.oauthProvider || 'credentials',
     googleId: data.googleId,
     role: 'user',
