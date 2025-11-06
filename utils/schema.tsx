@@ -1084,6 +1084,159 @@ export const sentimentApiUsageSchema = z.object({
   updatedAt: z.date().optional(),
 });
 
+// ============================================================================
+// AI OUTREACH AGENT TABLES
+// ============================================================================
+
+export const OutreachLists = pgTable("ai_outreach_lists", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: varchar("user_id").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  companyDescription: text("company_description").notNull(),
+  targetAudiences: jsonb("target_audiences").$type<string[]>().notNull(),
+  status: varchar("status", { length: 50 }).default("completed"), // 'generating', 'completed', 'failed'
+  leadCount: integer("lead_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+  errorMessage: text("error_message"),
+  metadata: jsonb("metadata").$type<{
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+    processingTime?: number;
+    aiModel?: string;
+    cacheHit?: boolean;
+  }>(),
+}, (table) => ({
+  userIdIdx: index("ai_outreach_lists_user_id_idx").on(table.userId),
+  createdAtIdx: index("ai_outreach_lists_created_at_idx").on(table.createdAt),
+  statusIdx: index("ai_outreach_lists_status_idx").on(table.status),
+}));
+
+export const OutreachLeads = pgTable("ai_outreach_leads", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  listId: uuid("list_id").notNull().references(() => OutreachLists.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  type: varchar("type", { length: 50 }).notNull(), // LeadType enum values
+  relevance: text("relevance").notNull(),
+  outreachSuggestion: text("outreach_suggestion").notNull(),
+  status: varchar("status", { length: 50 }).default("active"), // 'active', 'contacted', 'responded', 'archived'
+  priority: integer("priority").default(1), // 1-5, higher is more important
+  tags: jsonb("tags").$type<string[]>().default([]),
+  contactInfo: jsonb("contact_info").$type<{
+    email?: string;
+    linkedin?: string;
+    website?: string;
+    phone?: string;
+  }>(),
+  notes: text("notes"),
+  contactedAt: timestamp("contacted_at"),
+  respondedAt: timestamp("responded_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  listIdIdx: index("ai_outreach_leads_list_id_idx").on(table.listId),
+  userIdIdx: index("ai_outreach_leads_user_id_idx").on(table.userId),
+  typeIdx: index("ai_outreach_leads_type_idx").on(table.type),
+  statusIdx: index("ai_outreach_leads_status_idx").on(table.status),
+}));
+
+export const OutreachSessions = pgTable("ai_outreach_sessions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: varchar("user_id").notNull(),
+  sessionId: varchar("session_id", { length: 255 }).notNull().unique(),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  startedAt: timestamp("started_at").defaultNow(),
+  endedAt: timestamp("ended_at"),
+  duration: integer("duration"), // in seconds
+  actions: jsonb("actions").$type<Array<{
+    action: string;
+    timestamp: string;
+    metadata?: any;
+  }>>().default([]),
+  metadata: jsonb("metadata").$type<{
+    totalListsGenerated?: number;
+    totalLeadsViewed?: number;
+    exportCount?: number;
+    searchQueries?: string[];
+  }>(),
+}, (table) => ({
+  userIdIdx: index("ai_outreach_sessions_user_id_idx").on(table.userId),
+  sessionIdIdx: index("ai_outreach_sessions_session_id_idx").on(table.sessionId),
+  startedAtIdx: index("ai_outreach_sessions_started_at_idx").on(table.startedAt),
+}));
+
+// Validation schemas for AI Outreach Agent
+export const outreachListSchema = z.object({
+  id: z.string().uuid().optional(),
+  userId: z.string().min(1, 'User ID is required'),
+  title: z.string().min(1, 'Title is required').max(255),
+  companyDescription: z.string().min(50, 'Company description must be at least 50 characters').max(2000),
+  targetAudiences: z.array(z.string()).min(1, 'At least one target audience required').max(5),
+  status: z.enum(['generating', 'completed', 'failed']).optional(),
+  leadCount: z.number().min(0).optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+  completedAt: z.date().optional(),
+  errorMessage: z.string().optional(),
+  metadata: z.object({
+    promptTokens: z.number().optional(),
+    completionTokens: z.number().optional(),
+    totalTokens: z.number().optional(),
+    processingTime: z.number().optional(),
+    aiModel: z.string().optional(),
+    cacheHit: z.boolean().optional(),
+  }).optional(),
+});
+
+export const outreachLeadSchema = z.object({
+  id: z.string().uuid().optional(),
+  listId: z.string().uuid('Invalid list ID'),
+  userId: z.string().min(1, 'User ID is required'),
+  name: z.string().min(1, 'Lead name is required').max(255),
+  type: z.string().min(1, 'Lead type is required').max(50),
+  relevance: z.string().min(10, 'Relevance must be at least 10 characters'),
+  outreachSuggestion: z.string().min(20, 'Outreach suggestion must be at least 20 characters'),
+  status: z.enum(['active', 'contacted', 'responded', 'archived']).optional(),
+  priority: z.number().min(1).max(5).optional(),
+  tags: z.array(z.string()).optional(),
+  contactInfo: z.object({
+    email: z.string().email().optional(),
+    linkedin: z.string().url().optional(),
+    website: z.string().url().optional(),
+    phone: z.string().optional(),
+  }).optional(),
+  notes: z.string().optional(),
+  contactedAt: z.date().optional(),
+  respondedAt: z.date().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+export const outreachSessionSchema = z.object({
+  id: z.string().uuid().optional(),
+  userId: z.string().min(1, 'User ID is required'),
+  sessionId: z.string().min(1, 'Session ID is required'),
+  ipAddress: z.string().optional(),
+  userAgent: z.string().optional(),
+  startedAt: z.date().optional(),
+  endedAt: z.date().optional(),
+  duration: z.number().optional(),
+  actions: z.array(z.object({
+    action: z.string(),
+    timestamp: z.string(),
+    metadata: z.any().optional(),
+  })).optional(),
+  metadata: z.object({
+    totalListsGenerated: z.number().optional(),
+    totalLeadsViewed: z.number().optional(),
+    exportCount: z.number().optional(),
+    searchQueries: z.array(z.string()).optional(),
+  }).optional(),
+});
 
 // ============================================================================
 // AUTHENTICATION TABLES (Enterprise-Grade)

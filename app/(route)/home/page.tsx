@@ -115,6 +115,13 @@ export default function Page() {
       status: "Available",
     },
     {
+      id: "/tools/ai-outreach-agent",
+      name: "AI Outreach Agent",
+      href: "/tools/ai-outreach-agent",
+      description: "Generate personalized outreach lists with strategic leads and tailored messaging for your business development. Create comprehensive lead portfolios with AI-powered analysis, advanced filtering, export capabilities, and lead management features. Features include real-time statistics, progress tracking, and enterprise-grade lead organization.",
+      status: "Available",
+    },
+    {
       id: "/agtech-events",
       name: "AgTech Event Finder",
       href: "/agtech-events",

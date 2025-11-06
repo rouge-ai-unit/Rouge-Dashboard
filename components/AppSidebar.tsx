@@ -85,6 +85,11 @@ const publicNavItems = [
     href: "/tools/cold-connect-automator",
   },
   {
+    title: "AI Outreach Agent",
+    icon: Briefcase,
+    href: "/tools/ai-outreach-agent",
+  },
+  {
     title: "Contact Us",
     icon: HelpCircle,
     href: "/tools/contact",

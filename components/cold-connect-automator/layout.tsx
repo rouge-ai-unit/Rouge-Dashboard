@@ -339,17 +339,9 @@ const Sidebar: React.FC<SidebarProps> = memo(({
           {/* Footer */}
           <div className="p-4 border-t border-gray-700">
             {!collapsed && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start text-gray-400 hover:text-white"
-                asChild
-              >
-                <a href="/help" className="flex items-center">
-                  <HelpCircle className="h-4 w-4 mr-3" />
-                  Help & Support
-                </a>
-              </Button>
+              <div className="text-xs text-gray-500 text-center">
+                Access help from the top navigation
+              </div>
             )}
           </div>
         </div>

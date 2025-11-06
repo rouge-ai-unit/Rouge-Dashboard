@@ -188,6 +188,52 @@ export default function HelpDialog({ open, onOpenChangeAction }: HelpDialogProps
                   </AccordionContent>
                 </AccordionItem>
 
+                <AccordionItem value="ai-outreach-agent" className="border-gray-700/50">
+                  <AccordionTrigger className="text-blue-400 hover:text-blue-300">
+                    <div className="flex items-center gap-2">
+                      <Target className="w-4 h-4" />
+                      AI Outreach Agent
+                      <Badge variant="outline" className="border-indigo-500/30 text-indigo-400">Lead Gen</Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-gray-300 space-y-2">
+                    <p><strong>Purpose:</strong> Generate personalized outreach lists with strategic leads and tailored messaging for business development using AI-powered analysis</p>
+                    <p><strong>How to use:</strong></p>
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                      <li>Describe your company, products/services, and target market in the company description field</li>
+                      <li>Select target audience types (VCs, Corporate Clients, Farmer Cooperatives, Angel Investors, Strategic Partners)</li>
+                      <li>Click "Generate Outreach List" to create AI-powered leads with personalized messaging</li>
+                      <li>Review and manage leads in the Outreach Portfolio tab</li>
+                    </ul>
+                    <p><strong>Features:</strong></p>
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                      <li>AI-powered lead generation using Google Gemini</li>
+                      <li>Strategic lead analysis and relevance scoring</li>
+                      <li>Personalized outreach message suggestions</li>
+                      <li>Advanced filtering and search capabilities</li>
+                      <li>Lead status tracking (Active, Contacted, Responded, Archived)</li>
+                      <li>Priority management (1-5 scale)</li>
+                      <li>Contact information management</li>
+                      <li>Multiple export formats (CSV, JSON, Email lists)</li>
+                      <li>Real-time statistics and portfolio overview</li>
+                      <li>Lead management with notes and follow-up tracking</li>
+                      <li>Progress tracking during generation</li>
+                      <li>Enterprise-grade data validation and error handling</li>
+                    </ul>
+                    <p><strong>Limits:</strong> 10 outreach list generations per hour per user</p>
+                    <p><strong>Data Storage:</strong> Outreach lists and leads are securely stored with user authentication and audit logging</p>
+                    <p><strong>Best Practices:</strong></p>
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                      <li>Provide detailed company descriptions for better lead matching</li>
+                      <li>Select 3-5 target audience types for comprehensive coverage</li>
+                      <li>Review and customize AI-generated messages before sending</li>
+                      <li>Use lead management features to track outreach progress</li>
+                      <li>Export successful campaigns for future reference</li>
+                    </ul>
+                    <p><strong>Route:</strong> <code className="bg-gray-700/50 px-2 py-1 rounded">/tools/ai-outreach-agent</code></p>
+                  </AccordionContent>
+                </AccordionItem>
+
                 <AccordionItem value="sentiment-analyzer" className="border-gray-700/50">
                   <AccordionTrigger className="text-blue-400 hover:text-blue-300">
                     <div className="flex items-center gap-2">

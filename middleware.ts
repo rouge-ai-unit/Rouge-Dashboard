@@ -95,7 +95,6 @@ export default withProductionMiddleware(authMiddleware);
 export const config = {
   matcher: [
     "/stats",
-    "/help",
     "/work-tracker",
     "/settings",
     "/agtech-events",

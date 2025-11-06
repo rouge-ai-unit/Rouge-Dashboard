@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { OutreachErrorBoundary } from '@/components/ai-outreach-agent/ErrorBoundary'
 
 export const metadata: Metadata = {
   title: 'AI Outreach Agent',
@@ -18,7 +19,9 @@ export default function AIOutreachAgentLayout({
           Generate personalized outreach suggestions for your target audiences using AI
         </p>
       </div>
-      {children}
+      <OutreachErrorBoundary>
+        {children}
+      </OutreachErrorBoundary>
     </div>
   )
 }
