@@ -202,7 +202,7 @@ export default function HelpDialog({ open, onOpenChangeAction }: HelpDialogProps
                     <ul className="list-disc list-inside space-y-1 ml-2">
                       <li>Describe your company, products/services, and target market in the company description field</li>
                       <li>Select target audience types (VCs, Corporate Clients, Farmer Cooperatives, Angel Investors, Strategic Partners)</li>
-                      <li>Click "Generate Outreach List" to create AI-powered leads with personalized messaging</li>
+                      <li>Click &quot;Generate Outreach List&quot; to create AI-powered leads with personalized messaging</li>
                       <li>Review and manage leads in the Outreach Portfolio tab</li>
                     </ul>
                     <p><strong>Features:</strong></p>
