@@ -392,11 +392,32 @@ export async function getContactMetrics(userId: string) {
   const activeContacts = activeContactsResult[0]?.count || 0;
 
   // For now, we'll set qualified contacts to 0 since we don't have a qualification system yet
-  // This can be enhanced later with actual qualification logic
-  const qualifiedContacts = 0;
+  // Calculate qualified contacts based on engagement and status
+  const qualifiedContactsResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(Contacts)
+    .where(
+      and(
+        eq(Contacts.userId, userId),
+        eq(Contacts.status, 'qualified')
+      )
+    );
+  const qualifiedContacts = qualifiedContactsResult[0]?.count || 0;
 
-  // Calculate average engagement score (placeholder - would need engagement tracking)
-  const avgEngagementScore = 0;
+  // Calculate average engagement score from messages
+  const engagementResult = await db
+    .select({
+      avgScore: sql<number>`AVG(CASE 
+        WHEN ${Messages.status} = 'sent' THEN 1
+        WHEN ${Messages.status} = 'opened' THEN 2
+        WHEN ${Messages.status} = 'clicked' THEN 3
+        WHEN ${Messages.status} = 'replied' THEN 4
+        ELSE 0
+      END)`
+    })
+    .from(Messages)
+    .where(eq(Messages.userId, userId));
+  const avgEngagementScore = Math.round((engagementResult[0]?.avgScore || 0) * 25); // Convert to 0-100 scale
 
   // Get recent additions (last 7 days)
   const sevenDaysAgo = new Date();

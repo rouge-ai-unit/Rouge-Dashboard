@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { MessageCircle, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface ChatbotWidgetProps {
   chatbotUrl?: string;
@@ -16,6 +17,7 @@ export default function ChatbotWidget({
   position = 'bottom-right',
   theme = 'dark'
 }: ChatbotWidgetProps) {
+  const { data: session, status } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -23,6 +25,15 @@ export default function ChatbotWidget({
   const popupRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const pathname = usePathname();
+
+  // Don't show chatbot on auth pages or if not authenticated
+  const isAuthPage = pathname?.startsWith('/signin') || 
+                     pathname?.startsWith('/signup') || 
+                     pathname?.startsWith('/forgot-password') ||
+                     pathname?.startsWith('/reset-password') ||
+                     pathname?.startsWith('/pending-approval') ||
+                     pathname?.startsWith('/admin-choice') ||
+                     pathname?.startsWith('/support');
 
   // Prevent hydration mismatch by only rendering after mount
   useEffect(() => {
@@ -120,13 +131,13 @@ export default function ChatbotWidget({
 
   const currentTheme = themeClasses[theme];
 
-  // Don't render on signin pages
-  const isSigninPage = pathname?.startsWith('/signin') || 
-                      pathname?.startsWith('/auth/signin') || 
-                      pathname?.startsWith('/(auth)/signin');
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return null;
+  }
 
-  // Prevent hydration mismatch by not rendering until mounted or on signin pages
-  if (!mounted || isSigninPage) {
+  // Don't render on auth pages or if not authenticated
+  if (status === 'unauthenticated' || isAuthPage) {
     return null;
   }
 

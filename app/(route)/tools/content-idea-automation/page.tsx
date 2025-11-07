@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -27,8 +28,13 @@ interface ContentItem {
 }
 
 export default function ContentIdeaAutomation() {
+  const { data: session } = useSession();
   const router = useRouter();
   const [content, setContent] = useState<ContentItem[]>([]);
+  
+  // Get user role for permission checks
+  const userRole = (session?.user as any)?.role;
+  const isReadOnly = userRole === 'member';
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("content");
   const headerRef = useRef<HTMLDivElement | null>(null);
@@ -141,26 +147,34 @@ export default function ContentIdeaAutomation() {
               <h1 className="text-3xl md:text-4xl font-bold text-white">
                 LinkedIn Content Ideas ({content.length})
               </h1>
-              <Button
-                onClick={() => handleGenerateData()}
-                disabled={loading}
-                className="flex items-center gap-2"
-              >
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-                Generate Data
-              </Button>
-              <Button
-                variant="outline"
-                disabled={loading}
-                onClick={() => setRangeOpen(true)}
-                className="ml-2 border-gray-400 text-gray-200"
-              >
-                Custom Range
-              </Button>
+              {!isReadOnly ? (
+                <>
+                  <Button
+                    onClick={() => handleGenerateData()}
+                    disabled={loading}
+                    className="flex items-center gap-2"
+                  >
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                    Generate Data
+                  </Button>
+                  <Button
+                    variant="outline"
+                    disabled={loading}
+                    onClick={() => setRangeOpen(true)}
+                    className="ml-2 border-gray-400 text-gray-200"
+                  >
+                    Custom Range
+                  </Button>
+                </>
+              ) : (
+                <div className="text-sm text-yellow-300 bg-yellow-900/20 px-4 py-2 rounded-lg border border-yellow-600/50">
+                  View-only access - Contact admin for generation permissions
+                </div>
+              )}
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 8 }}

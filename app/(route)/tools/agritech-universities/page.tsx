@@ -183,9 +183,23 @@ export default function AgritechUniversitiesPage() {
     if (sessionStatus === "unauthenticated") {
       router.push("/signin");
     } else if (sessionStatus === "authenticated") {
+      // Check if user is approved
+      const isApproved = (session?.user as any)?.isApproved;
+      if (!isApproved) {
+        router.push("/pending-approval");
+        return;
+      }
+      
+      // Check role - only admin, leader, and co-leader can access
+      const userRole = (session?.user as any)?.role;
+      if (userRole === "member") {
+        router.push("/unauthorized");
+        return;
+      }
+      
       loadHistoricalResults();
     }
-  }, [sessionStatus, router]);
+  }, [sessionStatus, session, router]);
 
   // ============================================================================
   // DATA LOADING FUNCTIONS

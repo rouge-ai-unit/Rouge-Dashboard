@@ -14,6 +14,8 @@ import {
   isRougeEmail,
   getEmailRejectionReason,
 } from "./auth/auth-service";
+import { updateLastActive, checkApprovalExpiry } from "./security/approval-expiry";
+import { getSessionDurationForRole, forceLogoutOnRoleChange } from "./security/session-manager";
 
 const envEmails = (process.env.ALLOWED_EMAILS || "").split(",").map(s => s.trim()).filter(Boolean);
 const envDomains = (process.env.ALLOWED_DOMAINS || "").split(",").map(s => s.trim()).filter(Boolean);
@@ -144,6 +146,17 @@ if (enableCredentialsProvider) {
           throw new Error("CredentialsSignin");
         }
 
+        // Check if user is approved
+        if (!user.isApproved) {
+          await logLoginAttempt({
+            email,
+            success: false,
+            userId: user.id,
+            errorMessage: 'Account pending approval',
+          });
+          throw new Error("AccountPendingApproval");
+        }
+
         // Check if user is active
         if (!user.isActive || user.status !== 'active') {
           await logLoginAttempt({
@@ -182,6 +195,11 @@ export const authOptions: NextAuthOptions = {
   secret: isProd
     ? (process.env.NEXTAUTH_SECRET as string)
     : process.env.NEXTAUTH_SECRET || randomUUID(),
+  session: {
+    strategy: "jwt",
+    maxAge: 8 * 60 * 60, // 8 hours default (admin)
+    updateAge: 60 * 60, // Update session every hour
+  },
   callbacks: {
     async signIn({ user, account }) {
       // Dev bypass sign-in checks
@@ -233,9 +251,31 @@ export const authOptions: NextAuthOptions = {
             }
           }
           
+          // Check if user is approved
+          if (!dbUser.isApproved) {
+            console.log(`[Auth] User ${email} is not approved yet`);
+            await logLoginAttempt({
+              email,
+              success: false,
+              userId: dbUser.id,
+              errorMessage: 'Account pending approval',
+            });
+            return "/pending-approval";
+          }
+          
           // Update last login - now dbUser is guaranteed to exist
           if (dbUser) {
             await updateLastLogin(dbUser.id);
+            
+            // Update last active timestamp
+            await updateLastActive(dbUser.id);
+            
+            // Check approval expiry
+            const expiryCheck = await checkApprovalExpiry(dbUser.id);
+            if (expiryCheck.needsReapproval) {
+              console.log(`[Auth] User ${email} needs re-approval (inactive for ${expiryCheck.daysSinceActive} days)`);
+              // Note: We don't block login, just flag for admin review
+            }
           }
           
           // Log successful login
@@ -262,11 +302,14 @@ export const authOptions: NextAuthOptions = {
         token.sub = user.id;
       }
       
-      // For Google OAuth, ensure we have the database user ID
-      if (account?.provider === "google" && token.email) {
+      // For Google OAuth or when we need to fetch user data, get from database
+      if (token.email) {
         const dbUser = await findUserByEmail(token.email as string);
         if (dbUser) {
           token.sub = dbUser.id;
+          token.role = dbUser.role || undefined;
+          token.unit = dbUser.unit || undefined;
+          token.isApproved = dbUser.isApproved ?? undefined;
         }
       }
       
@@ -275,11 +318,33 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user && token.sub) {
         (session.user as any).id = token.sub;
+        
+        // Set session expiry based on role
+        const userRole = token.role as string || 'member';
+        const sessionDuration = getSessionDurationForRole(userRole);
+        (session as any).maxAge = sessionDuration;
+        (session.user as any).role = token.role;
+        (session.user as any).unit = token.unit;
+        (session.user as any).isApproved = token.isApproved;
       }
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Always redirect to /home after login
+      // If redirecting to pending approval, allow it
+      if (url.includes("/pending-approval")) {
+        return url;
+      }
+      
+      // If redirecting to admin-choice, allow it
+      if (url.includes("/admin-choice")) {
+        return url;
+      }
+      
+      // Check if this is a post-login redirect
+      // We need to check the user's role to decide where to send them
+      // Since we can't access session here, we'll handle this in the pages
+      
+      // Default redirect to home
       return baseUrl + "/home";
     },
   },

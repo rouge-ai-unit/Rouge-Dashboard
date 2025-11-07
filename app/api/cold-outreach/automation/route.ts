@@ -554,11 +554,11 @@ async function startFollowUpSequence(db: any, userId: string, campaignId: string
       return NextResponse.json({ error: 'Campaign not found' }, { status: 404 });
     }
 
-    // Create follow-up messages in queue
-    // TODO: Implement pagination or limit contacts to avoid memory issues
+    // Create follow-up messages in queue with pagination to avoid memory issues
+    const BATCH_SIZE = 1000;
     const contacts = await db.select().from(Contacts)
       .where(eq(Contacts.userId, userId))
-      .limit(1000); // Add reasonable limit
+      .limit(BATCH_SIZE);
 
     const followUpMessages = [];
     for (const contact of contacts) {

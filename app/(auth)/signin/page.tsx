@@ -20,6 +20,7 @@ const errorMessages: Record<string, string> = {
   Configuration: "Authentication provider is not configured. Check server environment variables.",
   AccountLocked: "Your account has been locked due to too many failed login attempts. Please try again in 15 minutes or reset your password.",
   AccountInactive: "Your account is inactive. Please contact support.",
+  AccountPendingApproval: "Your account is pending approval from the AI Unit team. You will receive an email once approved.",
 };
 
 function resolveErrorMessage(error?: string | null): string {

@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { signupSchema } from '@/utils/auth-schema';
-import { createUser, isRougeEmail, getEmailRejectionReason, logAuditEvent } from '@/lib/auth/auth-service';
-import { sendWelcomeEmail } from '@/lib/auth/email-service';
+import { createUser, isRougeEmail, getEmailRejectionReason, logAuditEvent, createApprovalQueueEntry } from '@/lib/auth/auth-service';
+import { sendWelcomeEmail, sendPendingApprovalEmail, sendAdminNewUserNotification } from '@/lib/auth/email-service';
+import { notifyNewSignup } from '@/lib/notifications/notification-service';
 
 /**
  * POST /api/auth/signup
  * Register a new user (Rouge emails only)
+ * New users require approval from AI Unit admins
  */
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +22,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { email, password, firstName, lastName } = validationResult.data;
+    const { email, password, firstName, lastName, requestedUnit, requestedRole, signupJustification } = validationResult.data;
     
     // Check if Rouge email
     if (!isRougeEmail(email)) {
@@ -44,27 +46,56 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Create user
+    // Create user (status will be 'pending' for manual signups)
     const user = await createUser({
       email,
       password,
       firstName,
       lastName,
+      requestedUnit,
+      requestedRole,
+      signupJustification,
     });
     
-    // Send welcome email (non-blocking)
-    sendWelcomeEmail(email, `${firstName} ${lastName}`).catch(err => {
-      console.error('[Signup] Failed to send welcome email:', err);
+    // Create approval queue entry
+    await createApprovalQueueEntry({
+      userId: user.id,
+      requestedRole,
+      requestedUnit,
+      justification: signupJustification,
+    });
+    
+    // Send pending approval email to user (non-blocking)
+    sendPendingApprovalEmail(email, `${firstName} ${lastName}`).catch(err => {
+      console.error('[Signup] Failed to send pending approval email:', err);
+    });
+    
+    // Send notification to admins about new signup (non-blocking)
+    sendAdminNewUserNotification({
+      email,
+      name: `${firstName} ${lastName}`,
+      requestedUnit,
+      requestedRole,
+      justification: signupJustification,
+    }).catch(err => {
+      console.error('[Signup] Failed to send admin notification:', err);
+    });
+    
+    // Create in-app notification for admins (non-blocking)
+    notifyNewSignup(user.id, email, requestedRole).catch(err => {
+      console.error('[Signup] Failed to create admin notification:', err);
     });
     
     return NextResponse.json({
       success: true,
-      message: 'Account created successfully. Please sign in.',
+      message: 'Account created successfully. Your registration is pending approval from the AI Unit. You will receive an email once your account is approved.',
+      requiresApproval: true,
       user: {
         id: user.id,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        status: user.status,
       },
     }, { status: 201 });
     

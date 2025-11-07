@@ -38,8 +38,6 @@ import {
 } from "@/lib/client-utils";
 import { buildCampaignResponse } from "@/lib/cold-outreach/campaign-response";
 
-const DEV_NO_DB = !process.env.DATABASE_URL && !process.env.NEXT_PUBLIC_DATABASE_URL;
-
 const statusEnum = z.enum(["draft", "active", "paused", "completed"]);
 const priorityEnum = z.enum(["low", "medium", "high", "urgent"]);
 
@@ -475,30 +473,7 @@ export async function GET(req: NextRequest) {
 
     const validatedQuery = querySchema.parse(queryParams);
 
-    if (DEV_NO_DB) {
-      const processingTime = Date.now() - startTime;
-      logger.info('Campaign List Using Mock Data', {
-        userId,
-        userEmail,
-        processingTime,
-        queryParams: validatedQuery,
-      });
 
-      return NextResponse.json({
-        campaigns: [],
-        pagination: {
-          total: 0,
-          limit: validatedQuery.limit,
-          offset: validatedQuery.offset,
-          hasMore: false,
-        },
-        metadata: {
-          processingTime,
-          query: validatedQuery,
-          note: 'Using mock data because DATABASE_URL is not configured.',
-        },
-      });
-    }
 
     const db = getDb();
 

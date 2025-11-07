@@ -7,8 +7,6 @@ import { getDb } from '@/utils/dbConfig';
 import { Campaigns, Contacts, Messages } from '@/utils/schema';
 import { eq, desc, sql, and, gte } from 'drizzle-orm';
 
-const DEV_NO_DB = !process.env.DATABASE_URL && !process.env.NEXT_PUBLIC_DATABASE_URL;
-
 /**
  * @swagger
  * /api/cold-outreach/dashboard/activities:
@@ -94,22 +92,54 @@ const activitySchema = z.object({
 
 // Audit logging functions
 async function logActivityAccess(userId: string, filters: any, resultCount: number) {
-  // TODO: Implement audit logging when audit system is available
-  logger.info('Dashboard activities accessed', {
-    userId: sanitizeInput(userId),
-    filters: sanitizeInput(JSON.stringify(filters)),
-    resultCount,
-    timestamp: new Date().toISOString(),
-  });
+  try {
+    const db = getDb();
+    const { AuditLogs } = await import('@/utils/auth-schema');
+    
+    await db.insert(AuditLogs).values({
+      userId,
+      eventType: 'dashboard_activities_access',
+      eventCategory: 'cold_outreach',
+      eventStatus: 'success',
+      ipAddress: 'system',
+      userAgent: 'api',
+      metadata: {
+        filters: sanitizeInput(JSON.stringify(filters)),
+        resultCount,
+      },
+    });
+  } catch (error) {
+    logger.info('Dashboard activities accessed', {
+      userId: sanitizeInput(userId),
+      filters: sanitizeInput(JSON.stringify(filters)),
+      resultCount,
+      timestamp: new Date().toISOString(),
+    });
+  }
 }
 
 async function logActivityError(userId: string, error: any, context: any) {
-  // TODO: Implement audit logging when audit system is available
-  logger.error('Dashboard activities error', error, {
-    userId: sanitizeInput(userId),
-    context: sanitizeInput(JSON.stringify(context)),
-    timestamp: new Date().toISOString(),
-  });
+  try {
+    const db = getDb();
+    const { AuditLogs } = await import('@/utils/auth-schema');
+    
+    await db.insert(AuditLogs).values({
+      userId,
+      eventType: 'dashboard_activities_error',
+      eventCategory: 'cold_outreach',
+      eventStatus: 'failure',
+      ipAddress: 'system',
+      userAgent: 'api',
+      errorMessage: error?.message || String(error),
+      metadata: context,
+    });
+  } catch (auditError) {
+    logger.error('Dashboard activities error', error, {
+      userId: sanitizeInput(userId),
+      context: sanitizeInput(JSON.stringify(context)),
+      timestamp: new Date().toISOString(),
+    });
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -171,25 +201,7 @@ export async function GET(request: NextRequest) {
         timestamp: new Date().toISOString(),
       });
 
-      if (DEV_NO_DB) {
-        const responseTime = Date.now() - startTime;
 
-        await logActivityAccess(userId, { limit, type, status }, 0);
-
-        return NextResponse.json({
-          activities: [],
-          metadata: {
-            total: 0,
-            filtered: 0,
-            limit,
-            type,
-            status,
-            responseTime,
-            timestamp: new Date().toISOString(),
-            note: 'Using mock data because DATABASE_URL is not configured.',
-          },
-        });
-      }
 
       const db = getDb();
 

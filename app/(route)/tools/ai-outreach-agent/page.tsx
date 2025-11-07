@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from 'sonner';
+import { ToolPageWrapper } from '@/components/guards';
 
 interface OutreachList {
   id: string;
@@ -22,7 +23,7 @@ interface OutreachList {
   leads?: Lead[];
 }
 
-export default function AIOutreachAgentPage() {
+function AIOutreachAgentPageContent() {
   const [lists, setLists] = useState<OutreachList[]>([]);
   const [currentList, setCurrentList] = useState<OutreachList | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -261,5 +262,17 @@ export default function AIOutreachAgentPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+
+export default function AIOutreachAgentPage() {
+  return (
+    <ToolPageWrapper 
+      allowedRoles={["admin", "leader"]}
+      toolName="AI Outreach Agent"
+    >
+      <AIOutreachAgentPageContent />
+    </ToolPageWrapper>
   );
 }

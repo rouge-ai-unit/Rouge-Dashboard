@@ -42,10 +42,262 @@ async function auditAnalyticsOperation(
 }
 
 /**
- * Helper function to return 501 Not Implemented for placeholder analytics
+ * Generate performance insights from message data
  */
-function notImplemented(feature: string): Promise<never> {
-  throw new Error(`Feature '${feature}' is not yet implemented. TODO: Implement ${feature} analytics.`);
+async function generatePerformanceInsights(messages: any[]) {
+  try {
+    const dayPerformance = new Map<string, { sent: number; opened: number; replied: number }>();
+    const hourPerformance = new Map<number, { sent: number; opened: number; replied: number }>();
+    
+    messages.forEach(msg => {
+      if (!msg.createdAt) return;
+      
+      const date = new Date(msg.createdAt);
+      const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' });
+      const hour = date.getHours();
+      
+      // Track by day
+      if (!dayPerformance.has(dayOfWeek)) {
+        dayPerformance.set(dayOfWeek, { sent: 0, opened: 0, replied: 0 });
+      }
+      const dayStats = dayPerformance.get(dayOfWeek)!;
+      dayStats.sent++;
+      if (msg.status === 'opened' || msg.status === 'replied') dayStats.opened++;
+      if (msg.status === 'replied') dayStats.replied++;
+      
+      // Track by hour
+      if (!hourPerformance.has(hour)) {
+        hourPerformance.set(hour, { sent: 0, opened: 0, replied: 0 });
+      }
+      const hourStats = hourPerformance.get(hour)!;
+      hourStats.sent++;
+      if (msg.status === 'opened' || msg.status === 'replied') hourStats.opened++;
+      if (msg.status === 'replied') hourStats.replied++;
+    });
+    
+    // Calculate best days
+    const bestDaysOfWeek = Array.from(dayPerformance.entries())
+      .map(([day, stats]) => ({
+        day,
+        openRate: stats.sent > 0 ? (stats.opened / stats.sent) * 100 : 0,
+        replyRate: stats.sent > 0 ? (stats.replied / stats.sent) * 100 : 0,
+        totalSent: stats.sent,
+      }))
+      .sort((a, b) => b.replyRate - a.replyRate);
+    
+    // Calculate best hours
+    const bestSendHours = Array.from(hourPerformance.entries())
+      .map(([hour, stats]) => ({
+        hour,
+        openRate: stats.sent > 0 ? (stats.opened / stats.sent) * 100 : 0,
+        replyRate: stats.sent > 0 ? (stats.replied / stats.sent) * 100 : 0,
+        totalSent: stats.sent,
+      }))
+      .sort((a, b) => b.replyRate - a.replyRate);
+    
+    // Generate recommendations
+    const recommendations = [];
+    if (bestDaysOfWeek.length > 0) {
+      recommendations.push(`Best day to send: ${bestDaysOfWeek[0].day} (${bestDaysOfWeek[0].replyRate.toFixed(1)}% reply rate)`);
+    }
+    if (bestSendHours.length > 0) {
+      const bestHour = bestSendHours[0].hour;
+      const timeStr = bestHour === 0 ? '12 AM' : bestHour < 12 ? `${bestHour} AM` : bestHour === 12 ? '12 PM' : `${bestHour - 12} PM`;
+      recommendations.push(`Best time to send: ${timeStr} (${bestSendHours[0].replyRate.toFixed(1)}% reply rate)`);
+    }
+    
+    return { bestDaysOfWeek, bestSendHours, recommendations };
+  } catch (error) {
+    logger.error('Error generating performance insights', error as Error);
+    return { bestDaysOfWeek: [], bestSendHours: [], recommendations: [] };
+  }
+}
+
+/**
+ * Generate predictive analytics based on historical data
+ */
+async function generatePredictiveAnalytics(messages: any[], campaigns: any[]) {
+  try {
+    const totalSent = messages.filter(m => m.status === 'sent' || m.status === 'opened' || m.status === 'replied').length;
+    const totalOpened = messages.filter(m => m.status === 'opened' || m.status === 'replied').length;
+    const totalReplied = messages.filter(m => m.status === 'replied').length;
+    
+    const currentPerformance = {
+      openRate: totalSent > 0 ? (totalOpened / totalSent) * 100 : 0,
+      replyRate: totalSent > 0 ? (totalReplied / totalSent) * 100 : 0,
+      totalSent,
+      totalOpened,
+      totalReplied,
+    };
+    
+    // Simple prediction: assume 5% improvement with optimization
+    const predictedPerformance = {
+      openRate: currentPerformance.openRate * 1.05,
+      replyRate: currentPerformance.replyRate * 1.05,
+      estimatedIncrease: {
+        opens: Math.round(totalSent * 0.05 * (currentPerformance.openRate / 100)),
+        replies: Math.round(totalSent * 0.05 * (currentPerformance.replyRate / 100)),
+      },
+    };
+    
+    const recommendations = [];
+    if (currentPerformance.openRate < 20) {
+      recommendations.push('Consider improving subject lines to increase open rates');
+    }
+    if (currentPerformance.replyRate < 5) {
+      recommendations.push('Add stronger call-to-actions to improve reply rates');
+    }
+    if (campaigns.filter((c: any) => c.status === 'active').length > 5) {
+      recommendations.push('Consider consolidating campaigns for better focus');
+    }
+    
+    return { currentPerformance, predictedPerformance, recommendations };
+  } catch (error) {
+    logger.error('Error generating predictive analytics', error as Error);
+    return { currentPerformance: {}, predictedPerformance: {}, recommendations: [] };
+  }
+}
+
+/**
+ * Segment contacts based on engagement
+ */
+async function segmentContacts(messages: any[], contactsResult: any[]) {
+  try {
+    const contactEngagement = new Map<string, { opens: number; replies: number; sent: number }>();
+    
+    messages.forEach(msg => {
+      if (!msg.contactId) return;
+      
+      if (!contactEngagement.has(msg.contactId)) {
+        contactEngagement.set(msg.contactId, { opens: 0, replies: 0, sent: 0 });
+      }
+      
+      const stats = contactEngagement.get(msg.contactId)!;
+      stats.sent++;
+      if (msg.status === 'opened' || msg.status === 'replied') stats.opens++;
+      if (msg.status === 'replied') stats.replies++;
+    });
+    
+    const segments = { high: [] as string[], medium: [] as string[], low: [] as string[] };
+    
+    contactEngagement.forEach((stats, contactId) => {
+      const engagementScore = (stats.opens * 1 + stats.replies * 3) / stats.sent;
+      
+      if (engagementScore >= 2) {
+        segments.high.push(contactId);
+      } else if (engagementScore >= 1) {
+        segments.medium.push(contactId);
+      } else {
+        segments.low.push(contactId);
+      }
+    });
+    
+    const summary = {
+      highEngagement: segments.high.length,
+      mediumEngagement: segments.medium.length,
+      lowEngagement: segments.low.length,
+      total: contactEngagement.size,
+    };
+    
+    return { segments, summary };
+  } catch (error) {
+    logger.error('Error segmenting contacts', error as Error);
+    return { segments: { high: [], medium: [], low: [] }, summary: {} };
+  }
+}
+
+/**
+ * Calculate optimal send times based on historical performance
+ */
+async function calculateOptimalSendTimes(messages: any[]) {
+  try {
+    const timeSlots = new Map<string, { sent: number; opened: number; replied: number }>();
+    
+    messages.forEach(msg => {
+      if (!msg.createdAt) return;
+      
+      const date = new Date(msg.createdAt);
+      const dayOfWeek = date.getDay(); // 0-6
+      const hour = date.getHours();
+      const timeSlot = `${dayOfWeek}-${hour}`;
+      
+      if (!timeSlots.has(timeSlot)) {
+        timeSlots.set(timeSlot, { sent: 0, opened: 0, replied: 0 });
+      }
+      
+      const stats = timeSlots.get(timeSlot)!;
+      stats.sent++;
+      if (msg.status === 'opened' || msg.status === 'replied') stats.opened++;
+      if (msg.status === 'replied') stats.replied++;
+    });
+    
+    const optimalTimes = Array.from(timeSlots.entries())
+      .filter(([_, stats]) => stats.sent >= 5) // Minimum sample size
+      .map(([timeSlot, stats]) => {
+        const [day, hour] = timeSlot.split('-').map(Number);
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        
+        return {
+          day: dayNames[day],
+          hour,
+          replyRate: stats.sent > 0 ? (stats.replied / stats.sent) * 100 : 0,
+          openRate: stats.sent > 0 ? (stats.opened / stats.sent) * 100 : 0,
+          sampleSize: stats.sent,
+        };
+      })
+      .sort((a, b) => b.replyRate - a.replyRate)
+      .slice(0, 10);
+    
+    return optimalTimes;
+  } catch (error) {
+    logger.error('Error calculating optimal send times', error as Error);
+    return [];
+  }
+}
+
+/**
+ * Compare template performance
+ */
+async function compareTemplates(messages: any[], templates: any[]) {
+  try {
+    const templatePerformance = new Map<string, { sent: number; opened: number; replied: number; name: string }>();
+    
+    messages.forEach(msg => {
+      if (!msg.templateId) return;
+      
+      if (!templatePerformance.has(msg.templateId)) {
+        const template = templates.find((t: any) => t.id === msg.templateId);
+        templatePerformance.set(msg.templateId, {
+          sent: 0,
+          opened: 0,
+          replied: 0,
+          name: template?.name || 'Unknown Template',
+        });
+      }
+      
+      const stats = templatePerformance.get(msg.templateId)!;
+      stats.sent++;
+      if (msg.status === 'opened' || msg.status === 'replied') stats.opened++;
+      if (msg.status === 'replied') stats.replied++;
+    });
+    
+    const comparison = Array.from(templatePerformance.entries())
+      .map(([templateId, stats]) => ({
+        templateId,
+        templateName: stats.name,
+        sent: stats.sent,
+        opened: stats.opened,
+        replied: stats.replied,
+        openRate: stats.sent > 0 ? (stats.opened / stats.sent) * 100 : 0,
+        replyRate: stats.sent > 0 ? (stats.replied / stats.sent) * 100 : 0,
+      }))
+      .sort((a, b) => b.replyRate - a.replyRate);
+    
+    return comparison;
+  } catch (error) {
+    logger.error('Error comparing templates', error as Error);
+    return [];
+  }
 }
 
 /**
@@ -466,11 +718,11 @@ async function generateAdvancedAnalytics(db: any, userId: string, messages: any[
         logger.warn('Error in A/B testing analysis', { userId, error: error.message });
         return [];
       }),
-      notImplemented('performanceInsights').catch(() => ({ bestDaysOfWeek: [], bestSendHours: [], recommendations: [] })),
-      notImplemented('predictiveAnalytics').catch(() => ({ currentPerformance: {}, predictedPerformance: {}, recommendations: [] })),
-      notImplemented('contactSegmentation').catch(() => ({ segments: { high: [], medium: [], low: [] }, summary: {} })),
-      notImplemented('optimalSendTimes').catch(() => []),
-      notImplemented('templateComparison').catch(() => []),
+      generatePerformanceInsights(messages).catch(() => ({ bestDaysOfWeek: [], bestSendHours: [], recommendations: [] })),
+      generatePredictiveAnalytics(messages, campaigns).catch(() => ({ currentPerformance: {}, predictedPerformance: {}, recommendations: [] })),
+      segmentContacts(messages, []).catch(() => ({ segments: { high: [], medium: [], low: [] }, summary: {} })),
+      calculateOptimalSendTimes(messages).catch(() => []),
+      compareTemplates(messages, templates).catch(() => []),
     ]);
 
     const advancedAnalytics = {
@@ -557,310 +809,14 @@ async function performABTesting(messages: any[], templates: any[]) {
   }
 }
 
-function generatePerformanceInsights(messages: any[], campaigns: any[], timeRange: string) {
-  try {
-    // Analyze performance by day of week
-    const dayOfWeekPerformance = Array.from({ length: 7 }, (_, i) => ({
-      day: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][i],
-      sent: 0,
-      opened: 0,
-      replied: 0,
-    }));
-
-    messages.forEach(message => {
-      if (message.createdAt) {
-        const day = new Date(message.createdAt).getDay();
-        if (message.status === 'sent') dayOfWeekPerformance[day].sent += 1;
-        if (message.status === 'opened') dayOfWeekPerformance[day].opened += 1;
-        if (message.status === 'replied') dayOfWeekPerformance[day].replied += 1;
-      }
-    });
-
-    // Calculate best performing days
-    const bestDays = dayOfWeekPerformance
-      .map(day => ({
-        ...day,
-        openRate: day.sent > 0 ? (day.opened / day.sent) * 100 : 0,
-        replyRate: day.sent > 0 ? (day.replied / day.sent) * 100 : 0,
-      }))
-      .sort((a, b) => b.openRate - a.openRate);
-
-    // Analyze performance by hour
-    const hourPerformance = Array.from({ length: 24 }, (_, i) => ({
-      hour: i,
-      sent: 0,
-      opened: 0,
-      replied: 0,
-    }));
-
-    messages.forEach(message => {
-      if (message.createdAt) {
-        const hour = new Date(message.createdAt).getHours();
-        if (message.status === 'sent') hourPerformance[hour].sent += 1;
-        if (message.status === 'opened') hourPerformance[hour].opened += 1;
-        if (message.status === 'replied') hourPerformance[hour].replied += 1;
-      }
-    });
-
-    const bestHours = hourPerformance
-      .map(hour => ({
-        ...hour,
-        openRate: hour.sent > 0 ? (hour.opened / hour.sent) * 100 : 0,
-      }))
-      .sort((a, b) => b.openRate - a.openRate)
-      .slice(0, 5);
-
-    return {
-      bestDaysOfWeek: bestDays.slice(0, 3),
-      bestSendHours: bestHours,
-      recommendations: generateRecommendations(bestDays[0], bestHours[0]),
-    };
-
-  } catch (error) {
-    logger.error('Error generating performance insights', error instanceof Error ? error : new Error('Unknown error'), {
-      messageCount: messages.length,
-      campaignCount: campaigns.length,
-    });
-    return {
-      bestDaysOfWeek: [],
-      bestSendHours: [],
-      recommendations: ['Unable to generate performance insights due to data processing error'],
-    };
-  }
-}
-
-function generatePredictiveAnalytics(messages: any[], campaigns: any[]) {
-  try {
-    // Simple predictive analytics based on historical data
-    const totalSent = messages.filter(m => m.status === 'sent').length;
-    const totalOpened = messages.filter(m => m.status === 'opened').length;
-    const totalReplied = messages.filter(m => m.status === 'replied').length;
-
-    if (totalSent === 0) {
-      return {
-        currentPerformance: {
-          avgOpenRate: 0,
-          avgReplyRate: 0,
-        },
-        predictedPerformance: {
-          nextWeekOpenRate: 0,
-          nextWeekReplyRate: 0,
-          trend: 'insufficient-data',
-        },
-        recommendations: ['Insufficient data for predictive analytics'],
-      };
-    }
-
-    const avgOpenRate = (totalOpened / totalSent) * 100;
-    const avgReplyRate = (totalReplied / totalSent) * 100;
-
-    // Predict future performance based on trends
-    const recentMessages = messages
-      .filter(m => m.createdAt && new Date(m.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
-      .slice(-100); // Last 100 messages
-
-    const recentSent = recentMessages.filter(m => m.status === 'sent').length;
-    const recentOpened = recentMessages.filter(m => m.status === 'opened').length;
-    const recentReplied = recentMessages.filter(m => m.status === 'replied').length;
-
-    const recentOpenRate = recentSent > 0 ? (recentOpened / recentSent) * 100 : 0;
-    const recentReplyRate = recentSent > 0 ? (recentReplied / recentSent) * 100 : 0;
-
-    const trend = recentOpenRate > avgOpenRate ? 'improving' : recentSent >= 10 ? 'declining' : 'insufficient-data';
-
-    return {
-      currentPerformance: {
-        avgOpenRate: Math.round(avgOpenRate * 100) / 100,
-        avgReplyRate: Math.round(avgReplyRate * 100) / 100,
-      },
-      predictedPerformance: {
-        nextWeekOpenRate: Math.round(recentOpenRate * 100) / 100,
-        nextWeekReplyRate: Math.round(recentReplyRate * 100) / 100,
-        trend,
-      },
-      recommendations: trend === 'improving'
-        ? ['Continue current strategy', 'Consider scaling up successful campaigns']
-        : trend === 'declining'
-        ? ['Review recent campaigns', 'Test different subject lines', 'Check send timing']
-        : ['Collect more data for accurate predictions'],
-    };
-
-  } catch (error) {
-    logger.error('Error generating predictive analytics', error instanceof Error ? error : new Error('Unknown error'), {
-      messageCount: messages.length,
-      campaignCount: campaigns.length,
-    });
-    return {
-      currentPerformance: { avgOpenRate: 0, avgReplyRate: 0 },
-      predictedPerformance: { nextWeekOpenRate: 0, nextWeekReplyRate: 0, trend: 'error' },
-      recommendations: ['Unable to generate predictions due to processing error'],
-    };
-  }
-}
-
-async function generateContactSegmentation(db: any, userId: string, messages: any[]) {
-  try {
-    // Get contact data with engagement metrics
-    const contacts = await retryWithBackoff(
-      () => db.select().from(Contacts).where(eq(Contacts.userId, userId)),
-      3,
-      1000
-    ) as any[];
-
-    const contactEngagement = contacts.map((contact: any) => {
-      const contactMessages = messages.filter(m => m.contactId === contact.id);
-      const sent = contactMessages.filter(m => m.status === 'sent').length;
-      const opened = contactMessages.filter(m => m.status === 'opened').length;
-      const replied = contactMessages.filter(m => m.status === 'replied').length;
-
-      const engagementScore = sent > 0 ? ((opened * 2) + (replied * 5)) / sent : 0;
-
-      return {
-        id: contact.id,
-        name: contact.name,
-        email: contact.email,
-        company: contact.company,
-        role: contact.role,
-        sent,
-        opened,
-        replied,
-        engagementScore: Math.round(engagementScore * 100) / 100,
-        segment: engagementScore > 3 ? 'high' : engagementScore > 1 ? 'medium' : 'low',
-      };
-    });
-
-    const segments = {
-      high: contactEngagement.filter((c: any) => c.segment === 'high'),
-      medium: contactEngagement.filter((c: any) => c.segment === 'medium'),
-      low: contactEngagement.filter((c: any) => c.segment === 'low'),
-    };
-
-    return {
-      segments,
-      summary: {
-        highEngagement: segments.high.length,
-        mediumEngagement: segments.medium.length,
-        lowEngagement: segments.low.length,
-        totalContacts: contacts.length,
-      },
-    };
-
-  } catch (error) {
-    logger.error('Error generating contact segmentation', error instanceof Error ? error : undefined, {
-      userId,
-      messageCount: messages.length,
-    });
-    return {
-      segments: { high: [], medium: [], low: [] },
-      summary: { highEngagement: 0, mediumEngagement: 0, lowEngagement: 0, totalContacts: 0 },
-    };
-  }
-}
-
-function calculateOptimalSendTimes(messages: any[]) {
-  try {
-    const hourStats = Array.from({ length: 24 }, (_, hour) => {
-      const hourMessages = messages.filter(m => {
-        if (!m.createdAt) return false;
-        const msgHour = new Date(m.createdAt).getHours();
-        return msgHour === hour;
-      });
-
-      const sent = hourMessages.filter(m => m.status === 'sent').length;
-      const opened = hourMessages.filter(m => m.status === 'opened').length;
-
-      return {
-        hour,
-        sent,
-        opened,
-        openRate: sent > 0 ? (opened / sent) * 100 : 0,
-      };
-    });
-
-    return hourStats
-      .filter(stat => stat.sent > 5) // Minimum sample size
-      .sort((a, b) => b.openRate - a.openRate)
-      .slice(0, 5);
-
-  } catch (error) {
-    logger.error('Error calculating optimal send times', error instanceof Error ? error : undefined, {
-      messageCount: messages.length,
-    });
-    return [];
-  }
-}
-
-function compareTemplatePerformance(messages: any[], templates: any[]) {
-  try {
-    return templates.map(template => {
-      // Find messages that used this template (simplified matching)
-      const templateMessages = messages.filter(m =>
-        m.subject?.toLowerCase().includes(template.name.toLowerCase()) ||
-        m.content?.toLowerCase().includes(template.subject?.toLowerCase())
-      );
-
-      const sent = templateMessages.filter(m => m.status === 'sent').length;
-      const opened = templateMessages.filter(m => m.status === 'opened').length;
-      const replied = templateMessages.filter(m => m.status === 'replied').length;
-
-      return {
-        templateId: template.id,
-        templateName: template.name,
-        category: template.category,
-        sent,
-        opened,
-        replied,
-        openRate: sent > 0 ? Math.round((opened / sent) * 100) : 0,
-        replyRate: sent > 0 ? Math.round((replied / sent) * 100) : 0,
-      };
-    }).sort((a, b) => b.openRate - a.openRate);
-
-  } catch (error) {
-    logger.error('Error comparing template performance', error instanceof Error ? error : new Error('Unknown error'), {
-      messageCount: messages.length,
-      templateCount: templates.length,
-    });
-    return [];
-  }
-}
-
+// Helper function for confidence interval calculation
 function calculateConfidenceInterval(rate: number, sampleSize: number) {
   try {
-    // Simplified confidence interval calculation
     if (sampleSize <= 0) return 0;
-
     const standardError = Math.sqrt((rate * (1 - rate)) / sampleSize);
     const confidenceInterval = 1.96 * standardError; // 95% confidence
     return Math.round(confidenceInterval * 10000) / 100; // Return as percentage
-
   } catch (error) {
-    logger.error('Error calculating confidence interval', error instanceof Error ? error : undefined, {
-      rate,
-      sampleSize,
-    });
     return 0;
-  }
-}
-
-function generateRecommendations(bestDay: any, bestHour: any) {
-  try {
-    const recommendations = [];
-
-    if (bestDay && bestDay.sent > 0) {
-      recommendations.push(`Best day to send: ${bestDay.day} (${bestDay.openRate.toFixed(1)}% open rate)`);
-    }
-
-    if (bestHour && bestHour.sent > 0) {
-      recommendations.push(`Best time to send: ${bestHour.hour}:00 (${bestHour.openRate.toFixed(1)}% open rate)`);
-    }
-
-    recommendations.push('Consider A/B testing different subject lines');
-    recommendations.push('Personalize emails based on recipient role and company');
-
-    return recommendations;
-
-  } catch (error) {
-    logger.error('Error generating recommendations', error instanceof Error ? error : new Error('Unknown error'), {});
-    return ['Unable to generate recommendations due to processing error'];
   }
 }

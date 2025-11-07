@@ -570,30 +570,61 @@ const TemplateEditorComponent: React.FC<TemplateEditorProps> = memo(({
   const optimizeSubjectWithAI = useCallback(async () => {
     setIsAIGenerating(true);
     try {
-      // Placeholder for AI optimization
-      const optimizedSubject = `✨ ${editorState.subject} - Exclusive Opportunity`;
-      updateField('subject', optimizedSubject);
+      const response = await fetch('/api/cold-outreach/ai-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'optimize_subject',
+          subject: editorState.subject,
+          content: editorState.content,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to optimize subject');
+      }
+
+      const data = await response.json();
+      updateField('subject', data.optimizedSubject || editorState.subject);
       saveToHistory();
     } catch (error) {
       console.error('Error optimizing subject:', error);
+      // Fallback to basic optimization
+      const optimizedSubject = editorState.subject.trim() || 'Exclusive Opportunity';
+      updateField('subject', optimizedSubject);
     } finally {
       setIsAIGenerating(false);
     }
-  }, [editorState.subject, updateField, saveToHistory]);
+  }, [editorState.subject, editorState.content, updateField, saveToHistory]);
 
   const personalizeContentWithAI = useCallback(async () => {
     setIsAIGenerating(true);
     try {
-      // Placeholder for AI personalization
-      const personalizedContent = `${editorState.content}\n\nBest regards,\n{{sender.name}}\n{{sender.role}}\n{{sender.company}}`;
-      updateField('content', personalizedContent);
+      const response = await fetch('/api/cold-outreach/ai-personalization', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          template: editorState.content,
+          subject: editorState.subject,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to personalize content');
+      }
+
+      const data = await response.json();
+      updateField('content', data.personalizedContent || editorState.content);
       saveToHistory();
     } catch (error) {
       console.error('Error personalizing content:', error);
+      // Fallback to adding signature placeholders
+      const personalizedContent = `${editorState.content}\n\nBest regards,\n{{sender.name}}\n{{sender.role}}\n{{sender.company}}`;
+      updateField('content', personalizedContent);
     } finally {
       setIsAIGenerating(false);
     }
-  }, [editorState.content, updateField, saveToHistory]);
+  }, [editorState.content, editorState.subject, updateField, saveToHistory]);
 
   // ============================================================================
   // Keyboard Shortcuts

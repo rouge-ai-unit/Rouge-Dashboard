@@ -95,30 +95,53 @@ async function logImportError(userId: string, error: any, context: any) {
 
 // Secure credential retrieval function
 async function getGoogleSheetsCredentials(userId: string): Promise<any | null> {
-  // TODO: Implement secure credential retrieval from encrypted storage or OAuth service
-  // For now, return null to indicate credentials need to be configured
-  // In production, this should retrieve OAuth tokens from secure storage
-
-  // Check if Google Sheets integration is configured in user settings
   try {
     const { getUserSettings } = await import('@/lib/settings');
     const settings = await getUserSettings(userId);
 
-    if (settings?.integrations?.googleSheets?.connected) {
-      // Integration is marked as connected, but credentials need to be retrieved securely
-      // This is a placeholder - actual implementation would retrieve from secure storage
-      logger.warn('Google Sheets integration connected but credentials not available', {
+    if (!settings?.integrations?.googleSheets?.connected) {
+      return null;
+    }
+
+    // Retrieve credentials from settings
+    const googleSheetsConfig = settings.integrations.googleSheets as any;
+    const credentials = googleSheetsConfig?.credentials;
+    const serviceAccountKey = googleSheetsConfig?.serviceAccountKey;
+    
+    if (!credentials && !serviceAccountKey) {
+      logger.warn('Google Sheets integration connected but credentials not found', {
         userId: sanitizeInput(userId)
       });
       return null;
     }
+    
+    // Return service account key if available (preferred method)
+    if (serviceAccountKey) {
+      try {
+        // Parse service account key if it's a string
+        if (typeof serviceAccountKey === 'string') {
+          return JSON.parse(serviceAccountKey);
+        }
+        return serviceAccountKey;
+      } catch (parseError) {
+        logger.error('Error parsing service account key', parseError as Error, {
+          userId: sanitizeInput(userId)
+        });
+      }
+    }
+    
+    // Fallback to credentials object
+    if (credentials) {
+      return credentials;
+    }
+    
+    return null;
   } catch (error) {
-    logger.error('Error checking Google Sheets settings', error as Error, {
+    logger.error('Error retrieving Google Sheets credentials', error as Error, {
       userId: sanitizeInput(userId)
     });
+    return null;
   }
-
-  return null; // Credentials not configured
 }
 
 // POST /api/cold-outreach/import/google-sheets - Import contacts from Google Sheets
@@ -156,7 +179,6 @@ export async function POST(req: NextRequest) {
 
       // SECURITY: Credentials are no longer accepted in request body
       // Retrieve Google Sheets credentials from secure storage
-      // TODO: Implement secure credential retrieval from settings or OAuth service
       const credentials = await getGoogleSheetsCredentials(userId);
 
       if (!credentials) {

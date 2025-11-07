@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { z } from "zod";
@@ -51,9 +52,14 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function WorkTracker() {
+  const { data: session, status } = useSession();
   const router = useRouter();
   // const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [data, setData] = useState<WorkItem[]>([]);
+  
+  // Get user role for permission checks
+  const userRole = (session?.user as any)?.role;
+  const isReadOnly = userRole === 'member';
   const [total, setTotal] = useState<number>(0);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [page, setPage] = useState<number>(1);
@@ -314,13 +320,26 @@ export default function WorkTracker() {
         />
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.05 }}
-        className="bg-gray-900/50 backdrop-blur-sm p-4 sm:p-6 rounded-2xl mb-8 sm:mb-10 shadow-2xl border border-gray-700/50"
-        ref={formRef}
-      >
+      {isReadOnly && (
+        <div className="bg-yellow-900/20 border border-yellow-600/50 rounded-lg p-4 mb-6 flex items-center gap-3">
+          <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div>
+            <p className="text-yellow-200 font-medium">View-Only Access</p>
+            <p className="text-yellow-300/80 text-sm">You have read-only access to Work Tracker. Contact an admin to request full access.</p>
+          </div>
+        </div>
+      )}
+
+      {!isReadOnly && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+          className="bg-gray-900/50 backdrop-blur-sm p-4 sm:p-6 rounded-2xl mb-8 sm:mb-10 shadow-2xl border border-gray-700/50"
+          ref={formRef}
+        >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <Label className="mb-1 block text-gray-300">Unit <span className="text-red-400" aria-hidden>*</span><span className="sr-only">Required</span></Label>
@@ -389,7 +408,8 @@ export default function WorkTracker() {
         <Button onClick={handleSubmit(onSubmit)} disabled={!isValid} className="mt-4 flex items-center gap-2 w-full sm:w-auto">
           <Plus className="w-5 h-5" /> Add
         </Button>
-  </motion.div>
+      </motion.div>
+      )}
 
       {/* Toolbar */}
   <div className="mb-3 flex items-center gap-2 flex-wrap justify-between">
@@ -565,24 +585,26 @@ export default function WorkTracker() {
                   {new Date(item.lastUpdated).toLocaleString()}
                 </td>}
                 <td className="px-2 py-3">
-                  <div className="flex justify-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="text-gray-300 hover:text-white p-1 rounded hover:bg-gray-800">
-                          <MoreVertical className="h-4 w-4" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="bg-gray-900/95 backdrop-blur-md border-gray-700/50 text-gray-100 shadow-2xl">
-                        <DropdownMenuItem onClick={() => setEditing(item)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStatus(item._id!, "In Progress")}>Mark In Progress</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStatus(item._id!, "Done")}>Mark Done</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStatus(item._id!, "Blocked")}>Mark Blocked</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStatus(item._id!, "On Hold")}>Put On Hold</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStatus(item._id!, "Canceled")}>Cancel</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(item._id)} className="text-red-400 focus:text-red-400">Delete</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                  {!isReadOnly && (
+                    <div className="flex justify-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="text-gray-300 hover:text-white p-1 rounded hover:bg-gray-800">
+                            <MoreVertical className="h-4 w-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="bg-gray-900/95 backdrop-blur-md border-gray-700/50 text-gray-100 shadow-2xl">
+                          <DropdownMenuItem onClick={() => setEditing(item)}>Edit</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleStatus(item._id!, "In Progress")}>Mark In Progress</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleStatus(item._id!, "Done")}>Mark Done</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleStatus(item._id!, "Blocked")}>Mark Blocked</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleStatus(item._id!, "On Hold")}>Put On Hold</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleStatus(item._id!, "Canceled")}>Cancel</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDelete(item._id)} className="text-red-400 focus:text-red-400">Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )}
                 </td>
               </motion.tr>
             ))}
@@ -608,20 +630,22 @@ export default function WorkTracker() {
                 <h3 className="text-lg font-semibold">{item.task}</h3>
                 <p className="text-sm text-gray-400">Unit: {item.unit}</p>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setEditing(item)}
-                  className="text-yellow-400 hover:text-yellow-600"
-                >
-                  <Pencil className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => handleDelete(item._id)}
-                  className="text-red-400 hover:text-red-600"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
+              {!isReadOnly && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setEditing(item)}
+                    className="text-yellow-400 hover:text-yellow-600"
+                  >
+                    <Pencil className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item._id)}
+                    className="text-red-400 hover:text-red-600"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
             </div>
             <div className="mt-2 text-sm">
               <p>

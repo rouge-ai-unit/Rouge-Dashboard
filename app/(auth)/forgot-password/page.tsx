@@ -170,7 +170,7 @@ export default function ForgotPasswordPage() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Need help?{" "}
-              <Link href="/tools/contact" className="text-blue-400 hover:text-blue-300">
+              <Link href="/support" className="text-blue-400 hover:text-blue-300">
                 Contact Support
               </Link>
             </p>

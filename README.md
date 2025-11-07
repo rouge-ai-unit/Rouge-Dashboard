@@ -249,8 +249,9 @@ GA_SERVICE_ACCOUNT_JSON_PATH=./config/google-analytics-service.json
 
 # SendGrid for email notifications and password resets
 SENDGRID_API_KEY=SG.your-sendgrid-api-key
-SENDGRID_FROM_EMAIL=noreply@rougevc.com
-AI_TEAM_EMAIL=ai@rougevc.com
+# Verified SendGrid sender email (a3@rougevc.com is the verified sender)
+SENDGRID_FROM_EMAIL=a3@rougevc.com
+# Admin emails are fetched dynamically from database
 
 # Cold Outreach
 NOTION_API_KEY=your-notion-api-key
@@ -1119,7 +1120,7 @@ This project is private and proprietary. All rights reserved.
 ## 📞 Support
 
 For support, please contact:
-- **Email:** ai@rougevc.com
+- **Email:** Contact your admin team (emails are managed dynamically in the system)
 - **Slack:** #rouge-dashboard
 - **Issues:** Create a GitHub issue
 
@@ -1231,4 +1232,4 @@ The Rouge Dashboard is **fully complete and production-ready** with all features
 **Version:** 1.0.0  
 **Status:** ✅ **PRODUCTION READY**  
 **Domain:** https://rougevc.com  
-**Contact:** ai@rougevc.com
+**Contact:** Admin team (managed dynamically in system)

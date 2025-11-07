@@ -221,6 +221,20 @@ export default function ColdConnectAutomatorPage() {
       return;
     }
 
+    // Check if user is approved
+    const isApproved = (session?.user as any)?.isApproved;
+    if (!isApproved) {
+      router.push("/pending-approval");
+      return;
+    }
+
+    // Check role - only admin and leader can access
+    const userRole = (session?.user as any)?.role;
+    if (userRole !== "admin" && userRole !== "leader") {
+      router.push("/unauthorized");
+      return;
+    }
+
     fetchDashboardData();
     fetchActivities();
 

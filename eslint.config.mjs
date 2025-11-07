@@ -1,6 +1,6 @@
+import { FlatCompat } from "@eslint/eslintrc";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -10,16 +10,33 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  {
+    ignores: [
+      "node_modules/**",
+      ".next/**",
+      "build/**",
+      "dist/**",
+      ".swc/**",
+      "out/**",
+      ".git/**",
+      "coverage/**",
+      ".cache/**",
+      "public/build/**",
+      "*.config.js",
+      "drizzle/**",
+      ".vscode/**",
+      "*.tsbuildinfo",
+      "next-env.d.ts",
+    ],
+  },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
-    ignores: [".next/**"],
     rules: {
-  // Production: keep builds clean; these can be re-enabled in CI if desired
-  "@typescript-eslint/no-explicit-any": "off",
-  "@typescript-eslint/no-unused-vars": "off",
-  "react-hooks/exhaustive-deps": "off",
-  "@next/next/no-img-element": "off",
-  "prefer-const": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "react-hooks/exhaustive-deps": "off",
+      "@next/next/no-img-element": "off",
+      "prefer-const": "off",
     },
   },
 ];

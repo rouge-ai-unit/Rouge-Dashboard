@@ -50,8 +50,29 @@ type ViewMode = "grid" | "list";
 
 
 export default function Page() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
+
+  // Redirect admins to choice page if they just logged in
+  useEffect(() => {
+    if (status === "authenticated" && session?.user) {
+      const userRole = (session.user as any)?.role;
+      
+      // Check if this is a fresh login (no referrer from admin-choice)
+      if (userRole === "admin" && typeof window !== "undefined") {
+        const fromAdminChoice = sessionStorage.getItem("from_admin_choice");
+        const adminChoiceShown = sessionStorage.getItem("admin_choice_shown");
+        
+        // Show choice page only once per session (after login)
+        if (!fromAdminChoice && !adminChoiceShown) {
+          // Mark that we've shown the choice page
+          sessionStorage.setItem("admin_choice_shown", "true");
+          router.push("/admin-choice");
+          return;
+        }
+      }
+    }
+  }, [status, session, router]);
 
   // All hooks must be called unconditionally
   const [tools, setTools] = useState<Tool[]>([]);
@@ -63,86 +84,63 @@ export default function Page() {
   const [favorites, setFavorites] = useState<string[]>([]);
   // Removed refresh functionality as requested
 
-  // Static tools data
-  const staticTools: Tool[] = [
-    {
-      id: "/tools/ai-tools-request-form",
-      name: "AI Tools Request Form",
-      href: "/tools/ai-tools-request-form",
-      description: "Streamline your workflow by requesting custom AI tools tailored to your specific needs. Submit detailed requirements, specify use cases, and collaborate with our AI specialists to develop cutting-edge solutions that enhance productivity and drive innovation in your projects.",
-      status: "Available",
-    },
-    {
-      id: "/tools/work-tracker",
-      name: "Work Tracker",
-      href: "/tools/work-tracker",
-      description: "Comprehensive project management solution with advanced tracking capabilities. Monitor task progress, set milestones, track time spent, generate detailed reports, and maintain accountability across teams. Features include real-time updates, customizable dashboards, and integration with popular productivity platforms.",
-      status: "Available",
-    },
-    {
-      id: "/tools/ai-news-daily",
-      name: "Ai News Daily",
-      href: "/tools/ai-news-daily",
-      description: "Stay ahead of the curve with curated daily AI news and insights. Get personalized news feeds, trending topics, expert analysis, and breaking developments in artificial intelligence. Features include smart filtering, bookmarking, sharing capabilities, and notifications for topics that matter most to you.",
-      status: "Available",
-    },
-    {
-      id: "/tools/startup-seeker",
-      name: "Agritech Startup Seeker",
-      href: "/tools/startup-seeker",
-      description: "Discover innovative agritech startups revolutionizing agriculture. Explore comprehensive startup profiles, funding information, technology stacks, market impact, and investment opportunities. Connect with founders, track industry trends, and identify potential partners or acquisition targets in the growing agritech ecosystem.",
-      status: "Available",
-    },
-    {
-      id: "/tools/agritech-universities",
-      name: "Agritech Universities",
-      href: "/tools/agritech-universities",
-      description: "Explore leading universities driving agritech research and innovation. Access detailed profiles of academic programs, research centers, faculty expertise, ongoing projects, and collaboration opportunities. Find potential partners for research, internships, or technology transfer initiatives in agricultural technology.",
-      status: "Available",
-    },
-    {
-      id: "/tools/content-idea-automation",
-      name: "Content Idea Automation",
-      href: "/tools/content-idea-automation",
-      description: "Revolutionize your content creation process with AI-powered idea generation. Generate topic suggestions, content outlines, SEO-optimized headlines, and creative concepts based on your niche and audience. Features include trend analysis, competitor research, and automated content calendars to maintain consistent publishing schedules.",
-      status: "Available",
-    },
-    {
-      id: "/tools/cold-connect-automator",
-      name: "Cold Connect Automator",
-      href: "/tools/cold-connect-automator",
-      description: "Automate personalized cold outreach campaigns with AI-powered message generation. Sync contacts with Notion CRM or Google Sheets, personalize messages with recipient context, and track campaign performance. Boost your productivity and never miss a follow-up.",
-      status: "Available",
-    },
-    {
-      id: "/tools/ai-outreach-agent",
-      name: "AI Outreach Agent",
-      href: "/tools/ai-outreach-agent",
-      description: "Generate personalized outreach lists with strategic leads and tailored messaging for your business development. Create comprehensive lead portfolios with AI-powered analysis, advanced filtering, export capabilities, and lead management features. Features include real-time statistics, progress tracking, and enterprise-grade lead organization.",
-      status: "Available",
-    },
-    {
-      id: "/agtech-events",
-      name: "AgTech Event Finder",
-      href: "/agtech-events",
-      description: "Discover upcoming AgTech startup conventions, expos, and networking events powered by AI. Search by location, filter by price, export results to CSV, and never miss an opportunity to connect with the agricultural technology ecosystem. Features advanced filters, multiple view modes, and real-time event discovery.",
-      status: "Available",
-    },
-    {
-      id: "/tools/sentiment-analyzer",
-      name: "Sentiment Analyzer",
-      href: "/tools/sentiment-analyzer",
-      description: "Analyze public sentiment about companies using AI-powered news analysis. Search recent articles, get sentiment insights (positive, negative, neutral), and understand public perception. Features include real-time analysis, search history, usage tracking, and detailed reasoning for each sentiment classification.",
-      status: "Available",
-    },
-  ];
 
-  // Set static tools on mount
+
+  // Fetch accessible tools dynamically from API
   useEffect(() => {
-    setTools(staticTools);
-    setLoading(false);
-    setError(null);
-  }, []);
+    const fetchTools = async () => {
+      if (status === "authenticated" && session?.user) {
+        try {
+          setLoading(true);
+          const response = await fetch('/api/user/accessible-tools');
+          if (response.ok) {
+            const data = await response.json();
+            // Convert API tools to Tool format
+            const apiTools = data.tools
+              .filter((tool: any) => tool.href !== '/home' && tool.href !== '/admin/dashboard') // Exclude home and admin from tools list
+              .map((tool: any) => ({
+                id: tool.href,
+                name: tool.title,
+                href: tool.href,
+                description: getToolDescription(tool.href),
+                status: "Available",
+              }));
+            setTools(apiTools);
+            setError(null);
+          } else {
+            setError("Failed to load tools");
+          }
+        } catch (error) {
+          console.error('Error fetching tools:', error);
+          setError("Error loading tools");
+        } finally {
+          setLoading(false);
+        }
+      } else if (status === "unauthenticated") {
+        setLoading(false);
+      }
+    };
+
+    fetchTools();
+  }, [status, session]);
+  
+  // Helper function to get tool descriptions
+  const getToolDescription = (href: string): string => {
+    const descriptions: Record<string, string> = {
+      "/tools/ai-tools-request-form": "Streamline your workflow by requesting custom AI tools tailored to your specific needs. Submit detailed requirements, specify use cases, and collaborate with our AI specialists to develop cutting-edge solutions that enhance productivity and drive innovation in your projects.",
+      "/tools/work-tracker": "Comprehensive project management solution with advanced tracking capabilities. Monitor task progress, set milestones, track time spent, generate detailed reports, and maintain accountability across teams. Features include real-time updates, customizable dashboards, and integration with popular productivity platforms.",
+      "/tools/ai-news-daily": "Stay ahead of the curve with curated daily AI news and insights. Get personalized news feeds, trending topics, expert analysis, and breaking developments in artificial intelligence. Features include smart filtering, bookmarking, sharing capabilities, and notifications for topics that matter most to you.",
+      "/tools/startup-seeker": "Discover innovative agritech startups revolutionizing agriculture. Explore comprehensive startup profiles, funding information, technology stacks, market impact, and investment opportunities. Connect with founders, track industry trends, and identify potential partners or acquisition targets in the growing agritech ecosystem.",
+      "/tools/agritech-universities": "Explore leading universities driving agritech research and innovation. Access detailed profiles of academic programs, research centers, faculty expertise, ongoing projects, and collaboration opportunities. Find potential partners for research, internships, or technology transfer initiatives in agricultural technology.",
+      "/tools/content-idea-automation": "Revolutionize your content creation process with AI-powered idea generation. Generate topic suggestions, content outlines, SEO-optimized headlines, and creative concepts based on your niche and audience. Features include trend analysis, competitor research, and automated content calendars to maintain consistent publishing schedules.",
+      "/tools/cold-connect-automator": "Automate personalized cold outreach campaigns with AI-powered message generation. Sync contacts with Notion CRM or Google Sheets, personalize messages with recipient context, and track campaign performance. Boost your productivity and never miss a follow-up.",
+      "/tools/ai-outreach-agent": "Generate personalized outreach lists with strategic leads and tailored messaging for your business development. Create comprehensive lead portfolios with AI-powered analysis, advanced filtering, export capabilities, and lead management features. Features include real-time statistics, progress tracking, and enterprise-grade lead organization.",
+      "/agtech-events": "Discover upcoming AgTech startup conventions, expos, and networking events powered by AI. Search by location, filter by price, export results to CSV, and never miss an opportunity to connect with the agricultural technology ecosystem. Features advanced filters, multiple view modes, and real-time event discovery.",
+      "/tools/sentiment-analyzer": "Analyze public sentiment about companies using AI-powered news analysis. Search recent articles, get sentiment insights (positive, negative, neutral), and understand public perception. Features include real-time analysis, search history, usage tracking, and detailed reasoning for each sentiment classification.",
+      "/tools/contact": "Get in touch with our team for support, feedback, or inquiries. We're here to help you make the most of Rouge Dashboard tools and services.",
+    };
+    return descriptions[href] || "Powerful tool to enhance your productivity and workflow.";
+  };
   // Removed auto-refresh functionality
 
   useEffect(() => {
@@ -420,14 +418,6 @@ export default function Page() {
 
   return (
     <TooltipProvider>
-      {/* Skip to main content link for accessibility */}
-      <a 
-        href="#main-content" 
-        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded-md z-50 focus:ring-2 focus:ring-blue-500"
-      >
-        Skip to main content
-      </a>
-      
       <div className="min-h-screen">
         <div className="container mx-auto px-4 py-8 max-w-7xl">
           {/* Header Section */}

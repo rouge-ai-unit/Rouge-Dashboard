@@ -4,25 +4,6 @@ import { LinkedinContent } from "@/utils/schema";
 import { requireSession } from "@/lib/apiAuth";
 import { randomUUID } from "crypto";
 
-const DEV_NO_DB = !process.env.DATABASE_URL && !process.env.NEXT_PUBLIC_DATABASE_URL;
-
-type ContentItem = {
-  id: string;
-  dayOfMonth: number;
-  weekOfMonth: number;
-  date: string;
-  specialOccasion?: string | null;
-  generalTheme: string;
-  postIdeas: string;
-  caption: string;
-  hashtags: string;
-  status?: "Draft" | "Approved" | "Scheduled";
-};
-
-const globalAny = globalThis as unknown as { __contents_mem?: ContentItem[] };
-globalAny.__contents_mem = globalAny.__contents_mem || [];
-const mem: ContentItem[] = globalAny.__contents_mem;
-
 function hkDateString(d: Date) {
   const utc = d.getTime() + d.getTimezoneOffset() * 60000;
   const hk = new Date(utc + 8 * 60 * 60 * 1000);
@@ -46,18 +27,27 @@ export async function POST(req: NextRequest) {
     const to = hkDateString(end);
 
     // Try Gemini first; fall back to a deterministic generator
-    let generated: Omit<ContentItem, "id">[] = [];
+    let generated: Array<{
+      dayOfMonth: number;
+      weekOfMonth: number;
+      date: string;
+      specialOccasion?: string | null;
+      generalTheme: string;
+      postIdeas: string;
+      caption: string;
+      hashtags: string;
+    }> = [];
 
-  const hasGemini = !!process.env.NEXT_PUBLIC_GEMINI;
+    const hasGemini = !!process.env.NEXT_PUBLIC_GEMINI;
     if (hasGemini) {
       try {
-    const { GoogleGenerativeAI } = await import("@google/generative-ai");
-    const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI as string);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const prompt = `Generate 6 LinkedIn content items for AgTech between ${from} and ${to}.
+        const { GoogleGenerativeAI } = await import("@google/generative-ai");
+        const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI as string);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const prompt = `Generate 6 LinkedIn content items for AgTech between ${from} and ${to}.
 Return ONLY a JSON array with objects having: dayOfMonth, weekOfMonth, date (YYYY-MM-DD), specialOccasion, generalTheme, postIdeas, caption (no hashtags), hashtags (comma-separated string).`;
-    const res = await model.generateContent(prompt);
-    let text = (await res.response.text()).trim();
+        const res = await model.generateContent(prompt);
+        let text = (await res.response.text()).trim();
         text = String(text).replace(/```json\n?|```/g, "").trim();
         if (text.startsWith("[") && text.endsWith("]")) {
           text = text.replace(/,\s*([}\]])/g, "$1");
@@ -100,23 +90,12 @@ Return ONLY a JSON array with objects having: dayOfMonth, weekOfMonth, date (YYY
       }
     }
 
-    // De-duplicate by date if any existing records
-    const dedupe = (existing: ContentItem[], items: Omit<ContentItem, "id">[]) => {
-      const set = new Set(existing.map((e) => e.date));
-      return items.filter((i) => !set.has(i.date));
-    };
-
-    // Persist
-    if (DEV_NO_DB) {
-      const toInsert = dedupe(mem, generated);
-  const created = toInsert.map((g) => ({ id: randomUUID(), status: "Draft" as const, ...g }));
-      mem.unshift(...created);
-      return NextResponse.json(created, { status: 201 });
-    }
     const db = getDb();
     // Pull existing for dedupe by date
     const existing = await db.select().from(LinkedinContent);
-    const toInsert = dedupe(existing as unknown as ContentItem[], generated);
+    const existingDates = new Set(existing.map((e) => e.date));
+    const toInsert = generated.filter((g) => !existingDates.has(g.date));
+    
     try {
       const inserted = await Promise.all(
         toInsert.map((g) => db.insert(LinkedinContent).values({ ...g, status: "Draft" }).returning().then((r) => r[0]))

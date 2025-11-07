@@ -64,6 +64,7 @@ export const Tickets = pgTable("tickets", {
   description: varchar("description").notNull(),
   requestedBy: varchar("requestedBy").notNull(),
   status: varchar("status").notNull(),
+  criticality: varchar("criticality").default("Medium"),
   team: varchar("team"),
   department: varchar("department"),
   // Structured request criteria (optional)
@@ -77,6 +78,8 @@ export const Tickets = pgTable("tickets", {
   impact: varchar("impact"),
   businessGoal: varchar("businessGoal"),
   businessSteps: varchar("businessSteps"),
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow(),
 });
 
 // Agritech Universities Results

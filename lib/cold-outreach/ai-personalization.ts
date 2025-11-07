@@ -726,13 +726,41 @@ export const getCachedFollowUpSequence = withPerformanceMonitoring(async functio
  */
 export function clearContactCache(contactId: string): void {
   logger.info('Clearing personalization cache for contact', { contactId });
-  // TODO: Implement selective cache clearing
-  // Options:
-  // 1. Store keys in a separate index by contactId
-  // 2. Use a cache library with pattern matching (e.g., node-cache)
-  // 3. Iterate through keys and delete matching ones
-  logger.warn('Selective cache clearing not implemented, clearing entire cache', { contactId });
-  personalizationCache.clear();
+  
+  try {
+    // Iterate through cache keys and delete matching ones
+    const keysToDelete: string[] = [];
+    
+    // Access the internal cache Map to get keys
+    const cacheInternal = (personalizationCache as any).cache as Map<string, any>;
+    if (cacheInternal && cacheInternal.keys) {
+      for (const key of cacheInternal.keys()) {
+        // Check if key contains the contactId
+        if (key.includes(contactId)) {
+          keysToDelete.push(key);
+        }
+      }
+      
+      // Delete matching keys
+      keysToDelete.forEach(key => {
+        personalizationCache.delete(key);
+      });
+      
+      logger.info('Cleared personalization cache entries', {
+        contactId,
+        entriesCleared: keysToDelete.length
+      });
+    } else {
+      // Fallback: clear entire cache if we can't access keys
+      logger.warn('Unable to access cache keys, clearing entire cache', { contactId });
+      personalizationCache.clear();
+    }
+  } catch (error) {
+    logger.error('Error clearing contact cache, clearing entire cache', error instanceof Error ? error : new Error(String(error)), {
+      contactId
+    });
+    personalizationCache.clear();
+  }
 }
 /**
  * Get cache statistics

@@ -8,37 +8,6 @@ import { randomUUID } from "crypto";
 import fs from "fs";
 import path from "path";
 
-const DEV_NO_DB = !process.env.DATABASE_URL && !process.env.NEXT_PUBLIC_DATABASE_URL;
-// Use a global singleton so [id] route and this index route share memory in dev
-const globalAny = globalThis as unknown as { __tools_mem?: Array<{
-  id: string;
-  name: string;
-  href: string;
-  description: string;
-  unit?: string | null;
-  status: string;
-  progress?: number | null;
-  criticality?: string | null;
-  owner?: string | null;
-  eta?: string | null;
-}> };
-// In-memory list (dev/no DB). Intentionally no seeds to keep data fully dynamic.
-globalAny.__tools_mem = globalAny.__tools_mem || [];
-const memTools: Array<{
-  id: string;
-  name: string;
-  href: string;
-  description: string;
-  unit?: string | null;
-  status: string;
-  progress?: number | null;
-  criticality?: string | null;
-  owner?: string | null;
-  eta?: string | null;
-}> = globalAny.__tools_mem;
-
-// No clearing needed; when DB is present we read from DB and ignore memTools
-
 export async function GET() {
   try {
   // Public read: do not require session for listing tools
@@ -157,14 +126,6 @@ export async function GET() {
       return items;
     };
 
-    // Public read so dashboard can show tools even before sign-in
-    if (DEV_NO_DB) {
-      if (memTools.length === 0) {
-        // Populate in-memory list once per dev session so counts are visible without seeds
-        memTools.push(...discoveredDefaults());
-      }
-      return NextResponse.json(memTools);
-    }
     const db = getDb();
     const rows = await db.select().from(Tools).orderBy(Tools.name);
     if (!rows || rows.length === 0) {
@@ -196,11 +157,6 @@ export async function POST(req: NextRequest) {
   await requireSession();
     const body = await req.json();
     const parsed = ToolCreate.parse(body);
-    if (DEV_NO_DB) {
-      const created = { id: randomUUID(), ...parsed };
-      memTools.unshift(created);
-      return NextResponse.json(created, { status: 201 });
-    }
     const db = getDb();
     // Only persist columns that exist in the DB schema
     const { name, href, description, unit, status, progress, criticality } = parsed as {

@@ -85,40 +85,63 @@ const dashboardStatsSchema = z.object({
 
 // Audit logging functions
 async function logStatsAccess(userId: string, stats: any) {
-  // TODO: Implement audit logging when audit system is available
-  logger.info('Dashboard stats accessed', {
-    userId: sanitizeInput(userId),
-    statsSummary: {
-      totalCampaigns: stats.totalCampaigns,
-      activeCampaigns: stats.activeCampaigns,
-      totalContacts: stats.totalContacts,
-      emailsSent: stats.emailsSent,
-    },
-    timestamp: new Date().toISOString(),
-  });
+  try {
+    const db = getDb();
+    const { AuditLogs } = await import('@/utils/auth-schema');
+    
+    await db.insert(AuditLogs).values({
+      userId,
+      eventType: 'dashboard_stats_access',
+      eventCategory: 'cold_outreach',
+      eventStatus: 'success',
+      ipAddress: 'system',
+      userAgent: 'api',
+      metadata: {
+        totalCampaigns: stats.totalCampaigns,
+        activeCampaigns: stats.activeCampaigns,
+        totalContacts: stats.totalContacts,
+        emailsSent: stats.emailsSent,
+      },
+    });
+  } catch (error) {
+    logger.info('Dashboard stats accessed', {
+      userId: sanitizeInput(userId),
+      statsSummary: {
+        totalCampaigns: stats.totalCampaigns,
+        activeCampaigns: stats.activeCampaigns,
+        totalContacts: stats.totalContacts,
+        emailsSent: stats.emailsSent,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  }
 }
 
 async function logStatsError(userId: string, error: any, context: any) {
-  // TODO: Implement audit logging when audit system is available
-  logger.error('Dashboard stats error', error, {
-    userId: sanitizeInput(userId),
-    context: sanitizeInput(JSON.stringify(context)),
-    timestamp: new Date().toISOString(),
-  });
+  try {
+    const db = getDb();
+    const { AuditLogs } = await import('@/utils/auth-schema');
+    
+    await db.insert(AuditLogs).values({
+      userId,
+      eventType: 'dashboard_stats_error',
+      eventCategory: 'cold_outreach',
+      eventStatus: 'failure',
+      ipAddress: 'system',
+      userAgent: 'api',
+      errorMessage: error?.message || String(error),
+      metadata: context,
+    });
+  } catch (auditError) {
+    logger.error('Dashboard stats error', error, {
+      userId: sanitizeInput(userId),
+      context: sanitizeInput(JSON.stringify(context)),
+      timestamp: new Date().toISOString(),
+    });
+  }
 }
 
-const DEV_NO_DB = !process.env.DATABASE_URL;
 
-const MOCK_STATS = {
-  totalCampaigns: 0,
-  activeCampaigns: 0,
-  totalContacts: 0,
-  emailsSent: 0,
-  openRate: 0,
-  clickRate: 0,
-  replyRate: 0,
-  conversionRate: 0,
-} as const;
 
 export async function GET(request: NextRequest) {
     let userId: string = 'unknown';
@@ -142,19 +165,7 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      if (DEV_NO_DB) {
-        await logStatsAccess(userId, MOCK_STATS);
-        return NextResponse.json({
-          stats: MOCK_STATS,
-          metadata: {
-            calculatedAt: new Date().toISOString(),
-            dataFreshness: 'mock',
-            estimatedMetrics: ['clickRate', 'conversionRate'],
-            userId: sanitizeInput(userId),
-            note: 'Using mock data because DATABASE_URL is not configured.',
-          },
-        });
-      }
+
 
       // Fetch dashboard stats with retry logic
       const stats = await retryWithBackoff(

@@ -4,7 +4,22 @@ import { logger, AppError, ValidationError, withPerformanceMonitoring } from './
 // Enterprise-grade SendGrid setup for production
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL;
-const AI_TEAM_EMAIL = process.env.AI_TEAM_EMAIL || 'ai@rougevc.com';
+
+/**
+ * Fetch admin email dynamically from database
+ */
+async function getAdminEmail(): Promise<string> {
+  try {
+    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/public/admin-emails`);
+    if (response.ok) {
+      const data = await response.json();
+      return data.primaryEmail || process.env.SENDGRID_FROM_EMAIL || 'noreply@rougevc.com';
+    }
+  } catch (error) {
+    console.error('Error fetching admin email:', error);
+  }
+  return process.env.SENDGRID_FROM_EMAIL || 'noreply@rougevc.com';
+}
 
 // Configuration validation
 interface SendGridConfig {
@@ -20,7 +35,7 @@ interface SendGridConfig {
 const sendGridConfig: SendGridConfig = {
   apiKey: SENDGRID_API_KEY || '',
   fromEmail: SENDGRID_FROM_EMAIL || '',
-  aiTeamEmail: AI_TEAM_EMAIL,
+  aiTeamEmail: '', // Will be fetched dynamically
   maxRetries: parseInt(process.env.SENDGRID_MAX_RETRIES || '3'),
   retryDelay: parseInt(process.env.SENDGRID_RETRY_DELAY || '1000'),
   batchSize: parseInt(process.env.SENDGRID_BATCH_SIZE || '10'),
@@ -41,9 +56,7 @@ function validateSendGridConfig(): boolean {
     errors.push('SENDGRID_FROM_EMAIL is not a valid email address');
   }
 
-  if (!isValidEmail(sendGridConfig.aiTeamEmail)) {
-    errors.push('AI_TEAM_EMAIL is not a valid email address');
-  }
+  // AI team email will be fetched dynamically, skip validation here
 
   if (errors.length > 0) {
     logger.error('SendGrid configuration validation failed', undefined, { errors });
@@ -87,7 +100,8 @@ export const sendTicketNotification = withPerformanceMonitoring(async function s
       throw new ValidationError('Missing required fields: subject, text, or html');
     }
 
-    const recipient = to || sendGridConfig.aiTeamEmail;
+    // Fetch admin email dynamically if no recipient specified
+    const recipient = to || await getAdminEmail();
     if (!isValidEmail(recipient)) {
       throw new ValidationError(`Invalid recipient email: ${recipient}`);
     }

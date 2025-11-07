@@ -54,7 +54,8 @@ type Ticket = {
 export default function AIToolsRequestFormPage() {
   const [tools, setTools] = useState<Tool[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [, setLoading] = useState({ tools: true, tickets: true });
+  const [units, setUnits] = useState<Array<{ id: string; name: string; code: string }>>([]);
+  const [, setLoading] = useState({ tools: true, tickets: true, units: true });
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lastCreatedId, setLastCreatedId] = useState<string | null>(null);
@@ -86,16 +87,16 @@ export default function AIToolsRequestFormPage() {
         },
         { message: "Due date must be today or later" }
       ),
-    team: z.string().default("AI team"),
-    department: z.string().default("AI"),
+    team: z.string().min(1, "Please select your team/unit"),
+    department: z.string().min(1, "Please select your department"),
     aiToolCategory: z.string().min(1, "Please select an AI tool category"),
+    criticality: z.string().default("Medium"),
     // Additional fields (optional)
     problemStatement: z.string().optional(),
     expectedOutcome: z.string().optional(),
     dataSources: z.string().optional(),
     constraints: z.string().optional(),
     manualSteps: z.string().optional(),
-    // criticality removed from user-facing form
   });
   type FormValues = z.infer<typeof schema>;
 
@@ -108,9 +109,10 @@ export default function AIToolsRequestFormPage() {
       businessSteps: "",
       businessGoal: "",
       dueDate: "",
-      team: "AI team",
-      department: "AI",
+      team: "",
+      department: "",
       aiToolCategory: "",
+      criticality: "Medium",
       problemStatement: "",
       expectedOutcome: "",
       dataSources: "",
@@ -175,8 +177,10 @@ export default function AIToolsRequestFormPage() {
     try {
       const res = await fetch("/api/tickets", { cache: "no-store" });
       if (!res.ok) throw new Error("Failed to load tickets");
-      const data: Ticket[] = await res.json();
-      setTickets(data);
+      const data = await res.json();
+      // Handle both response formats: { tickets: [...] } or [...]
+      const ticketsArray = data.tickets || (Array.isArray(data) ? data : []);
+      setTickets(ticketsArray);
       setLastUpdated(new Date());
     } catch (e) {
       console.error(e);
@@ -185,12 +189,29 @@ export default function AIToolsRequestFormPage() {
     }
   };
 
+  const fetchUnits = async () => {
+    try {
+      const res = await fetch("/api/public/units", { cache: "no-store" });
+      if (!res.ok) throw new Error("Failed to load units");
+      const data = await res.json();
+      setUnits(data.units || []);
+    } catch (e) {
+      console.error(e);
+      // Fallback to empty array if API fails
+      setUnits([]);
+    } finally {
+      setLoading((s) => ({ ...s, units: false }));
+    }
+  };
+
   useEffect(() => {
     fetchTools();
     fetchTickets();
+    fetchUnits();
     const poll = setInterval(() => {
       fetchTools();
       fetchTickets();
+      fetchUnits();
     }, 15000);
     return () => clearInterval(poll);
   }, []);
@@ -317,7 +338,10 @@ export default function AIToolsRequestFormPage() {
   const onSubmit = async (values: FormValues) => {
     try {
       setSubmitting(true);
-      const payload = { ...values, status: "Open" };
+      const payload = { 
+        ...values, 
+        status: "Open"
+      };
       const res = await fetch("/api/tickets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -326,7 +350,7 @@ export default function AIToolsRequestFormPage() {
       if (!res.ok) throw new Error("Failed to submit request");
       const created: Ticket = await res.json();
       setTickets((prev) => [created, ...prev]);
-      toast.success("Request submitted");
+      toast.success("AI Tools request submitted successfully! Admins will review it in real-time.");
       setLastCreatedId(created.id);
       reset({
         title: "",
@@ -335,9 +359,10 @@ export default function AIToolsRequestFormPage() {
         businessSteps: "",
         businessGoal: "",
         dueDate: "",
-        team: "AI team",
-        department: "AI",
+        team: "",
+        department: "",
         aiToolCategory: "",
+        criticality: "Medium",
         problemStatement: "",
         expectedOutcome: "",
         dataSources: "",
@@ -426,26 +451,58 @@ export default function AIToolsRequestFormPage() {
             <form className="grid gap-6 md:grid-cols-2" onSubmit={handleSubmit(onSubmit)}>
               <div className="md:col-span-2 flex gap-4">
                 <div className="flex-1">
-                  <Label className="block text-sm font-semibold mb-2 text-gray-300">Team</Label>
-                  <Input
-                    required
-                    className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    {...register("team")}
-                    value={watch("team")}
-                    readOnly
+                  <Label className="block text-sm font-semibold mb-2 text-gray-300">Your Team/Unit <RequiredMark /></Label>
+                  <Controller
+                    name="team"
+                    control={form.control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                          <SelectValue placeholder="Select your team/unit" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-900/95 backdrop-blur-md border-gray-700/50 text-white shadow-2xl">
+                          {units.length > 0 ? (
+                            units.map((unit) => (
+                              <SelectItem key={unit.id} value={unit.name}>
+                                {unit.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="loading" disabled>Loading units...</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    )}
                   />
-                  <div className="mt-1 text-xs text-gray-400">This request will be routed to the AI team.</div>
+                  <div className="mt-1 text-xs text-gray-400">Select your team/unit - Request will be sent to AI Unit admins</div>
+                  {errors.team && <p className="mt-1 text-sm text-red-400">{errors.team.message}</p>}
                 </div>
                 <div className="flex-1">
-                  <Label className="block text-sm font-semibold mb-2 text-gray-300">Department</Label>
-                  <Input
-                    required
-                    className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    {...register("department")}
-                    value={watch("department")}
-                    readOnly
+                  <Label className="block text-sm font-semibold mb-2 text-gray-300">Your Department <RequiredMark /></Label>
+                  <Controller
+                    name="department"
+                    control={form.control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger className="bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                          <SelectValue placeholder="Select your department" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-900/95 backdrop-blur-md border-gray-700/50 text-white shadow-2xl">
+                          {units.length > 0 ? (
+                            units.map((unit) => (
+                              <SelectItem key={unit.id} value={unit.name}>
+                                {unit.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="loading" disabled>Loading departments...</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    )}
                   />
-                  <div className="mt-1 text-xs text-gray-400">Department for this request (AI).</div>
+                  <div className="mt-1 text-xs text-gray-400">Select your department</div>
+                  {errors.department && <p className="mt-1 text-sm text-red-400">{errors.department.message}</p>}
                 </div>
               </div>
               <div className="md:col-span-2">

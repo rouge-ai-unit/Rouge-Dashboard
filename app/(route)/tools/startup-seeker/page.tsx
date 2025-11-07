@@ -1,15 +1,17 @@
-import { Metadata } from 'next';
-import StartupSeekerTool from '@/components/StartupSeekerTool';
+"use client";
 
-export const metadata: Metadata = {
-  title: 'Agritech Startup Seeker | Rouge Dashboard',
-  description: 'Discover and evaluate promising agritech startups for investment opportunities using AI-powered analysis.',
-};
+import StartupSeekerTool from '@/components/StartupSeekerTool';
+import { ToolPageWrapper } from '@/components/guards';
 
 export default function StartupSeekerPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <StartupSeekerTool />
-    </div>
+    <ToolPageWrapper 
+      allowedRoles={["admin", "leader", "co-leader"]}
+      toolName="Agritech Startup Seeker"
+    >
+      <div className="min-h-screen bg-background">
+        <StartupSeekerTool />
+      </div>
+    </ToolPageWrapper>
   );
 }

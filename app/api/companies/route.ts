@@ -3,37 +3,10 @@ import { getDb } from "@/utils/dbConfig";
 import { Companies } from "@/utils/schema";
 import { z } from "zod";
 import { requireSession } from "@/lib/apiAuth";
-import { randomUUID } from "crypto";
-
-const DEV_NO_DB = !process.env.DATABASE_URL && !process.env.NEXT_PUBLIC_DATABASE_URL;
-type CompanyItem = {
-  id: string;
-  companyName: string;
-  companyWebsite?: string | null;
-  companyLinkedin?: string | null;
-  region: string;
-  industryFocus: string;
-  offerings: string;
-  marketingPosition: string;
-  potentialPainPoints: string;
-  contactName: string;
-  contactPosition: string;
-  linkedin?: string | null;
-  contactEmail: string;
-  isMailed?: boolean;
-  addedToMailList?: boolean;
-};
-// Use a global singleton so [id] route and this index route share memory in dev
-const globalAny = globalThis as unknown as { __companies_mem?: CompanyItem[] };
-globalAny.__companies_mem = globalAny.__companies_mem || [];
-const memCompanies: CompanyItem[] = globalAny.__companies_mem;
 
 export async function GET() {
   try {
-  await requireSession();
-    if (DEV_NO_DB) {
-      return NextResponse.json(memCompanies);
-    }
+    await requireSession();
     const db = getDb();
     const companies = await db
       .select()
@@ -69,7 +42,7 @@ const CompanyCreateSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-  await requireSession();
+    await requireSession();
     const body = await req.json();
     const parsed = CompanyCreateSchema.parse(body);
     const toInsert: typeof Companies.$inferInsert = {
@@ -88,11 +61,7 @@ export async function POST(req: NextRequest) {
       ...(parsed.isMailed !== undefined ? { isMailed: parsed.isMailed } : {}),
       ...(parsed.addedToMailList !== undefined ? { addedToMailList: parsed.addedToMailList } : {}),
     };
-    if (DEV_NO_DB) {
-      const created: CompanyItem = { id: randomUUID(), ...toInsert } as CompanyItem;
-      memCompanies.unshift(created);
-      return NextResponse.json(created, { status: 201 });
-    }
+    
     const db = getDb();
     const inserted = await db.insert(Companies).values(toInsert).returning();
     return NextResponse.json(inserted[0], { status: 201 });

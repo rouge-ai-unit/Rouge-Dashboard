@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +31,24 @@ import {
 export type HelpDialogProps = { open: boolean; onOpenChangeAction: (open: boolean) => void };
 
 export default function HelpDialog({ open, onOpenChangeAction }: HelpDialogProps) {
+  const [adminEmail, setAdminEmail] = React.useState("");
+
+  // Fetch admin email dynamically
+  React.useEffect(() => {
+    const fetchAdminEmail = async () => {
+      try {
+        const response = await fetch('/api/public/admin-emails');
+        if (response.ok) {
+          const data = await response.json();
+          setAdminEmail(data.primaryEmail || '');
+        }
+      } catch (error) {
+        console.error('Error fetching admin email:', error);
+      }
+    };
+    fetchAdminEmail();
+  }, []);
+
   // Defensive: ensure no lingering overlay blocks clicks after close
   if (!open) {
     try {
@@ -392,7 +411,7 @@ export default function HelpDialog({ open, onOpenChangeAction }: HelpDialogProps
                 <AccordionItem value="access" className="border-gray-700/50">
                   <AccordionTrigger className="text-orange-400">How do I get access to the platform?</AccordionTrigger>
                   <AccordionContent className="text-gray-300">
-                    Access is restricted to Rouge email addresses (.rouge@gmail.com or @rougevc.com). Contact the AI team at ai@rougevc.com for account setup and onboarding.
+                    Access is restricted to Rouge email addresses (.rouge@gmail.com or @rougevc.com). Contact the AI team at {adminEmail} for account setup and onboarding.
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="tools" className="border-gray-700/50">
@@ -416,7 +435,7 @@ export default function HelpDialog({ open, onOpenChangeAction }: HelpDialogProps
                 <AccordionItem value="support" className="border-gray-700/50">
                   <AccordionTrigger className="text-orange-400">How do I get help or report issues?</AccordionTrigger>
                   <AccordionContent className="text-gray-300">
-                    Use the Contact Us page to submit support tickets, email ai@rougevc.com directly, or reach out via Slack #ai-unit-support channel. Include screenshots and detailed descriptions for faster resolution.
+                    Use the Contact Us page to submit support tickets, email {adminEmail} directly, or reach out via Slack #ai-unit-support channel. Include screenshots and detailed descriptions for faster resolution.
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
@@ -454,7 +473,7 @@ export default function HelpDialog({ open, onOpenChangeAction }: HelpDialogProps
                 Google Analytics
                 <ExternalLink className="w-3 h-3"/>
               </a>
-              <a className="flex items-center gap-2 text-orange-400 hover:text-orange-300 hover:underline transition-colors p-2 rounded-lg hover:bg-gray-700/30" href="mailto:ai@rougevc.com">
+              <a className="flex items-center gap-2 text-orange-400 hover:text-orange-300 hover:underline transition-colors p-2 rounded-lg hover:bg-gray-700/30" href={`mailto:${adminEmail}`}>
                 <Mail className="w-4 h-4"/> 
                 Email Support
               </a>

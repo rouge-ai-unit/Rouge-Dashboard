@@ -3,44 +3,14 @@ import { LinkedinContent } from "@/utils/schema";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireSession } from "@/lib/apiAuth";
-import { randomUUID } from "crypto";
-
-const DEV_NO_DB = !process.env.DATABASE_URL && !process.env.NEXT_PUBLIC_DATABASE_URL;
-type ContentItem = {
-  id: string;
-  dayOfMonth: number;
-  weekOfMonth: number;
-  date: string;
-  specialOccasion?: string | null;
-  generalTheme: string;
-  postIdeas: string;
-  caption: string;
-  hashtags: string;
-  status?: "Draft" | "Approved" | "Scheduled";
-};
-// Use a global singleton so [id] route and this index route share memory in dev
-const globalAny = globalThis as unknown as { __contents_mem?: ContentItem[] };
-globalAny.__contents_mem = globalAny.__contents_mem || [];
-const memContents: ContentItem[] = globalAny.__contents_mem;
 
 export async function GET(req: NextRequest) {
   try {
-  await requireSession();
+    await requireSession();
     const { searchParams } = new URL(req.url);
     const from = searchParams.get("from");
     const to = searchParams.get("to");
-    if (DEV_NO_DB) {
-      const rows = memContents
-        .filter((r) => {
-          if (!from && !to) return true;
-          const d = r.date;
-          if (from && d < from) return false;
-          if (to && d > to) return false;
-          return true;
-        })
-  .sort((a, b) => a.date.localeCompare(b.date));
-      return NextResponse.json(rows);
-    }
+    
     const db = getDb();
     const contents = await db
       .select()
@@ -52,7 +22,7 @@ export async function GET(req: NextRequest) {
       if (from && d < from) return false;
       if (to && d > to) return false;
       return true;
-  });
+    });
     return NextResponse.json(filtered);
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
@@ -80,13 +50,8 @@ export async function POST(req: NextRequest) {
     await requireSession();
     const body = await req.json();
     const parsed = ContentCreateSchema.parse(body);
-    if (DEV_NO_DB) {
-      const created: ContentItem = { id: randomUUID(), status: parsed.status ?? "Draft", ...parsed };
-      memContents.unshift(created);
-      return NextResponse.json(created, { status: 201 });
-    }
+    
     const db = getDb();
-    // Insert only DB columns; status is tracked in-memory until a migration adds it
     const { dayOfMonth, weekOfMonth, date, specialOccasion, generalTheme, postIdeas, caption, hashtags, status } = parsed;
     try {
       const inserted = await db

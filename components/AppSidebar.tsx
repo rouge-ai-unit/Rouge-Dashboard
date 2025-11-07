@@ -19,6 +19,7 @@ import {
   HelpCircle,
   Sparkles,
   TrendingUp,
+  Shield,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -33,82 +34,72 @@ import {
 } from "./ui/tooltip";
 
 
-const publicNavItems = [
-  {
-  title: "Home",
-    icon: LayoutDashboard,
-  href: "/home",
-  },
-  {
-    title: "AI Tools Request Form",
-    icon: FileText, // Changed to FileText icon for uniqueness
-    href: "/tools/ai-tools-request-form",
-  },
-  {
-    title: "Work Tracker",
-    icon: UserCog2,
-    href: "/tools/work-tracker",
-  },
-  {
-    title: "Ai News Daily",
-    icon: Newspaper,
-    href: "/tools/ai-news-daily",
-  },
-  {
-    title: "Agritech Startup Seeker",
-    icon: Target,
-    href: "/tools/startup-seeker",
-  },
-  {
-    title: "AgTech Event Finder",
-    icon: Sparkles,
-    href: "/agtech-events",
-  },
-  {
-    title: "Agritech Universities",
-    icon: GraduationCap,
-    href: "/tools/agritech-universities",
-  },
-  {
-    title: "Sentiment Analyzer",
-    icon: TrendingUp,
-    href: "/tools/sentiment-analyzer",
-  },
-  {
-    title: "Content Idea Automation",
-    icon: BrainCircuit,
-    href: "/tools/content-idea-automation",
-  },
-  {
-    title: "Cold Connect Automator",
-    icon: Mail,
-    href: "/tools/cold-connect-automator",
-  },
-  {
-    title: "AI Outreach Agent",
-    icon: Briefcase,
-    href: "/tools/ai-outreach-agent",
-  },
-  {
-    title: "Contact Us",
-    icon: HelpCircle,
-    href: "/tools/contact",
-  },
-];
-
-
+// Icon mapping for dynamic tools
+const iconMap: Record<string, any> = {
+  LayoutDashboard,
+  Shield,
+  FileText,
+  UserCog2,
+  Newspaper,
+  Target,
+  Sparkles,
+  GraduationCap,
+  TrendingUp,
+  BrainCircuit,
+  Mail,
+  Briefcase,
+  HelpCircle,
+};
 
 interface AppSidebarProps {
   onCollapseAction?: (collapsed: boolean) => void;
 }
 
-export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
+interface NavItem {
+  title: string;
+  icon: any;
+  href: string;
+}
 
-  const { data: session } = useSession();
+export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
+  const { data: session, status } = useSession();
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const [signingOut, setSigningOut] = useReactState(false);
-  // onCollapseAction is received via props
+  const [navItems, setNavItems] = useState<NavItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch accessible tools dynamically from API
+  useEffect(() => {
+    const fetchAccessibleTools = async () => {
+      if (status === "authenticated" && session?.user) {
+        try {
+          // Determine if we're in admin context based on current path
+          const isAdminRoute = pathname?.startsWith('/admin');
+          const context = isAdminRoute ? 'admin' : 'normal';
+          
+          const response = await fetch(`/api/user/accessible-tools?context=${context}`);
+          if (response.ok) {
+            const data = await response.json();
+            const tools = data.tools.map((tool: any) => ({
+              title: tool.title,
+              icon: iconMap[tool.icon] || LayoutDashboard,
+              href: tool.href,
+            }));
+            setNavItems(tools);
+          }
+        } catch (error) {
+          console.error('Error fetching accessible tools:', error);
+        } finally {
+          setLoading(false);
+        }
+      } else if (status === "unauthenticated") {
+        setLoading(false);
+      }
+    };
+
+    fetchAccessibleTools();
+  }, [session, status, pathname]);
 
   // Persist collapsed state across reloads for better UX
   useEffect(() => {
@@ -181,7 +172,12 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
       </div>
       {/* Navigation Menu */}
       <nav className="mt-4 flex-1 overflow-y-auto" aria-label="Primary">
-        {publicNavItems.map((item, index) => (
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : (
+          navItems.map((item, index) => (
           <Link href={item.href} key={index} aria-current={pathname === item.href ? "page" : undefined}>
             {collapsed ? (
               <TooltipProvider>
@@ -215,7 +211,8 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
               </div>
             )}
           </Link>
-        ))}
+        ))
+        )}
       </nav>
 
   {/* Footer */}
@@ -229,6 +226,35 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
                     {session.user?.name}
                   </p>
                   <p className="text-xs text-gray-400 truncate">{session.user?.email}</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {(() => {
+                      const userRole = (session.user as any)?.role;
+                      const userUnit = (session.user as any)?.unit;
+                      const getRoleBadgeColor = (role: string) => {
+                        switch (role) {
+                          case 'admin': return 'bg-red-500/20 text-red-400 border-red-500/30';
+                          case 'leader': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+                          case 'co-leader': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+                          case 'member': return 'bg-green-500/20 text-green-400 border-green-500/30';
+                          default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+                        }
+                      };
+                      return (
+                        <>
+                          {userRole && (
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded border capitalize ${getRoleBadgeColor(userRole)}`}>
+                              {userRole}
+                            </span>
+                          )}
+                          {userUnit && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded border bg-gray-500/20 text-gray-400 border-gray-500/30 truncate max-w-[80px]" title={userUnit}>
+                              {userUnit}
+                            </span>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
               )}
               <div className="flex-shrink-0">

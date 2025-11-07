@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 // no dynamic imports needed for dialogs in client component
 import SettingsDialog from "./dialogs/SettingsDialog";
 import HelpDialog from "./dialogs/HelpDialog";
-import { useRouter } from "next/navigation";
+import NotificationPanel from "./NotificationPanel";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,12 +19,13 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSession, signOut } from "next-auth/react";
 import {
   Plus,
-  Bell,
   ChevronDown,
   User,
   LogOut,
   HelpCircle,
   Settings,
+  Shield,
+  LayoutDashboard,
 } from "lucide-react";
 
 // dialogs are client components; direct import is fine
@@ -32,153 +34,19 @@ type Props = { title?: string };
 
 export default function Topbar({ title }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session } = useSession();
   const [signingOut, setSigningOut] = useState(false);
-
-  // Notifications state and polling
-  type Notif = { id: string; title: string; href: string; type: "ticket" | "work"; ts: number; meta?: string };
-  const [notifs, setNotifs] = useState<Notif[]>([]);
-  const [unread, setUnread] = useState<number>(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  
+  const isAdminRoute = pathname?.startsWith('/admin');
 
+  // Prevent hydration mismatch
   useEffect(() => {
-    let cancelled = false;
-    const getPollMs = () => {
-      try { return Math.max(10, Number(localStorage.getItem("prefs:notifs:pollMs") || "30")) * 1000; } catch { return 30000; }
-    };
-    const getEnabled = () => {
-      try {
-        const enableTickets = localStorage.getItem("prefs:notifs:enableTickets");
-        const enableWork = localStorage.getItem("prefs:notifs:enableWork");
-        return {
-          tickets: enableTickets == null ? true : enableTickets === "true",
-          work: enableWork == null ? true : enableWork === "true",
-        } as const;
-      } catch {
-        return { tickets: true, work: true } as const;
-      }
-    };
-    const getEnableSound = () => {
-      try {
-        const s = localStorage.getItem("prefs:notifs:enableSound");
-        return s == null ? false : s === "true";
-      } catch { return false; }
-    }
-    // simple beep
-  const playBeep = () => {
-      try {
-    type WinWithWebkitAC = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
-    const w = window as WinWithWebkitAC;
-    const Ctx = w.AudioContext || w.webkitAudioContext;
-        if (!Ctx) return;
-        const audioCtx = new Ctx();
-        const o = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        o.type = "sine";
-        o.frequency.value = 880; // A5
-        o.connect(g);
-        g.connect(audioCtx.destination);
-        g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.05, audioCtx.currentTime + 0.01);
-        o.start();
-        o.stop(audioCtx.currentTime + 0.08);
-      } catch {}
-    };
-    let interval = 0;
-    const computeUnread = (items: Notif[]) => {
-      try {
-        const seenRaw = localStorage.getItem("notifs:seenIds");
-        const seen = new Set<string>(seenRaw ? JSON.parse(seenRaw) : []);
-        const c = items.filter(n => !seen.has(n.id)).length;
-        setUnread(c);
-      } catch { setUnread(0); }
-    };
-  const lastKnownIds = new Set<string>();
-  const load = async () => {
-      try {
-        const [ticketsRes, trackerRes] = await Promise.all([
-          fetch("/api/tickets", { cache: "no-store" }),
-          fetch("/api/tracker?page=1&pageSize=10", { cache: "no-store" }),
-        ]);
-        const ticketsJson = ticketsRes.ok ? await ticketsRes.json() : [] as unknown[];
-  const trackerJson = trackerRes.ok ? await trackerRes.json() : { items: [] as unknown[] };
-  type TrackerResp = { items?: unknown[] };
-  const trackerObj: TrackerResp = (trackerJson ?? {}) as TrackerResp;
-
-        type TicketRaw = { id?: string; title?: string; criticality?: string; updatedAt?: string };
-        type WorkRaw = { _id?: string; task?: string; status?: string; assignedTo?: string; lastUpdated?: string };
-
-        const tNotifs: Notif[] = (Array.isArray(ticketsJson) ? ticketsJson : [])
-          .slice(0, 10)
-          .map((raw: unknown) => {
-            const t = raw as TicketRaw;
-            if (!t.id || !t.title) return null;
-            const ts = t.updatedAt ? Date.parse(t.updatedAt) : Date.now();
-            return {
-              id: `t:${t.id}`,
-              title: `New ticket: ${t.title}`,
-              href: "/tools/ai-tools-request-form",
-              type: "ticket" as const,
-              ts: isNaN(ts) ? Date.now() : ts,
-              meta: t.criticality || "",
-            } as Notif;
-          })
-          .filter(Boolean) as Notif[];
-
-  const wItems = Array.isArray(trackerObj.items) ? trackerObj.items : [];
-  const wNotifs: Notif[] = wItems
-          .slice(0, 10)
-          .map((raw: unknown) => {
-            const w = raw as WorkRaw;
-            if (!w._id || !w.task) return null;
-            const ts = w.lastUpdated ? Date.parse(w.lastUpdated) : Date.now();
-            return {
-              id: `w:${w._id}`,
-              title: `${w.task} → ${w.status || "Updated"}`,
-              href: "/work-tracker",
-              type: "work" as const,
-              ts: isNaN(ts) ? Date.now() : ts,
-              meta: w.assignedTo || "",
-            } as Notif;
-          })
-          .filter(Boolean) as Notif[];
-        const enabled = getEnabled();
-        const filtered = [
-          ...(enabled.work ? wNotifs : []),
-          ...(enabled.tickets ? tNotifs : []),
-        ];
-        const all = filtered.sort((a, b) => b.ts - a.ts).slice(0, 12);
-        if (!cancelled) {
-          const enableSound = getEnableSound();
-          // detect newly added items vs. lastKnownIds
-          const newOnes = all.filter(n => !lastKnownIds.has(n.id));
-          if (enableSound && newOnes.length > 0) {
-            playBeep();
-          }
-          // update lastKnownIds snapshot
-          lastKnownIds.clear();
-          for (const n of all) lastKnownIds.add(n.id);
-          setNotifs(all);
-          computeUnread(all);
-        }
-      } catch {}
-    };
-    const start = () => {
-      clearInterval(interval);
-      load();
-      interval = window.setInterval(load, getPollMs());
-    };
-    start();
-    const onFocus = () => load();
-    window.addEventListener("focus", onFocus);
-    return () => { cancelled = true; clearInterval(interval); window.removeEventListener("focus", onFocus); };
+    setMounted(true);
   }, []);
-
-  const markAllRead = () => {
-    try { localStorage.setItem("notifs:seenIds", JSON.stringify(notifs.map(n => n.id))); } catch {}
-    setUnread(0);
-  };
 
   return (
     <div
@@ -192,56 +60,37 @@ export default function Topbar({ title }: Props) {
         
   {/* Quick actions */}
   <div className="ml-auto flex items-center gap-1 sm:gap-2">
-
+          {/* Admin/Dashboard Switch Button (only for admins) */}
+          {mounted && (session?.user as any)?.role === 'admin' && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-gray-700 text-white hover:bg-gray-800 flex items-center gap-2"
+              onClick={() => {
+                if (isAdminRoute) {
+                  router.push('/home');
+                } else {
+                  router.push('/admin/dashboard');
+                }
+              }}
+              title={isAdminRoute ? 'Switch to Dashboard' : 'Switch to Admin Panel'}
+            >
+              {isAdminRoute ? (
+                <>
+                  <LayoutDashboard className="size-4" />
+                  <span className="hidden md:inline">Dashboard</span>
+                </>
+              ) : (
+                <>
+                  <Shield className="size-4" />
+                  <span className="hidden md:inline">Admin Panel</span>
+                </>
+              )}
+            </Button>
+          )}
 
           {/* Notifications */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="border-gray-700 text-white relative" aria-label="Notifications">
-                <Bell className="size-4" />
-                {unread > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] leading-none px-1.5 py-0.5 rounded-full">
-                    {unread}
-                  </span>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 bg-gray-900/95 backdrop-blur-md text-gray-100 border-gray-700/50 shadow-2xl">
-              <div className="flex items-center justify-between px-2 py-2">
-                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-                <div className="flex items-center gap-2">
-                  <Button size="sm" variant="outline" className="h-7 px-2 border-gray-700" onClick={markAllRead}>Mark all read</Button>
-                  <Button size="sm" variant="outline" className="h-7 px-2 border-gray-700" onClick={() => setSettingsOpen(true)}>Prefs</Button>
-                </div>
-              </div>
-              <DropdownMenuSeparator />
-              {notifs.length === 0 ? (
-                <div className="px-2 py-3 text-sm text-gray-300">No notifications yet</div>
-              ) : (
-                <ul className="max-h-80 overflow-auto">
-                  {notifs.map((n) => (
-                    <li key={n.id}>
-                      <button onClick={() => { 
-                        try {
-                          const seenRaw = localStorage.getItem("notifs:seenIds");
-                          const seen = new Set<string>(seenRaw ? JSON.parse(seenRaw) : []);
-                          seen.add(n.id);
-                          localStorage.setItem("notifs:seenIds", JSON.stringify([...seen]));
-                        } catch {}
-                        router.push(n.href);
-                      }} className="w-full text-left px-3 py-2 hover:bg-gray-800/50 transition flex items-start gap-2">
-                        <span className={`mt-1 h-2 w-2 rounded-full ${n.type === "ticket" ? "bg-blue-500" : "bg-emerald-500"}`} />
-                        <div className="flex-1">
-                          <div className="text-sm text-gray-100 truncate">{n.title}</div>
-                          <div className="text-xs text-gray-400">{n.meta}</div>
-                        </div>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <NotificationPanel />
 
           {/* Profile */}
           <DropdownMenu>
@@ -255,9 +104,40 @@ export default function Topbar({ title }: Props) {
                 <ChevronDown className="size-3.5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-gray-900/95 backdrop-blur-md text-gray-100 border-gray-700/50 shadow-2xl">
-              <DropdownMenuLabel className="flex items-center gap-2">
-                <User className="size-4" /> {session?.user?.name ?? "User"}
+            <DropdownMenuContent align="end" className="w-64 bg-gray-900/95 backdrop-blur-md text-gray-100 border-gray-700/50 shadow-2xl">
+              <DropdownMenuLabel>
+                <div className="flex items-center gap-2 mb-2">
+                  <User className="size-4" /> {session?.user?.name ?? "User"}
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  {(() => {
+                    const userRole = (session?.user as any)?.role;
+                    const userUnit = (session?.user as any)?.unit;
+                    const getRoleBadgeColor = (role: string) => {
+                      switch (role) {
+                        case 'admin': return 'bg-red-500/20 text-red-400 border-red-500/30';
+                        case 'leader': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+                        case 'co-leader': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+                        case 'member': return 'bg-green-500/20 text-green-400 border-green-500/30';
+                        default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+                      }
+                    };
+                    return (
+                      <>
+                        {userRole && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full border capitalize ${getRoleBadgeColor(userRole)}`}>
+                            {userRole}
+                          </span>
+                        )}
+                        {userUnit && (
+                          <span className="text-xs px-2 py-0.5 rounded-full border bg-gray-500/20 text-gray-400 border-gray-500/30">
+                            {userUnit}
+                          </span>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="data-[highlighted]:bg-gray-800/50 data-[highlighted]:text-gray-100" title="Open settings" onClick={() => setSettingsOpen(true)}>
@@ -269,6 +149,11 @@ export default function Topbar({ title }: Props) {
               <DropdownMenuSeparator />
               <DropdownMenuItem className="data-[highlighted]:bg-gray-800/50 data-[highlighted]:text-gray-100" title="Sign out of your account" onClick={async () => {
                 setSigningOut(true);
+                // Clear admin choice flags on logout
+                if (typeof window !== "undefined") {
+                  sessionStorage.removeItem("from_admin_choice");
+                  sessionStorage.removeItem("admin_choice_shown");
+                }
                 await signOut({ callbackUrl: '/signin', redirect: false });
                 window.location.href = '/signin';
               }} disabled={signingOut}>
