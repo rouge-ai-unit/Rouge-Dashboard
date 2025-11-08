@@ -111,12 +111,16 @@ export default function SignIn() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      {/* Background gradient/blur */}
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+      {/* Enhanced Background Effects */}
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl opacity-10 bg-blue-500" />
-        <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full blur-3xl opacity-10 bg-purple-500" />
+        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl opacity-20 bg-blue-600 animate-pulse" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full blur-3xl opacity-20 bg-purple-600 animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-3xl opacity-10 bg-gradient-to-r from-blue-500 to-purple-500" />
       </div>
+      
+      {/* Grid Pattern Overlay */}
+      <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '50px 50px' }} />
 
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center px-[5vw] py-[5vh] md:grid md:grid-cols-2 md:px-0 md:py-0">
         {/* Welcome/brand side */}
@@ -126,22 +130,62 @@ export default function SignIn() {
           transition={{ duration: 0.5 }}
           className="flex flex-col justify-center p-4 md:p-12"
         >
-          <div className="mb-6 flex items-center gap-3">
-            <Image src="/logo.jpg" alt="Logo" width={40} height={40} className="h-10 w-10 rounded-md object-cover" />
-            <span className="text-xl font-bold text-white">Rouge Dashboard</span>
+          <div className="mb-8 flex items-center gap-3">
+            <div className="relative">
+              <Image src="/logo.jpg" alt="Logo" width={48} height={48} className="h-12 w-12 rounded-xl object-cover shadow-lg ring-2 ring-blue-500/20" />
+              <div className="absolute -inset-1 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 opacity-20 blur-lg" />
+            </div>
+            <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Rouge Dashboard</span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-white">Welcome back</h1>
-          <p className="mt-3 text-base text-gray-300">
-            Access your AI-powered operations platform for AgTech research, startup discovery, and content automation.
+          <h1 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent leading-tight">
+            Welcome back
+          </h1>
+          <p className="mt-4 text-lg text-gray-400 leading-relaxed">
+            Your comprehensive AI-powered platform for AgTech innovation, research, and business automation.
           </p>
           <div className="mt-8 hidden md:block">
-            <ul className="space-y-3 text-gray-300">
-              <li>• AgTech event discovery & startup analysis</li>
-              <li>• AI-powered content generation & outreach</li>
-              <li>• University research database & TTO insights</li>
-              <li>• Project tracking & ticketing system</li>
-              <li>• Enterprise security with audit logging</li>
-            </ul>
+            <div className="space-y-2">
+              <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 hover:border-blue-500/30 transition-colors group">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 group-hover:scale-125 transition-transform flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-gray-200 font-medium text-sm">AgTech Event Finder & Startup Seeker</span>
+                  <p className="text-xs text-gray-500 mt-0.5">Discover events, analyze startups with AI scoring</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 hover:border-purple-500/30 transition-colors group">
+                <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 group-hover:scale-125 transition-transform flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-gray-200 font-medium text-sm">AI Content & Outreach Automation</span>
+                  <p className="text-xs text-gray-500 mt-0.5">LinkedIn content, cold outreach, AI personalization</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 hover:border-cyan-500/30 transition-colors group">
+                <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 mt-1.5 group-hover:scale-125 transition-transform flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-gray-200 font-medium text-sm">Research & Intelligence Tools</span>
+                  <p className="text-xs text-gray-500 mt-0.5">Universities database, sentiment analyzer, AI news</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 hover:border-green-500/30 transition-colors group">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 group-hover:scale-125 transition-transform flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-gray-200 font-medium text-sm">Project Management Suite</span>
+                  <p className="text-xs text-gray-500 mt-0.5">Work tracker, ticketing system, team collaboration</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 hover:border-orange-500/30 transition-colors group">
+                <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-1.5 group-hover:scale-125 transition-transform flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-gray-200 font-medium text-sm">Enterprise Features</span>
+                  <p className="text-xs text-gray-500 mt-0.5">Role-based access, admin controls, audit logging</p>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 p-3 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20">
+              <p className="text-xs text-gray-400 text-center">
+                <span className="text-blue-400 font-semibold">11+ AI-powered tools</span> • Secure authentication • Real-time collaboration
+              </p>
+            </div>
           </div>
         </motion.div>
 
@@ -152,20 +196,22 @@ export default function SignIn() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="flex w-full items-center justify-center p-4 md:p-12"
         >
-          <div className="w-full max-w-md rounded-2xl border border-gray-700 bg-white dark:bg-gray-800 p-4 md:p-6 shadow-2xl">
-            <h2 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">Sign in</h2>
-            <p className="mb-6 text-sm text-gray-600 dark:text-gray-400">Choose a method to continue</p>
+          <div className="w-full max-w-md rounded-2xl border border-gray-700/50 bg-gray-800/50 backdrop-blur-xl p-6 md:p-8 shadow-2xl ring-1 ring-gray-700/50">
+            <div className="mb-6">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Sign in</h2>
+              <p className="mt-2 text-sm text-gray-400">Choose a method to continue</p>
+            </div>
 
             <button
               onClick={handleGoogle}
-              className="flex w-full items-center justify-center gap-3 rounded-lg bg-white px-4 py-4 font-semibold text-black transition hover:bg-gray-100 min-h-[48px] text-base"
+              className="flex w-full items-center justify-center gap-3 rounded-xl bg-white px-4 py-4 font-semibold text-black transition hover:bg-gray-50 hover:shadow-lg min-h-[52px] text-base border-2 border-transparent hover:border-blue-500/20"
               style={{ touchAction: 'manipulation' }}
             >
               {loading === "google" ? (
                 <span className="animate-pulse">Redirecting…</span>
               ) : (
                 <>
-                  <Image src="/globe.svg" width={20} height={20} className="h-5 w-5" alt="" />
+                  <Image src="/google-icon.svg" width={20} height={20} className="h-5 w-5" alt="Google" />
                   Continue with Google
                 </>
               )}
@@ -174,25 +220,27 @@ export default function SignIn() {
             {devBypass || enableEmailAuth ? (
               <>
                 <div className="my-6 flex items-center gap-3 text-xs text-gray-500">
-                  <div className="h-px flex-1 bg-gray-700" />
-                  <span>or</span>
-                  <div className="h-px flex-1 bg-gray-700" />
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-600 to-transparent" />
+                  <span className="text-gray-400">or</span>
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-600 to-transparent" />
                 </div>
-                <form onSubmit={handleEmail} className="space-y-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@company.com"
-                    autoComplete="email"
-                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-3 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[48px] text-base transition-colors"
-                    style={{ touchAction: 'manipulation' }}
-                  />
+                <form onSubmit={handleEmail} className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@company.com"
+                      autoComplete="email"
+                      className="w-full rounded-xl border border-gray-600 bg-gray-700/50 px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[52px] text-base transition-all backdrop-blur-sm"
+                      style={{ touchAction: 'manipulation' }}
+                    />
+                  </div>
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
-                      <Link href="/forgot-password" className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                      <label className="block text-sm font-medium text-gray-300">Password</label>
+                      <Link href="/forgot-password" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
                         Forgot password?
                       </Link>
                     </div>
@@ -202,13 +250,13 @@ export default function SignIn() {
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Password"
                       autoComplete="current-password"
-                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-3 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[48px] text-base transition-colors"
+                      className="w-full rounded-xl border border-gray-600 bg-gray-700/50 px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[52px] text-base transition-all backdrop-blur-sm"
                       style={{ touchAction: 'manipulation' }}
                     />
                   </div>
                   <button
                     type="submit"
-                    className="w-full rounded-lg bg-blue-600 px-4 py-3 font-bold text-white transition hover:bg-blue-700 disabled:opacity-60 min-h-[48px] text-base"
+                    className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3 font-bold text-white transition hover:from-blue-700 hover:to-purple-700 disabled:opacity-60 disabled:cursor-not-allowed min-h-[52px] text-base shadow-lg hover:shadow-xl"
                     disabled={!email || !password || loading === "email"}
                     style={{ touchAction: 'manipulation' }}
                   >
@@ -231,16 +279,21 @@ export default function SignIn() {
             )}
 
             {/* Sign Up Link */}
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="mt-8 text-center">
+              <p className="text-sm text-gray-400">
                 Don&apos;t have an account?{" "}
-                <Link href="/signup" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-semibold">
+                <Link href="/signup" className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
                   Sign up
                 </Link>
               </p>
             </div>
 
-            <p className="mt-4 text-center text-xs text-gray-500 dark:text-gray-400">By continuing, you agree to our Terms and Privacy Policy.</p>
+            <p className="mt-6 text-center text-xs text-gray-500">
+              By continuing, you agree to our{" "}
+              <span className="text-gray-400 hover:text-gray-300 cursor-pointer">Terms</span>
+              {" "}and{" "}
+              <span className="text-gray-400 hover:text-gray-300 cursor-pointer">Privacy Policy</span>
+            </p>
             {/* Global top toast for error (optional) */}
             {error && (
               <LoginError

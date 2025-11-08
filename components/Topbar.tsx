@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 // no dynamic imports needed for dialogs in client component
 import SettingsDialog from "./dialogs/SettingsDialog";
 import HelpDialog from "./dialogs/HelpDialog";
+import AdminHelpDialog from "./dialogs/AdminHelpDialog";
 import NotificationPanel from "./NotificationPanel";
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -140,7 +141,7 @@ export default function Topbar({ title }: Props) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="data-[highlighted]:bg-gray-800/50 data-[highlighted]:text-gray-100" title="Open settings" onClick={() => setSettingsOpen(true)}>
+              <DropdownMenuItem className="data-[highlighted]:bg-gray-800/50 data-[highlighted]:text-gray-100" title="Open settings" onClick={() => router.push(isAdminRoute ? '/admin/settings' : '/settings')}>
                 <Settings className="size-4 mr-2" /> Settings
               </DropdownMenuItem>
               <DropdownMenuItem className="data-[highlighted]:bg-gray-800/50 data-[highlighted]:text-gray-100" title="View help & docs" onClick={() => setHelpOpen(true)}>
@@ -167,7 +168,11 @@ export default function Topbar({ title }: Props) {
           </DropdownMenu>
   </div>
   <SettingsDialog open={settingsOpen} onOpenChangeAction={setSettingsOpen} />
-  <HelpDialog open={helpOpen} onOpenChangeAction={setHelpOpen} />
+  {isAdminRoute ? (
+    <AdminHelpDialog open={helpOpen} onOpenChangeAction={setHelpOpen} />
+  ) : (
+    <HelpDialog open={helpOpen} onOpenChangeAction={setHelpOpen} />
+  )}
       </div>
     </div>
   );

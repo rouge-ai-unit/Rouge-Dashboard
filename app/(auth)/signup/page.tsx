@@ -123,20 +123,20 @@ export default function SignUpPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+      <div className="relative min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-4 overflow-x-hidden">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 text-center"
+          className="max-w-md w-full bg-gray-800/50 backdrop-blur-xl rounded-2xl shadow-2xl p-8 text-center border border-gray-700/50 ring-1 ring-gray-700/50"
         >
-          <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle2 className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
+          <div className="w-20 h-20 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-6 ring-4 ring-yellow-500/20">
+            <CheckCircle2 className="w-10 h-10 text-yellow-400" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Registration Submitted!</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-4">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent mb-3">Registration Submitted!</h2>
+          <p className="text-gray-300 mb-4 text-lg">
             Your account is pending approval from the AI Unit team.
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-gray-400">
             You will receive an email once approved (typically within 24-48 hours).
           </p>
         </motion.div>
@@ -145,12 +145,16 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      {/* Background Effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-500 rounded-full blur-3xl opacity-10" />
-        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-purple-500 rounded-full blur-3xl opacity-10" />
+    <div className="relative min-h-screen w-full bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 overflow-x-hidden">
+      {/* Enhanced Background Effects */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-600 rounded-full blur-3xl opacity-20 animate-pulse" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-purple-600 rounded-full blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-3xl opacity-10 bg-gradient-to-r from-blue-500 to-purple-500" />
       </div>
+      
+      {/* Grid Pattern Overlay */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.02] -z-10" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '50px 50px' }} />
 
       <div className="relative min-h-screen flex items-center justify-center px-4 py-6">
         <motion.div
@@ -160,25 +164,28 @@ export default function SignUpPage() {
           className="max-w-5xl w-full mx-auto"
         >
           {/* Logo and Title */}
-          <div className="text-center mb-6">
-            <Link href="/" className="inline-flex items-center gap-3 mb-4">
-              <Image src="/logo.jpg" alt="Rouge Logo" width={40} height={40} className="rounded-lg" />
-              <span className="text-xl font-bold text-white">Rouge Dashboard</span>
+          <div className="text-center mb-8">
+            <Link href="/" className="inline-flex items-center gap-3 mb-6">
+              <div className="relative">
+                <Image src="/logo.jpg" alt="Rouge Logo" width={48} height={48} className="rounded-xl shadow-lg ring-2 ring-blue-500/20" />
+                <div className="absolute -inset-1 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 opacity-20 blur-lg" />
+              </div>
+              <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Rouge Dashboard</span>
             </Link>
-            <h1 className="text-2xl font-bold text-white mb-1">Create Your Account</h1>
-            <p className="text-gray-400 text-sm">Join the Rouge team</p>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent mb-2">Create Your Account</h1>
+            <p className="text-gray-400">Join the Rouge team and get started</p>
           </div>
 
           {/* Form Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6">
+          <div className="bg-gray-800/50 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-gray-700/50 ring-1 ring-gray-700/50">
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3"
+                className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-start gap-3 backdrop-blur-sm"
               >
-                <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                <XCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-300">{error}</p>
               </motion.div>
             )}
 
@@ -190,7 +197,7 @@ export default function SignUpPage() {
                   {/* Name Fields */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-300 mb-2">
                         First Name
                       </label>
                       <input
@@ -200,12 +207,12 @@ export default function SignUpPage() {
                         required
                         value={formData.firstName}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-colors text-sm"
+                        className="w-full px-4 py-3 bg-gray-700/50 backdrop-blur-sm border border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white placeholder-gray-500 transition-all text-sm"
                         placeholder="John"
                       />
                     </div>
                     <div>
-                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-300 mb-2">
                         Last Name
                       </label>
                       <input
@@ -215,7 +222,7 @@ export default function SignUpPage() {
                         required
                         value={formData.lastName}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-colors text-sm"
+                        className="w-full px-4 py-3 bg-gray-700/50 backdrop-blur-sm border border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white placeholder-gray-500 transition-all text-sm"
                         placeholder="Doe"
                       />
                     </div>
@@ -223,7 +230,7 @@ export default function SignUpPage() {
 
                   {/* Email */}
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
                       Rouge Email
                     </label>
                     <input
@@ -233,10 +240,10 @@ export default function SignUpPage() {
                       required
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-colors text-sm"
+                      className="w-full px-4 py-3 bg-gray-700/50 backdrop-blur-sm border border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white placeholder-gray-500 transition-all text-sm"
                       placeholder="john.rouge@gmail.com"
                     />
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <p className="mt-2 text-xs text-gray-400">
                       Must end with .rouge@gmail.com or @rougevc.com
                     </p>
                   </div>
@@ -253,7 +260,7 @@ export default function SignUpPage() {
                       value={formData.requestedUnit}
                       onChange={handleChange}
                       disabled={loadingUnits}
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-colors disabled:opacity-50 text-sm appearance-none cursor-pointer hover:border-blue-400 dark:hover:border-blue-500"
+                      className="w-full px-4 py-3 bg-gray-700/50 backdrop-blur-sm border border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white placeholder-gray-500 transition-all disabled:opacity-50 text-sm appearance-none cursor-pointer"
                       style={{ backgroundImage: "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")", backgroundPosition: "right 0.5rem center", backgroundRepeat: "no-repeat", backgroundSize: "1.5em 1.5em", paddingRight: "2.5rem" }}
                     >
                       <option value="">
@@ -281,7 +288,7 @@ export default function SignUpPage() {
                       required
                       value={formData.requestedRole}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-colors text-sm appearance-none cursor-pointer hover:border-blue-400 dark:hover:border-blue-500"
+                      className="w-full px-4 py-3 bg-gray-700/50 backdrop-blur-sm border border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white placeholder-gray-500 transition-all text-sm appearance-none cursor-pointer"
                       style={{ backgroundImage: "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")", backgroundPosition: "right 0.5rem center", backgroundRepeat: "no-repeat", backgroundSize: "1.5em 1.5em", paddingRight: "2.5rem" }}
                     >
                       <option value="member">Member - Basic access</option>
@@ -302,7 +309,7 @@ export default function SignUpPage() {
                       rows={3}
                       value={formData.signupJustification}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-colors resize-none text-sm"
+                      className="w-full px-4 py-3 bg-gray-700/50 backdrop-blur-sm border border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white placeholder-gray-500 transition-all resize-none text-sm"
                       placeholder="Explain your role and why you need access (min 20 chars)"
                       minLength={20}
                       maxLength={1000}
@@ -328,7 +335,7 @@ export default function SignUpPage() {
                         required
                         value={formData.password}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-colors pr-10 text-sm"
+                        className="w-full px-4 py-3 bg-gray-700/50 backdrop-blur-sm border border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white placeholder-gray-500 transition-all pr-10 text-sm"
                         placeholder="••••••••"
                       />
                       <button
@@ -349,7 +356,7 @@ export default function SignUpPage() {
                           ) : (
                             <XCircle className="w-3 h-3 text-gray-400" />
                           )}
-                          <span className={passwordChecks.length ? "text-green-600 dark:text-green-400" : "text-gray-500"}>
+                          <span className={passwordChecks.length ? "text-green-400" : "text-gray-500"}>
                             8+ characters
                           </span>
                         </div>
@@ -359,7 +366,7 @@ export default function SignUpPage() {
                           ) : (
                             <XCircle className="w-3 h-3 text-gray-400" />
                           )}
-                          <span className={passwordChecks.uppercase ? "text-green-600 dark:text-green-400" : "text-gray-500"}>
+                          <span className={passwordChecks.uppercase ? "text-green-400" : "text-gray-500"}>
                             Uppercase
                           </span>
                         </div>
@@ -369,7 +376,7 @@ export default function SignUpPage() {
                           ) : (
                             <XCircle className="w-3 h-3 text-gray-400" />
                           )}
-                          <span className={passwordChecks.lowercase ? "text-green-600 dark:text-green-400" : "text-gray-500"}>
+                          <span className={passwordChecks.lowercase ? "text-green-400" : "text-gray-500"}>
                             Lowercase
                           </span>
                         </div>
@@ -379,7 +386,7 @@ export default function SignUpPage() {
                           ) : (
                             <XCircle className="w-3 h-3 text-gray-400" />
                           )}
-                          <span className={passwordChecks.number ? "text-green-600 dark:text-green-400" : "text-gray-500"}>
+                          <span className={passwordChecks.number ? "text-green-400" : "text-gray-500"}>
                             Number
                           </span>
                         </div>
@@ -389,7 +396,7 @@ export default function SignUpPage() {
                           ) : (
                             <XCircle className="w-3 h-3 text-gray-400" />
                           )}
-                          <span className={passwordChecks.special ? "text-green-600 dark:text-green-400" : "text-gray-500"}>
+                          <span className={passwordChecks.special ? "text-green-400" : "text-gray-500"}>
                             Special char
                           </span>
                         </div>
@@ -410,7 +417,7 @@ export default function SignUpPage() {
                         required
                         value={formData.confirmPassword}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-colors pr-10 text-sm"
+                        className="w-full px-4 py-3 bg-gray-700/50 backdrop-blur-sm border border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white placeholder-gray-500 transition-all pr-10 text-sm"
                         placeholder="••••••••"
                       />
                       <button
@@ -426,12 +433,12 @@ export default function SignUpPage() {
                         {passwordsMatch ? (
                           <>
                             <CheckCircle2 className="w-3 h-3 text-green-500" />
-                            <span className="text-green-600 dark:text-green-400">Passwords match</span>
+                            <span className="text-green-400">Passwords match</span>
                           </>
                         ) : (
                           <>
                             <XCircle className="w-3 h-3 text-red-500" />
-                            <span className="text-red-600 dark:text-red-400">Passwords don&apos;t match</span>
+                            <span className="text-red-400">Passwords don&apos;t match</span>
                           </>
                         )}
                       </div>
@@ -451,7 +458,7 @@ export default function SignUpPage() {
                     !formData.requestedUnit || 
                     formData.signupJustification.length < 20
                   }
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3 font-bold text-white transition hover:from-blue-700 hover:to-purple-700 disabled:opacity-60 disabled:cursor-not-allowed min-h-[52px] text-base shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>
@@ -466,10 +473,10 @@ export default function SignUpPage() {
             </form>
 
             {/* Sign In Link */}
-            <div className="mt-4 text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-400">
                 Already have an account?{" "}
-                <Link href="/signin" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-semibold">
+                <Link href="/signin" className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
                   Sign in
                 </Link>
               </p>
@@ -477,8 +484,11 @@ export default function SignUpPage() {
           </div>
 
           {/* Footer */}
-          <p className="mt-4 text-center text-xs text-gray-500 dark:text-gray-400">
-            By creating an account, you agree to our Terms of Service and Privacy Policy
+          <p className="mt-6 text-center text-xs text-gray-500">
+            By creating an account, you agree to our{" "}
+            <span className="text-gray-400 hover:text-gray-300 cursor-pointer">Terms of Service</span>
+            {" "}and{" "}
+            <span className="text-gray-400 hover:text-gray-300 cursor-pointer">Privacy Policy</span>
           </p>
         </motion.div>
       </div>

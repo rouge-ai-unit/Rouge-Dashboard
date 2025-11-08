@@ -63,8 +63,8 @@ export default function HelpDialog({ open, onOpenChangeAction }: HelpDialogProps
   }
   return (
     <Dialog open={open} onOpenChange={onOpenChangeAction}>
-      <DialogContent className="bg-gray-900/95 backdrop-blur-md text-gray-100 border-gray-700/50 sm:max-w-5xl max-h-[90vh] shadow-2xl overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="bg-gray-900/95 backdrop-blur-md text-gray-100 border-gray-700/50 sm:max-w-5xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             Rouge Dashboard - Help & Documentation
           </DialogTitle>
@@ -72,7 +72,7 @@ export default function HelpDialog({ open, onOpenChangeAction }: HelpDialogProps
             Enterprise-grade AI-powered platform for internal operations and project management
           </DialogDescription>
         </DialogHeader>
-        <div className="px-1 pb-2 max-h-[70vh] overflow-y-auto space-y-6 scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
+        <div className="flex-1 overflow-y-auto px-1 space-y-6 scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
           
           {/* Platform Overview */}
           <Card className="bg-gradient-to-br from-blue-900/30 to-purple-900/30 backdrop-blur-sm border-blue-500/30 shadow-xl">
@@ -480,15 +480,13 @@ export default function HelpDialog({ open, onOpenChangeAction }: HelpDialogProps
             </CardContent>
           </Card>
         </div>
-        <DialogFooter>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => onOpenChangeAction(false)} 
-              className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg"
-            >
-              Close
-            </button>
-          </div>
+        <DialogFooter className="flex-shrink-0 mt-4 pt-4 border-t border-gray-700/50">
+          <button 
+            onClick={() => onOpenChangeAction(false)} 
+            className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg"
+          >
+            Close
+          </button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

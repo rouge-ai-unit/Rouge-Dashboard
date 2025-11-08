@@ -20,6 +20,8 @@ import {
   Sparkles,
   TrendingUp,
   Shield,
+  Menu,
+  X,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -64,6 +66,7 @@ interface NavItem {
 export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
   const { data: session, status } = useSession();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const [signingOut, setSigningOut] = useReactState(false);
   const [navItems, setNavItems] = useState<NavItem[]>([]);
@@ -135,16 +138,37 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
   };
 
   return (
-    <aside
-      className={`fixed top-0 left-0 h-screen bg-gray-900/95 backdrop-blur-md border-r border-gray-700/50 text-white transition-all duration-300 ${
-        collapsed ? "w-[5rem]" : "w-[15rem]"
-      } flex flex-col shadow-2xl`}
-      style={{ width: collapsed ? "5rem" : "15rem" }}
-    >
+    <>
+      {/* Mobile Hamburger Toggle */}
+      <div className="md:hidden fixed top-4 left-4 z-50">
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="bg-gray-900/95 backdrop-blur-md p-2 rounded-lg text-white shadow-2xl border border-gray-700/50"
+          aria-label="Toggle menu"
+        >
+          {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      {/* Mobile Overlay */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black bg-opacity-40 z-40"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed top-0 left-0 h-screen bg-gray-900/95 backdrop-blur-md border-r border-gray-700/50 text-white transition-all duration-300 flex flex-col shadow-2xl z-50
+          md:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
+          ${collapsed ? "md:w-[5rem]" : "md:w-[15rem]"} w-[75%] max-w-xs md:max-w-none`}
+        style={{ width: collapsed ? "5rem" : "15rem" }}
+      >
       {/* Sidebar Header */}
-      <div className="flex items-center justify-center px-4 py-4 gap-3">
+      <div className="flex items-center justify-between px-4 py-4 gap-3 border-b border-gray-700 md:border-0">
         <div className="flex items-center gap-2">
-          <Link href="/home">
+          <Link href="/home" onClick={() => setMobileOpen(false)}>
             <Image
               src="/logo.jpg"
               alt="Company Logo"
@@ -159,6 +183,11 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
             <p className="font-bold text-lg subpixel-antialiased tracking-tight">Rouge</p>
           )}
         </div>
+        {/* Close button for mobile */}
+        <button onClick={() => setMobileOpen(false)} className="md:hidden">
+          <X size={24} />
+        </button>
+        {/* Collapse button for desktop */}
         {!collapsed && (
           <Image
             onClick={handleCollapse}
@@ -166,7 +195,7 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
             alt="Collapse"
             width={30}
             height={30}
-            className="p-1 cursor-pointer mr-3 hover:bg-gray-800/50 rounded-full transition-all duration-500"
+            className="hidden md:block p-1 cursor-pointer mr-3 hover:bg-gray-800/50 rounded-full transition-all duration-500"
           />
         )}
       </div>
@@ -178,7 +207,12 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
           </div>
         ) : (
           navItems.map((item, index) => (
-          <Link href={item.href} key={index} aria-current={pathname === item.href ? "page" : undefined}>
+          <Link 
+            href={item.href} 
+            key={index} 
+            aria-current={pathname === item.href ? "page" : undefined}
+            onClick={() => setMobileOpen(false)}
+          >
             {collapsed ? (
               <TooltipProvider>
                 <Tooltip>
@@ -373,5 +407,6 @@ export default function AppSidebar({ onCollapseAction }: AppSidebarProps) {
         )}
       </div>
     </aside>
+    </>
   );
 }

@@ -2,7 +2,6 @@
 
 import React, { Suspense, useState } from "react";
 import AppSidebar from "../../components/AppSidebar";
-import MobileSidebar from "../../components/MobileSidebar";
 import Topbar from "@/components/Topbar";
 import { usePathname } from "next/navigation";
 
@@ -27,14 +26,8 @@ export default function RouteGroupLayout({
         <Topbar title={getTitle(pathname)} />
       </Suspense>
       <div className="flex flex-col md:flex-row min-h-screen w-full">
-        {/* Mobile Sidebar */}
-        <div className="block md:hidden">
-          <MobileSidebar />
-        </div>
-        {/* Desktop Sidebar */}
-        <div className="hidden md:block">
-          <AppSidebar onCollapseAction={setIsSidebarCollapsed} />
-        </div>
+        {/* Unified Sidebar for both mobile and desktop */}
+        <AppSidebar onCollapseAction={setIsSidebarCollapsed} />
 
         <main
           className={`flex-1 w-full transition-all duration-300 ${

@@ -678,6 +678,12 @@ export const UserSettings = pgTable("userSettings", {
     workTracker: boolean;
     campaignUpdates: boolean;
     contactUpdates: boolean;
+    // Admin-specific notifications
+    userApprovals?: boolean;
+    toolRequests?: boolean;
+    securityAlerts?: boolean;
+    systemUpdates?: boolean;
+    userActivity?: boolean;
   }>(),
 
   security: jsonb("security").$type<{
@@ -765,6 +771,12 @@ export const settingsSchema = z.object({
     workTracker: z.boolean(),
     campaignUpdates: z.boolean(),
     contactUpdates: z.boolean(),
+    // Admin-specific notifications
+    userApprovals: z.boolean().optional(),
+    toolRequests: z.boolean().optional(),
+    securityAlerts: z.boolean().optional(),
+    systemUpdates: z.boolean().optional(),
+    userActivity: z.boolean().optional(),
   }).optional(),
   security: z.object({
     twoFactorEnabled: z.boolean(),
