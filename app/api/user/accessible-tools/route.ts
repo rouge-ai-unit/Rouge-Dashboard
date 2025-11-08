@@ -54,7 +54,7 @@ const ALL_TOOLS = [
   {
     id: 'agtech-events',
     title: 'AgTech Event Finder',
-    href: '/agtech-events',
+    href: '/tools/agtech-events',
     icon: 'Sparkles',
     order: 6,
     alwaysVisible: true,

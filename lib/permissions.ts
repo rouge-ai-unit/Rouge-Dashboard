@@ -258,7 +258,7 @@ export const TOOLS = {
   WORK_TRACKER: '/tools/work-tracker',
   AI_NEWS_DAILY: '/tools/ai-news-daily',
   STARTUP_SEEKER: '/tools/startup-seeker',
-  AGTECH_EVENTS: '/agtech-events',
+  AGTECH_EVENTS: '/tools/agtech-events',
   AGRITECH_UNIVERSITIES: '/tools/agritech-universities',
   SENTIMENT_ANALYZER: '/tools/sentiment-analyzer',
   CONTENT_IDEA_AUTOMATION: '/tools/content-idea-automation',
@@ -290,5 +290,5 @@ export function isAdminRoute(path: string): boolean {
  * Check if route is a tool route
  */
 export function isToolRoute(path: string): boolean {
-  return path.startsWith('/tools') || path === '/agtech-events';
+  return path.startsWith('/tools');
 }

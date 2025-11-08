@@ -17,7 +17,7 @@ const VALID_TOOL_PATHS = [
   '/tools/work-tracker',
   '/tools/ai-news-daily',
   '/tools/startup-seeker',
-  '/agtech-events',
+  '/tools/agtech-events',
   '/tools/agritech-universities',
   '/tools/sentiment-analyzer',
   '/tools/content-idea-automation',

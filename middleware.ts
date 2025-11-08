@@ -186,7 +186,6 @@ export const config = {
     "/stats",
     "/work-tracker",
     "/settings",
-    "/agtech-events",
     "/tools/:path*",
     "/admin/:path*",
     "/home",

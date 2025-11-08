@@ -139,7 +139,7 @@ export default function HelpDialog({ open, onOpenChangeAction }: HelpDialogProps
                     <p><strong>Purpose:</strong> Discover and track AgTech startup events worldwide with AI-powered search</p>
                     <p><strong>Features:</strong> Location-based search, advanced filters, CSV export, event caching, database persistence</p>
                     <p><strong>Usage:</strong> Enter location → Browse events → Apply filters → Export results → Register for events</p>
-                    <p><strong>Route:</strong> <code className="bg-gray-700/50 px-2 py-1 rounded">/agtech-events</code></p>
+                    <p><strong>Route:</strong> <code className="bg-gray-700/50 px-2 py-1 rounded">/tools/agtech-events</code></p>
                   </AccordionContent>
                 </AccordionItem>
 

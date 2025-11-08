@@ -73,7 +73,7 @@ export default function PermissionsPage() {
           { name: "Work Tracker", path: "/tools/work-tracker" },
           { name: "AI News Daily", path: "/tools/ai-news-daily" },
           { name: "Agritech Startup Seeker", path: "/tools/startup-seeker" },
-          { name: "AgTech Event Finder", path: "/agtech-events" },
+          { name: "AgTech Event Finder", path: "/tools/agtech-events" },
           { name: "Agritech Universities", path: "/tools/agritech-universities" },
           { name: "Sentiment Analyzer", path: "/tools/sentiment-analyzer" },
           { name: "Content Idea Automation", path: "/tools/content-idea-automation" },
