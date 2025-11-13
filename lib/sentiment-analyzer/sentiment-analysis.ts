@@ -4,10 +4,10 @@
 // ============================================================================
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { 
-  GoogleSearchResult, 
+import {
+  GoogleSearchResult,
   SentimentAnalysisResult,
-  SentimentAnalysisRequest 
+  SentimentAnalysisRequest
 } from '@/types/sentiment-analyzer';
 
 // AI Model Configuration
@@ -51,7 +51,7 @@ async function analyzeSingleArticleWithGemini(
   try {
     if (!gemini) throw new Error('Gemini not initialized');
 
-    const model = gemini.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    const model = gemini.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
     const prompt = `Analyze the sentiment of this news article about a company.
 
@@ -72,7 +72,7 @@ Respond ONLY with valid JSON in this exact format:
     const result = await model.generateContent(prompt);
     const response = result.response;
     const text = response.text();
-    
+
     // Extract JSON from response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -160,7 +160,7 @@ Respond ONLY with valid JSON in this exact format:
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content;
-    
+
     if (!content) {
       throw new Error('No response from DeepSeek');
     }
@@ -204,10 +204,32 @@ async function analyzeSingleArticle(
   article: SentimentAnalysisRequest,
   model: AIModel = 'gemini'
 ): Promise<SentimentAnalysisResult> {
-  if (model === 'gemini') {
-    return analyzeSingleArticleWithGemini(article);
-  } else {
-    return analyzeSingleArticleWithDeepSeek(article);
+  try {
+    if (model === 'gemini') {
+      return await analyzeSingleArticleWithGemini(article);
+    } else {
+      return await analyzeSingleArticleWithDeepSeek(article);
+    }
+  } catch (error) {
+    console.error(`Primary model (${model}) failed, falling back to alternative...`);
+
+    // Fallback to the other model
+    const fallbackModel = model === 'gemini' ? 'deepseek' : 'gemini';
+    console.log(`Attempting analysis with ${fallbackModel} as fallback...`);
+
+    try {
+      if (fallbackModel === 'gemini') {
+        return await analyzeSingleArticleWithGemini(article);
+      } else {
+        return await analyzeSingleArticleWithDeepSeek(article);
+      }
+    } catch (fallbackError) {
+      console.error('Both primary and fallback models failed:', fallbackError);
+      return {
+        sentiment: 'neutral',
+        reasoning: 'All sentiment analysis models failed. Defaulted to neutral.',
+      };
+    }
   }
 }
 
@@ -231,7 +253,7 @@ export async function analyzeSentimentBatch(
   // Process in batches to avoid rate limiting
   for (let i = 0; i < articles.length; i += BATCH_SIZE) {
     const batch = articles.slice(i, i + BATCH_SIZE);
-    
+
     console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(articles.length / BATCH_SIZE)}`);
 
     const batchPromises = batch.map(article =>
@@ -285,7 +307,7 @@ export async function analyzeSentimentWithContext(
   // Process in batches
   for (let i = 0; i < articles.length; i += BATCH_SIZE) {
     const batch = articles.slice(i, i + BATCH_SIZE);
-    
+
     const batchPromises = batch.map(async (article) => {
       try {
         const result = await analyzeSingleArticle({
@@ -376,7 +398,7 @@ export function getSentimentSummary(
 export async function testAIAPI(model: AIModel = 'gemini'): Promise<boolean> {
   try {
     validateConfig(model);
-    
+
     const testArticle = {
       title: 'Test Article',
       snippet: 'This is a test.',
