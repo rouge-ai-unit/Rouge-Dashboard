@@ -317,13 +317,7 @@ class UnifiedAIService {
         throw new AIInvalidRequestError(`Invalid request: ${validation.error.errors.map(e => e.message).join(', ')}`);
       }
 
-      // Sanitize input messages
-      const sanitizedMessages = request.messages.map(msg => ({
-        ...msg,
-        content: sanitizeInput(msg.content)
-      }));
-
-      const sanitizedRequest = { ...request, messages: sanitizedMessages };
+      const sanitizedRequest = request; // Use request directly
 
       logger.debug('AI completion request started', {
         messageCount: sanitizedRequest.messages.length,
@@ -656,11 +650,9 @@ export const aiGenerateStartupData = withPerformanceMonitoring(async (prompt: st
   if (!country || typeof country !== 'string' || country.trim().length === 0) {
     throw new AIInvalidRequestError('Invalid country for startup data generation');
   }
-
-  const sanitizedPrompt = sanitizeInput(prompt);
   const sanitizedCountry = sanitizeInput(country);
 
-  logger.info('Generating startup data', { country: sanitizedCountry, promptLength: sanitizedPrompt.length });
+  logger.info('Generating startup data', { country: sanitizedCountry, promptLength: prompt.length });
 
   return aiComplete({
     messages: [
@@ -670,7 +662,7 @@ export const aiGenerateStartupData = withPerformanceMonitoring(async (prompt: st
       },
       {
         role: 'user',
-        content: `${sanitizedPrompt}\n\nFocus on ${sanitizedCountry} if specified, otherwise provide global results. Return valid JSON only.`
+        content: `${prompt}\n\nFocus on ${sanitizedCountry} if specified, otherwise provide global results. Return valid JSON only.`
       }
     ],
     temperature: 0.3,
