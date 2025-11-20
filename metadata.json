@@ -1,0 +1,5 @@
+{
+  "name": "AgTech University Finder",
+  "description": "An application to find and list AgTech universities and their Technology Transfer Offices (TTO) in a specified region using AI. It provides details on their location and startup incubation records.",
+  "requestFramePermissions": []
+}
