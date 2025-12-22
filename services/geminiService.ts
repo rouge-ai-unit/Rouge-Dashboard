@@ -40,7 +40,7 @@ export const generateDesignPlan = async (userRequest: string): Promise<DesignPla
     config: {
       responseMimeType: "application/json",
       responseSchema: schema,
-      systemInstruction: "You are an expert UI/UX designer. Your goal is to plan a visual design. Always ensure the 'imageGenerationPrompt' is very detailed, specifying that it is a 'High fidelity UI design mockup', describing specific UI components, buttons, and spacing.",
+      systemInstruction: "You are an expert UI/UX designer and AI art director. Your goal is to plan a visual design. For the 'imageGenerationPrompt', create an EXTREMELY detailed, professional description that will be used to generate a high-quality image. Include: (1) Specific visual style (modern, minimalist, luxury, playful, etc.), (2) Exact color descriptions and hex codes, (3) Detailed UI components layout and positioning, (4) Typography details, (5) Lighting and shadows, (6) Material textures (glass, metal, paper, plastic), (7) Camera angle and perspective, (8) Image quality descriptors (ultra high definition, 8K, cinematic, professional photography style), (9) Specific elements like buttons with exact styling, spacing measurements, and visual hierarchy. Make the prompt at least 150+ words and highly visual and specific.",
     },
   });
 
@@ -58,10 +58,13 @@ export const generateDesignPlan = async (userRequest: string): Promise<DesignPla
  */
 export const generateVisualDesign = async (prompt: string): Promise<string> => {
   // Use Pollinations API for image generation (free, no quota limits)
-  const encodedPrompt = encodeURIComponent(prompt);
+  // Add quality parameters for better image generation
+  const enhancedPrompt = `${prompt}. Professional quality, high definition, ultra detailed, sharp focus, cinematic lighting.`;
+  const encodedPrompt = encodeURIComponent(enhancedPrompt);
   const seed = Math.floor(Math.random() * 1000000);
   
-  const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&nologo=true`;
+  // Parameters: model=flux for better quality, width/height for standard aspect ratio
+  const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&nologo=true&model=flux&width=1024&height=768`;
   
   return imageUrl;
 };
