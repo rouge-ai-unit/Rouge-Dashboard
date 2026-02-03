@@ -1,8 +1,10 @@
 import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import { drizzle as drizzleNeon } from "drizzle-orm/neon-http";
+import { Pool } from "pg";
+import { drizzle as drizzlePg } from "drizzle-orm/node-postgres";
 import * as schema from "./schema";
 
-let _db: ReturnType<typeof drizzle> | null = null;
+let _db: any = null;
 
 export function getDb() {
 	if (_db) return _db;
@@ -10,8 +12,20 @@ export function getDb() {
 	if (!url) {
 		throw new Error("DATABASE_URL is not set");
 	}
-	const sql = neon(url);
-	_db = drizzle(sql, { schema });
+
+	// SMART SWITCH: Use local postgres if flag is set
+	const useLocal = process.env.USE_LOCAL_DB === "true";
+
+	if (useLocal) {
+		console.log("🔌 Using local database driver (pg)");
+		const pool = new Pool({ connectionString: url });
+		_db = drizzlePg(pool, { schema });
+	} else {
+		console.log("☁️ Using cloud database driver (neon-http)");
+		const sql = neon(url);
+		_db = drizzleNeon(sql, { schema });
+	}
+
 	return _db;
 }
 
