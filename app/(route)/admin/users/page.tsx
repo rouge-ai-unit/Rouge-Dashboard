@@ -16,6 +16,7 @@ import { TableSkeleton } from "@/components/admin/TableSkeleton";
 import { usePagination } from "@/hooks/usePagination";
 import { useUnits } from "@/hooks/useUnits";
 import { ExportDialog } from "@/components/admin/ExportDialog";
+import { AddUserDialog } from "@/components/admin/AddUserDialog";
 import { toast } from "sonner";
 import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -55,6 +56,7 @@ export default function UsersManagementPage() {
   const [editReason, setEditReason] = useState("");
   const [processing, setProcessing] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showAddUserDialog, setShowAddUserDialog] = useState(true)
 
   // Protect admin route
   useEffect(() => {
@@ -297,6 +299,14 @@ export default function UsersManagementPage() {
             <p className="text-gray-600 dark:text-gray-400">
               Manage all users, roles, and permissions
             </p>
+          </div>
+          <div className="flex items-center w-2xl">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddUserDialog(true)}>
+              Add Members
+            </Button>
           </div>
           <div className="flex items-center gap-2">
             {selectedUsers.size > 0 && (
@@ -621,6 +631,10 @@ export default function UsersManagementPage() {
         open={showExportDialog}
         onOpenChange={setShowExportDialog}
         exportType="users"
+      />
+      <AddUserDialog
+        open={showAddUserDialog}
+        onOpenChange={setShowAddUserDialog}
       />
     </div>
   );
