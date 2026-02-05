@@ -141,6 +141,26 @@ export default function UsersManagementPage() {
     setShowEditDialog(true);
   };
 
+  const handleApprove = async (user: User) => {
+  try {
+    const response = await fetch("/api/admin/users/approve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user.id }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Approval failed");
+    }
+
+    toast.success(`${user.displayName} approved`);
+    fetchUsers();
+  } catch (error) {
+    toast.error("Failed to approve user");
+  }
+};
+
+
   const handleDelete = (user: User) => {
     setSelectedUser(user);
     setShowDeleteDialog(true);
@@ -473,7 +493,10 @@ export default function UsersManagementPage() {
                           </Link>
                           <Button variant="ghost" size="sm" onClick={() => handleEdit(user)}>
                             <Edit className="w-4 h-4" />
-                          </Button>
+
+                          <Button variant="ghost" size="sm" onClick={() => handleApprove(user)}>
+                            <CheckSquare className="w-4 h-4 text-green-600" /> 
+                          
                           <Button variant="ghost" size="sm" onClick={() => handleDelete(user)}>
                             <Trash2 className="w-4 h-4 text-red-600" />
                           </Button>
