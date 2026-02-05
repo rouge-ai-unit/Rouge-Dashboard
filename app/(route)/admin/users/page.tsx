@@ -343,6 +343,36 @@ export default function UsersManagementPage() {
               Export CSV
             </Button>
           </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              const email = prompt("Enter the user's email:");
+              if (!email) return;
+              fetch("/api/admin/users/add-by-email", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email }),
+            })
+              .then((res) => res.json())
+              .then((data) => {
+                if (data.success) {
+                  toast.success(`User ${email} added successfully`);
+                  fetchUsers(); 
+                } else {
+                  toast.error(data.error || "Failed to add user");
+                }
+              })
+              .catch((err) => {
+                console.error(err);
+                toast.error("Error adding user");
+              });
+          }}
+        >
+          <UserPlus className="w-4 h-4 mr-2" />
+          Add User
+        </Button>
+
         </div>
       </div>
 
