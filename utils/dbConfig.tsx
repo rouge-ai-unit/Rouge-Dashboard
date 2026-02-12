@@ -14,5 +14,3 @@ export function getDb() {
 	_db = drizzle(sql, { schema });
 	return _db;
 }
-
-

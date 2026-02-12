@@ -30,9 +30,9 @@ function withProductionMiddleware(handler: any) {
     // Log incoming requests in production
     if (process.env.NODE_ENV === 'production') {
       const clientIP = request.headers.get('x-forwarded-for') ||
-                      request.headers.get('x-real-ip') ||
-                      request.headers.get('cf-connecting-ip') ||
-                      'unknown';
+        request.headers.get('x-real-ip') ||
+        request.headers.get('cf-connecting-ip') ||
+        'unknown';
 
       logger.info('Incoming request', {
         method,
@@ -47,7 +47,7 @@ function withProductionMiddleware(handler: any) {
     // Apply rate limiting for API routes
     if (request.nextUrl.pathname.startsWith('/api/')) {
       const rateLimitResult = await checkRoleBasedRateLimit(request);
-      
+
       if (!rateLimitResult.allowed) {
         const headers = getRateLimitHeaders(rateLimitResult);
         return new NextResponse(
@@ -73,14 +73,14 @@ function withProductionMiddleware(handler: any) {
     // Handle role-based redirects for authenticated users
     if (response && response.status === 200) {
       const pathname = request.nextUrl.pathname;
-      
+
       // Only redirect on home page access
       if (pathname === '/home') {
         try {
           // Get session from request (this is a simplified check)
           // In production, you'd want to decode the JWT token properly
           const sessionCookie = request.cookies.get('next-auth.session-token') || request.cookies.get('__Secure-next-auth.session-token');
-          
+
           if (sessionCookie) {
             // For now, we'll let the home page handle the redirect based on role
             // This is because middleware doesn't have easy access to decoded session data
@@ -123,17 +123,17 @@ const authMiddleware = withAuth({
   callbacks: {
     authorized: ({ token, req }) => {
       if (devBypass) return true; // allow all locally
-      
+
       const email = token?.email?.toLowerCase().trim() ?? "";
       if (!email) return false;
-      
+
       const pathname = req.nextUrl.pathname;
-      
+
       // Always allow access to unauthorized page
       if (pathname === "/unauthorized") {
         return true;
       }
-      
+
       // Check if user is approved
       const isApproved = (token as any)?.isApproved;
       if (isApproved === false) {
@@ -144,10 +144,10 @@ const authMiddleware = withAuth({
         // Redirect unapproved users trying to access other pages
         return false;
       }
-      
+
       // Get user role from token
       const userRole = (token as any)?.role;
-      
+
       // Define restricted routes for members
       const restrictedForMembers = [
         "/tools/startup-seeker",
@@ -156,19 +156,19 @@ const authMiddleware = withAuth({
         "/tools/cold-connect-automator",
         "/tools/ai-outreach-agent"
       ];
-      
+
       // Check if member is trying to access restricted tool
       if (userRole === "member" && restrictedForMembers.some(route => pathname.startsWith(route))) {
         return false; // Deny access - will redirect to signin (we'll handle redirect in the tool pages)
       }
-      
+
       // Check if non-admin is trying to access admin routes
       if (pathname.startsWith("/admin") && userRole !== "admin") {
         return false; // Deny access - will redirect to signin (we'll handle redirect in admin pages)
       }
-      
-      // Special-case allow: emails whose local-part ends with '.rouge' at gmail and @rougevc.com
-      if (email.endsWith('.rouge@gmail.com') || email.endsWith('@rougevc.com')) return true;
+
+      // Special-case allow: emails whose local-part ends with '.rouge' or '.acp' at gmail and @rougevc.com
+      if (email.endsWith('.rouge@gmail.com') || email.endsWith('.acp@gmail.com') || email.endsWith('@rougevc.com')) return true;
       // If no allowlist configured, allow any authenticated email
       if (envEmails.length === 0 && envDomains.length === 0 && patternRegex.length === 0) return true;
       if (envEmails.includes(email)) return true;

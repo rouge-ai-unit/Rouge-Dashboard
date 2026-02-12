@@ -8,7 +8,7 @@ import { randomBytes } from 'crypto';
 import { getDb } from '@/utils/dbConfig';
 import { Users, Sessions, AuditLogs, PasswordResetTokens, EmailVerificationTokens } from '@/utils/auth-schema';
 import { eq, and, gt, desc } from 'drizzle-orm';
-import type { User, NewUser, NewSession, NewAuditLog } from '@/utils/auth-schema';
+import type { User, NewUser, NewSession, NewAuditLog, RolePermission } from '@/utils/auth-schema';
 import { cleanupExpiredSessions } from '@/lib/security/session-manager';
 
 // ============================================================================
@@ -21,7 +21,11 @@ import { cleanupExpiredSessions } from '@/lib/security/session-manager';
  */
 export function isRougeEmail(email: string): boolean {
   const normalizedEmail = email.toLowerCase().trim();
-  return normalizedEmail.endsWith('.rouge@gmail.com') || normalizedEmail.endsWith('@rougevc.com');
+  return (
+    normalizedEmail.endsWith('.rouge@gmail.com') ||
+    normalizedEmail.endsWith('.acp@gmail.com') ||
+    normalizedEmail.endsWith('@rougevc.com')
+  );
 }
 
 /**
@@ -31,11 +35,11 @@ export function getEmailRejectionReason(email: string): string {
   if (!email || !email.includes('@')) {
     return 'Invalid email format';
   }
-  
+
   if (!isRougeEmail(email)) {
-    return 'Access restricted to Rouge team members only. Please use your Rouge email address (ending with .rouge@gmail.com or @rougevc.com)';
+    return 'Access restricted to Rouge team members only. Please use your authorized email address (ending with .rouge@gmail.com, .acp@gmail.com, or @rougevc.com)';
   }
-  
+
   return '';
 }
 
@@ -86,28 +90,28 @@ export async function createUser(data: {
   signupJustification?: string;
 }): Promise<User> {
   const db = getDb();
-  
+
   // Validate Rouge email
   if (!isRougeEmail(data.email)) {
     throw new Error(getEmailRejectionReason(data.email));
   }
-  
+
   // Check if user already exists
   const [existingUser] = await db.select().from(Users).where(eq(Users.email, data.email.toLowerCase())).limit(1);
-  
+
   if (existingUser) {
     throw new Error('User with this email already exists');
   }
-  
+
   // Hash password
   const passwordHash = await hashPassword(data.password);
-  
+
   // Determine if this is OAuth signup (auto-approve) or manual signup (requires approval)
   const isOAuthSignup = data.oauthProvider === 'google';
   const isApproved = isOAuthSignup; // Auto-approve OAuth signups for now
   const status = isApproved ? 'active' : 'pending';
   const role = isApproved ? 'member' : 'member'; // Default role
-  
+
   // Create user
   const result = await db.insert(Users).values({
     email: data.email.toLowerCase(),
@@ -128,9 +132,9 @@ export async function createUser(data: {
     unit: isApproved ? (data.requestedUnit || null) : null, // Set unit only if approved
     emailVerified: isOAuthSignup, // Auto-verify Google OAuth
   }).returning();
-  
+
   const user = result[0];
-  
+
   // Log signup
   await logAuditEvent({
     userId: user.id,
@@ -145,7 +149,7 @@ export async function createUser(data: {
       isApproved: isApproved,
     },
   });
-  
+
   // Notify admins of new signup (only if not auto-approved)
   if (!isApproved) {
     try {
@@ -155,7 +159,7 @@ export async function createUser(data: {
       console.error('[Auth Service] Failed to notify admins of new signup:', error);
     }
   }
-  
+
   return user;
 }
 
@@ -191,7 +195,7 @@ export async function findUserByGoogleId(googleId: string): Promise<User | undef
  */
 export async function updateUser(userId: string, data: Partial<User>): Promise<User> {
   const db = getDb();
-  
+
   const [user] = await db.update(Users)
     .set({
       ...data,
@@ -199,7 +203,7 @@ export async function updateUser(userId: string, data: Partial<User>): Promise<U
     })
     .where(eq(Users.id, userId))
     .returning();
-  
+
   return user;
 }
 
@@ -208,7 +212,7 @@ export async function updateUser(userId: string, data: Partial<User>): Promise<U
  */
 export async function updateLastLogin(userId: string, ipAddress?: string, device?: string): Promise<void> {
   const db = getDb();
-  
+
   await db.update(Users)
     .set({
       lastLoginAt: new Date(),
@@ -225,16 +229,16 @@ export async function updateLastLogin(userId: string, ipAddress?: string, device
  */
 export async function incrementFailedLoginAttempts(email: string): Promise<number> {
   const db = getDb();
-  
+
   const user = await findUserByEmail(email);
   if (!user) return 0;
-  
+
   const newAttempts = (user.failedLoginAttempts || 0) + 1;
-  
+
   // Lock account after 5 failed attempts for 15 minutes
   const shouldLock = newAttempts >= 5;
   const lockedUntil = shouldLock ? new Date(Date.now() + 15 * 60 * 1000) : null;
-  
+
   await db.update(Users)
     .set({
       failedLoginAttempts: newAttempts,
@@ -243,7 +247,7 @@ export async function incrementFailedLoginAttempts(email: string): Promise<numbe
       updatedAt: new Date(),
     })
     .where(eq(Users.id, user.id));
-  
+
   return newAttempts;
 }
 
@@ -253,7 +257,7 @@ export async function incrementFailedLoginAttempts(email: string): Promise<numbe
 export async function isUserLocked(email: string): Promise<boolean> {
   const user = await findUserByEmail(email);
   if (!user) return false;
-  
+
   if (user.status === 'locked' && user.lockedUntil) {
     // Check if lock has expired
     if (new Date() > user.lockedUntil) {
@@ -271,7 +275,7 @@ export async function isUserLocked(email: string): Promise<boolean> {
     }
     return true;
   }
-  
+
   return false;
 }
 
@@ -292,11 +296,11 @@ export async function createSession(data: {
   expiresInDays?: number;
 }): Promise<{ session: any; sessionToken: string }> {
   const db = getDb();
-  
+
   const sessionToken = generateToken(64);
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + (data.expiresInDays || 30));
-  
+
   const [session] = await db.insert(Sessions).values({
     userId: data.userId,
     sessionToken,
@@ -308,7 +312,7 @@ export async function createSession(data: {
     expiresAt,
     isActive: true,
   }).returning();
-  
+
   return { session, sessionToken };
 }
 
@@ -332,7 +336,7 @@ export async function findSessionByToken(token: string): Promise<any | undefined
  */
 export async function revokeSession(sessionToken: string, reason?: string): Promise<void> {
   const db = getDb();
-  
+
   await db.update(Sessions)
     .set({
       isActive: false,
@@ -347,7 +351,7 @@ export async function revokeSession(sessionToken: string, reason?: string): Prom
  */
 export async function revokeAllUserSessions(userId: string, reason?: string): Promise<void> {
   const db = getDb();
-  
+
   await db.update(Sessions)
     .set({
       isActive: false,
@@ -366,29 +370,29 @@ export async function revokeAllUserSessions(userId: string, reason?: string): Pr
  */
 export async function createPasswordResetToken(email: string): Promise<string> {
   const db = getDb();
-  
+
   const user = await findUserByEmail(email);
   if (!user) {
     throw new Error('User not found');
   }
-  
+
   // Invalidate any existing tokens
   await db.update(PasswordResetTokens)
     .set({ isUsed: true })
     .where(eq(PasswordResetTokens.userId, user.id));
-  
+
   // Create new token
   const token = generateToken(32);
   const expiresAt = new Date();
   expiresAt.setHours(expiresAt.getHours() + 1); // 1 hour expiry
-  
+
   await db.insert(PasswordResetTokens).values({
     userId: user.id,
     token,
     expiresAt,
     isUsed: false,
   });
-  
+
   // Log event
   await logAuditEvent({
     userId: user.id,
@@ -398,7 +402,7 @@ export async function createPasswordResetToken(email: string): Promise<string> {
     email: user.email,
     message: 'Password reset token created',
   });
-  
+
   return token;
 }
 
@@ -407,7 +411,7 @@ export async function createPasswordResetToken(email: string): Promise<string> {
  */
 export async function verifyPasswordResetToken(token: string): Promise<User | null> {
   const db = getDb();
-  
+
   const [resetToken] = await db.select().from(PasswordResetTokens).where(
     and(
       eq(PasswordResetTokens.token, token),
@@ -415,11 +419,11 @@ export async function verifyPasswordResetToken(token: string): Promise<User | nu
       gt(PasswordResetTokens.expiresAt, new Date())
     )
   ).limit(1);
-  
+
   if (!resetToken) {
     return null;
   }
-  
+
   const user = await findUserById(resetToken.userId);
   return user || null;
 }
@@ -429,15 +433,15 @@ export async function verifyPasswordResetToken(token: string): Promise<User | nu
  */
 export async function resetPassword(token: string, newPassword: string): Promise<void> {
   const db = getDb();
-  
+
   const user = await verifyPasswordResetToken(token);
   if (!user) {
     throw new Error('Invalid or expired reset token');
   }
-  
+
   // Hash new password
   const passwordHash = await hashPassword(newPassword);
-  
+
   // Update user password
   await db.update(Users)
     .set({
@@ -446,7 +450,7 @@ export async function resetPassword(token: string, newPassword: string): Promise
       updatedAt: new Date(),
     })
     .where(eq(Users.id, user.id));
-  
+
   // Mark token as used
   await db.update(PasswordResetTokens)
     .set({
@@ -454,10 +458,10 @@ export async function resetPassword(token: string, newPassword: string): Promise
       usedAt: new Date(),
     })
     .where(eq(PasswordResetTokens.token, token));
-  
+
   // Revoke all sessions for security
   await revokeAllUserSessions(user.id, 'Password reset');
-  
+
   // Log event
   await logAuditEvent({
     userId: user.id,
@@ -478,7 +482,7 @@ export async function resetPassword(token: string, newPassword: string): Promise
  */
 export async function logAuditEvent(data: NewAuditLog): Promise<void> {
   const db = getDb();
-  
+
   try {
     await db.insert(AuditLogs).values({
       ...data,
@@ -530,7 +534,7 @@ export async function createApprovalQueueEntry(data: {
   justification: string;
 }): Promise<void> {
   const db = getDb();
-  
+
   await db.insert(UserApprovalQueue).values({
     userId: data.userId,
     requestedRole: data.requestedRole,
@@ -545,7 +549,7 @@ export async function createApprovalQueueEntry(data: {
  */
 export async function getPendingApprovals(): Promise<any[]> {
   const db = getDb();
-  
+
   const approvals = await db
     .select({
       approval: UserApprovalQueue,
@@ -555,7 +559,7 @@ export async function getPendingApprovals(): Promise<any[]> {
     .leftJoin(Users, eq(UserApprovalQueue.userId, Users.id))
     .where(eq(UserApprovalQueue.status, 'pending'))
     .orderBy(UserApprovalQueue.createdAt);
-  
+
   return approvals;
 }
 
@@ -573,7 +577,7 @@ export async function approveUser(data: {
   userAgent?: string;
 }): Promise<void> {
   const db = getDb();
-  
+
   // Update user
   await db.update(Users)
     .set({
@@ -588,7 +592,7 @@ export async function approveUser(data: {
       updatedAt: new Date(),
     })
     .where(eq(Users.id, data.userId));
-  
+
   // Update approval queue
   await db.update(UserApprovalQueue)
     .set({
@@ -598,7 +602,7 @@ export async function approveUser(data: {
       reviewNotes: data.reviewNotes,
     })
     .where(eq(UserApprovalQueue.id, data.approvalId));
-  
+
   // Log admin activity
   await logAdminActivity({
     adminId: data.adminId,
@@ -606,17 +610,17 @@ export async function approveUser(data: {
     targetUserId: data.userId,
     targetResource: 'user_approval',
     oldValue: { isApproved: false, status: 'pending' },
-    newValue: { 
-      isApproved: true, 
-      status: 'active', 
-      role: data.assignedRole, 
-      unit: data.assignedUnit 
+    newValue: {
+      isApproved: true,
+      status: 'active',
+      role: data.assignedRole,
+      unit: data.assignedUnit
     },
     reason: data.reviewNotes,
     ipAddress: data.ipAddress,
     userAgent: data.userAgent,
   });
-  
+
   // Log audit event
   await logAuditEvent({
     userId: data.userId,
@@ -630,7 +634,7 @@ export async function approveUser(data: {
       assignedUnit: data.assignedUnit,
     },
   });
-  
+
   // Send welcome notification
   try {
     const { notifyUserApproved } = await import('@/lib/notifications/notification-service');
@@ -652,7 +656,7 @@ export async function rejectUser(data: {
   userAgent?: string;
 }): Promise<void> {
   const db = getDb();
-  
+
   // Update user status
   await db.update(Users)
     .set({
@@ -660,7 +664,7 @@ export async function rejectUser(data: {
       updatedAt: new Date(),
     })
     .where(eq(Users.id, data.userId));
-  
+
   // Update approval queue
   await db.update(UserApprovalQueue)
     .set({
@@ -670,7 +674,7 @@ export async function rejectUser(data: {
       reviewNotes: data.reviewNotes,
     })
     .where(eq(UserApprovalQueue.id, data.approvalId));
-  
+
   // Log admin activity
   await logAdminActivity({
     adminId: data.adminId,
@@ -683,7 +687,7 @@ export async function rejectUser(data: {
     ipAddress: data.ipAddress,
     userAgent: data.userAgent,
   });
-  
+
   // Log audit event
   await logAuditEvent({
     userId: data.userId,
@@ -696,7 +700,7 @@ export async function rejectUser(data: {
       reason: data.reviewNotes,
     },
   });
-  
+
   // Send rejection notification
   try {
     const { notifyUserRejected } = await import('@/lib/notifications/notification-service');
@@ -725,7 +729,7 @@ export async function logAdminActivity(data: {
   userAgent?: string;
 }): Promise<void> {
   const db = getDb();
-  
+
   try {
     await db.insert(AdminActivityLogs).values({
       adminId: data.adminId,
@@ -755,7 +759,7 @@ export async function getAdminActivityLogs(filters?: {
   offset?: number;
 }): Promise<any[]> {
   const db = getDb();
-  
+
   let query = db
     .select({
       log: AdminActivityLogs,
@@ -764,12 +768,12 @@ export async function getAdminActivityLogs(filters?: {
     .from(AdminActivityLogs)
     .leftJoin(Users, eq(AdminActivityLogs.adminId, Users.id))
     .orderBy(AdminActivityLogs.createdAt);
-  
+
   // Apply filters if provided
   // Note: This is a simplified version. In production, you'd want to use proper query building
-  
+
   const logs = await query.limit(filters?.limit || 100);
-  
+
   return logs;
 }
 
@@ -786,17 +790,17 @@ export async function hasPermission(
   action: string
 ): Promise<boolean> {
   const db = getDb();
-  
+
   // Get user
   const user = await findUserById(userId);
   if (!user) return false;
-  
+
   // Admins have all permissions
   if (user.role === 'admin') return true;
-  
+
   // Check role permissions
   if (!user.role) return false;
-  
+
   const [permission] = await db
     .select()
     .from(RolePermissions)
@@ -808,7 +812,7 @@ export async function hasPermission(
       )
     )
     .limit(1);
-  
+
   return permission?.allowed || false;
 }
 
@@ -824,18 +828,18 @@ export async function canAccessTool(userId: string, toolName: string): Promise<b
  */
 export async function getAccessibleTools(userId: string): Promise<string[]> {
   const db = getDb();
-  
+
   const user = await findUserById(userId);
   if (!user) return [];
-  
+
   // Admins can access all tools
   if (user.role === 'admin') {
     return ['*']; // Special marker for all tools
   }
-  
+
   // Check if user has a role
   if (!user.role) return [];
-  
+
   // Get tools user can execute
   const permissions = await db
     .select()
@@ -847,8 +851,8 @@ export async function getAccessibleTools(userId: string): Promise<string[]> {
         eq(RolePermissions.allowed, true)
       )
     );
-  
-  return permissions.map(p => p.resource);
+
+  return permissions.map((p: RolePermission) => p.resource);
 }
 
 // ============================================================================
@@ -865,7 +869,7 @@ export async function createToolAccessRequest(data: {
   justification: string;
 }): Promise<string> {
   const db = getDb();
-  
+
   const [request] = await db.insert(ToolAccessRequests).values({
     userId: data.userId,
     toolName: data.toolName,
@@ -873,7 +877,7 @@ export async function createToolAccessRequest(data: {
     justification: data.justification,
     status: 'pending',
   }).returning({ id: ToolAccessRequests.id });
-  
+
   // Log audit event
   await logAuditEvent({
     userId: data.userId,
@@ -886,7 +890,7 @@ export async function createToolAccessRequest(data: {
       toolPath: data.toolPath,
     },
   });
-  
+
   // Notify admins of new tool request
   try {
     const user = await findUserById(data.userId);
@@ -897,7 +901,7 @@ export async function createToolAccessRequest(data: {
   } catch (error) {
     console.error('[Auth Service] Failed to notify admins of tool request:', error);
   }
-  
+
   return request.id;
 }
 
@@ -906,7 +910,7 @@ export async function createToolAccessRequest(data: {
  */
 export async function getPendingToolAccessRequests(): Promise<any[]> {
   const db = getDb();
-  
+
   const requests = await db
     .select({
       request: ToolAccessRequests,
@@ -916,7 +920,7 @@ export async function getPendingToolAccessRequests(): Promise<any[]> {
     .leftJoin(Users, eq(ToolAccessRequests.userId, Users.id))
     .where(eq(ToolAccessRequests.status, 'pending'))
     .orderBy(ToolAccessRequests.createdAt);
-  
+
   return requests;
 }
 
@@ -929,7 +933,7 @@ export async function approveToolAccessRequest(data: {
   reviewNotes?: string;
 }): Promise<void> {
   const db = getDb();
-  
+
   // Update request
   await db.update(ToolAccessRequests)
     .set({
@@ -940,14 +944,14 @@ export async function approveToolAccessRequest(data: {
       updatedAt: new Date(),
     })
     .where(eq(ToolAccessRequests.id, data.requestId));
-  
+
   // Get request details for logging
   const [request] = await db
     .select()
     .from(ToolAccessRequests)
     .where(eq(ToolAccessRequests.id, data.requestId))
     .limit(1);
-  
+
   if (request) {
     // Log admin activity
     await logAdminActivity({
@@ -959,7 +963,7 @@ export async function approveToolAccessRequest(data: {
       newValue: { status: 'approved' },
       reason: data.reviewNotes,
     });
-    
+
     // Send tool access granted notification
     try {
       const { notifyToolAccessGranted } = await import('@/lib/notifications/notification-service');
@@ -983,14 +987,14 @@ export async function changeUserRole(data: {
   userAgent?: string;
 }): Promise<void> {
   const db = getDb();
-  
+
   // Get current user data
   const user = await findUserById(data.userId);
   if (!user) throw new Error('User not found');
-  
+
   const oldRole = user.role;
   const oldUnit = user.unit;
-  
+
   // Update user
   await db.update(Users)
     .set({
@@ -1001,7 +1005,7 @@ export async function changeUserRole(data: {
       updatedAt: new Date(),
     })
     .where(eq(Users.id, data.userId));
-  
+
   // Log admin activity
   await logAdminActivity({
     adminId: data.adminId,
@@ -1014,7 +1018,7 @@ export async function changeUserRole(data: {
     ipAddress: data.ipAddress,
     userAgent: data.userAgent,
   });
-  
+
   // Log audit event
   await logAuditEvent({
     userId: data.userId,
@@ -1030,7 +1034,7 @@ export async function changeUserRole(data: {
       newUnit: data.newUnit,
     },
   });
-  
+
   // Send role change notification
   try {
     const { notifyRoleChanged } = await import('@/lib/notifications/notification-service');
@@ -1063,7 +1067,7 @@ export async function logPermissionChange(data: {
   try {
     const db = getDb();
     const { PermissionAuditTrail } = await import('@/utils/auth-schema');
-    
+
     await db.insert(PermissionAuditTrail).values({
       adminId: data.adminId,
       role: data.role,
@@ -1076,7 +1080,7 @@ export async function logPermissionChange(data: {
       ipAddress: data.ipAddress,
       userAgent: data.userAgent,
     });
-    
+
     console.log(`[Permission Audit] Logged ${data.changeType} for ${data.role}:${data.resource}:${data.action}`);
   } catch (error) {
     console.error('[Permission Audit] Error logging permission change:', error);
@@ -1096,7 +1100,7 @@ export async function getPermissionAuditTrail(filters?: {
   try {
     const db = getDb();
     const { PermissionAuditTrail, Users } = await import('@/utils/auth-schema');
-    
+
     let query = db
       .select({
         id: PermissionAuditTrail.id,
@@ -1117,13 +1121,13 @@ export async function getPermissionAuditTrail(filters?: {
       .from(PermissionAuditTrail)
       .leftJoin(Users, eq(PermissionAuditTrail.adminId, Users.id))
       .orderBy(desc(PermissionAuditTrail.createdAt));
-    
+
     if (filters?.limit) {
       query = query.limit(filters.limit) as any;
     }
-    
+
     const results = await query;
-    
+
     return results;
   } catch (error) {
     console.error('[Permission Audit] Error getting audit trail:', error);

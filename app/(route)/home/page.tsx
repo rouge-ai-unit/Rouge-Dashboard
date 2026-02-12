@@ -20,9 +20,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
 import { ScrollArea } from "../../../components/ui/scroll-area";
 import { Separator } from "../../../components/ui/separator";
-import { 
-  Loader2, Wrench, Rocket, Info, Sparkles, Search, BarChart2, 
-  Newspaper, Briefcase, Lightbulb, Grid3X3, List, Filter, 
+import {
+  Loader2, Wrench, Rocket, Info, Sparkles, Search, BarChart2,
+  Newspaper, Briefcase, Lightbulb, Grid3X3, List, Filter,
   SortAsc, SortDesc, Heart, Share2, Download, RefreshCw,
   TrendingUp, Clock, Users, Eye, Star, Zap, Shield,
   CheckCircle, AlertCircle, Calendar, Tag, ExternalLink,
@@ -57,12 +57,12 @@ export default function Page() {
   useEffect(() => {
     if (status === "authenticated" && session?.user) {
       const userRole = (session.user as any)?.role;
-      
+
       // Check if this is a fresh login (no referrer from admin-choice)
       if (userRole === "admin" && typeof window !== "undefined") {
         const fromAdminChoice = sessionStorage.getItem("from_admin_choice");
         const adminChoiceShown = sessionStorage.getItem("admin_choice_shown");
-        
+
         // Show choice page only once per session (after login)
         if (!fromAdminChoice && !adminChoiceShown) {
           // Mark that we've shown the choice page
@@ -123,7 +123,7 @@ export default function Page() {
 
     fetchTools();
   }, [status, session]);
-  
+
   // Helper function to get tool descriptions
   const getToolDescription = (href: string): string => {
     const descriptions: Record<string, string> = {
@@ -154,27 +154,27 @@ export default function Page() {
 
 
   // Removed Tools In Progress logic as requested
-  
+
   // Refs
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Helper Functions
   const getToolIcon = useCallback((toolName: string, category: string) => {
     const iconClass = "w-5 h-5 sm:w-6 sm:h-6";
-    
+
     if (category === "analytics") return <BarChart2 className={`${iconClass} text-emerald-400`} />;
     if (category === "news") return <Newspaper className={`${iconClass} text-blue-400`} />;
     if (category === "productivity") return <Briefcase className={`${iconClass} text-amber-400`} />;
     if (category === "content") return <Lightbulb className={`${iconClass} text-orange-400`} />;
     if (category === "ai") return <Zap className={`${iconClass} text-purple-400`} />;
     if (category === "security") return <Shield className={`${iconClass} text-red-400`} />;
-    
+
     // Fallback based on tool name
     if (/analytics|chart|data/i.test(toolName)) return <BarChart2 className={`${iconClass} text-emerald-400`} />;
     if (/news|article/i.test(toolName)) return <Newspaper className={`${iconClass} text-blue-400`} />;
     if (/work|tracker|task/i.test(toolName)) return <Briefcase className={`${iconClass} text-amber-400`} />;
     if (/content|idea|automation/i.test(toolName)) return <Lightbulb className={`${iconClass} text-orange-400`} />;
-    
+
     return <Rocket className={`${iconClass} text-emerald-400`} />;
   }, []);
 
@@ -219,8 +219,8 @@ export default function Page() {
   }, []);
 
   const toggleFavorite = useCallback((toolId: string) => {
-    setFavorites(prev => 
-      prev.includes(toolId) 
+    setFavorites(prev =>
+      prev.includes(toolId)
         ? prev.filter(id => id !== toolId)
         : [...prev, toolId]
     );
@@ -311,16 +311,37 @@ export default function Page() {
 
 
   // Tool Card Component
-  const ToolCard = React.memo(({ tool, index }: { tool: Tool; index: number }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-      className={`group ${viewMode === 'list' ? 'col-span-full' : ''}`}
-    >
-      <Card
-        className={`
+  const ToolCard = React.memo(({ tool, index }: { tool: Tool; index: number }) => {
+
+    const handleToolOpen = async (e: React.MouseEvent) => {
+      // We don't prevent default, we just track and let the link navigate
+      // Or if handling navigation manually, prevents default.
+      // Since it's inside a Link, onClick on button bubbles up.
+      // However, for Link we might want to track on click.
+      try {
+        await fetch("/api/analytics/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            toolName: tool.href, // sending href as ID e.g. /tools/work-tracker
+            action: "open",
+          }),
+        });
+      } catch (err) {
+        console.error("Failed to track tool usage", err);
+      }
+    };
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 20 }}
+        transition={{ duration: 0.3, delay: index * 0.05 }}
+        className={`group ${viewMode === 'list' ? 'col-span-full' : ''}`}
+      >
+        <Card
+          className={`
           relative overflow-hidden bg-gray-900/50 backdrop-blur-sm border-gray-700/50
           hover:bg-gray-900/70 hover:border-gray-600/50 hover:shadow-2xl hover:shadow-blue-500/10
           transition-all duration-300 group h-auto cursor-pointer
@@ -328,91 +349,115 @@ export default function Page() {
           ${viewMode === 'grid' ? 'min-h-[200px] flex flex-col justify-between' : ''}
           focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:border-blue-500/50
         `}
-        role="article"
-        aria-labelledby={`tool-${tool.id}-title`}
-      >
-  <CardHeader className={`${viewMode === 'list' ? 'flex-shrink-0 w-64' : ''} pb-1`}> {/* Even less bottom padding */}
-          <div className="flex items-start gap-2">
-            {getToolIcon(tool.name, "")}
-            <div className="min-w-0 flex-1 flex flex-col">
-              <div className="flex min-w-0 w-full items-start">
-                <CardTitle
-                  id={`tool-${tool.id}-title`}
-                  className="text-lg sm:text-xl text-white font-bold group-hover:text-blue-400 transition-colors min-w-0 flex-1 break-words whitespace-normal leading-tight"
-                >
-                  {tool.name}
-                </CardTitle>
-                <div className="flex items-start gap-1 flex-shrink-0 ml-2 mt-1">
+          role="article"
+          aria-labelledby={`tool-${tool.id}-title`}
+        >
+          <CardHeader className={`${viewMode === 'list' ? 'flex-shrink-0 w-64' : ''} pb-1`}> {/* Even less bottom padding */}
+            <div className="flex items-start gap-2">
+              {getToolIcon(tool.name, "")}
+              <div className="min-w-0 flex-1 flex flex-col">
+                <div className="flex min-w-0 w-full items-start">
+                  <CardTitle
+                    id={`tool-${tool.id}-title`}
+                    className="text-lg sm:text-xl text-white font-bold group-hover:text-blue-400 transition-colors min-w-0 flex-1 break-words whitespace-normal leading-tight"
+                  >
+                    {tool.name}
+                  </CardTitle>
+                  <div className="flex items-start gap-1 flex-shrink-0 ml-2 mt-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-gray-800"
+                            onClick={() => toggleFavorite(tool.id)}
+                            tabIndex={0}
+                          >
+                            <Heart
+                              className={`w-4 h-4 ${favorites.includes(tool.id)
+                                ? 'fill-red-500 text-red-500'
+                                : 'text-gray-400 hover:text-red-400'
+                                }`}
+                            />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {favorites.includes(tool.id) ? 'Remove from favorites' : 'Add to favorites'}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </div>
+                <div> {/* Remove mt-1 for no extra gap */}
+                  <Badge className={`text-xs ${getStatusColor(tool.status)}`}>
+                    {tool.status}
+                  </Badge>
+                  {tool.version && <span className="text-xs text-gray-400">v{tool.version}</span>}
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className={`flex-1 ${viewMode === 'list' ? 'flex flex-col justify-between' : ''} pt-0`}> {/* Remove top padding */}
+            <div>
+              <p className="text-gray-300 text-sm leading-relaxed line-clamp-4 mb-2">
+                {tool.description}
+              </p>
+              <div className="flex items-center gap-2 text-xs text-gray-400">
+                <span>Click to explore</span>
+                <ExternalLink className="w-3 h-3" />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="mt-4 pt-3 border-t border-gray-700/50 flex gap-2">
+              {tool.status === "Available" ? (
+                <>
+                  <Button
+                    asChild
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white transition-all duration-200 group focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                    onClick={handleToolOpen}
+                  >
+                    <Link href={tool.href} aria-label={`Open ${tool.name}`}>
+                      Open Tool
+                      <ExternalLink className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
+                  </Button>
+
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 hover:bg-gray-800"
-                          onClick={() => toggleFavorite(tool.id)}
-                          tabIndex={0}
+                          asChild
+                          variant="secondary"
+                          className="bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700"
                         >
-                          <Heart
-                            className={`w-4 h-4 ${
-                              favorites.includes(tool.id)
-                                ? 'fill-red-500 text-red-500'
-                                : 'text-gray-400 hover:text-red-400'
-                            }`}
-                          />
+                          <Link href={`/tools/analytics/${tool.href.split('/').pop()}`} aria-label={`View Analytics for ${tool.name}`}>
+                            <BarChart2 className="w-4 h-4" />
+                          </Link>
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {favorites.includes(tool.id) ? 'Remove from favorites' : 'Add to favorites'}
+                        View Usage Analytics
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                </div>
-              </div>
-              <div> {/* Remove mt-1 for no extra gap */}
-                <Badge className={`text-xs ${getStatusColor(tool.status)}`}>
+                </>
+
+              ) : (
+                <Button disabled className="w-full bg-gray-700 text-gray-400 cursor-not-allowed">
                   {tool.status}
-                </Badge>
-                {tool.version && <span className="text-xs text-gray-400">v{tool.version}</span>}
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-
-  <CardContent className={`flex-1 ${viewMode === 'list' ? 'flex flex-col justify-between' : ''} pt-0`}> {/* Remove top padding */}
-          <div>
-            <p className="text-gray-300 text-sm leading-relaxed line-clamp-4 mb-2">
-              {tool.description}
-            </p>
-            <div className="flex items-center gap-2 text-xs text-gray-400">
-              <span>Click to explore</span>
-              <ExternalLink className="w-3 h-3" />
-            </div>
-          </div>
-
-          {/* Action Button */}
-          <div className="mt-4 pt-3 border-t border-gray-700/50"> {/* Reduce margin-top */}
-            {tool.status === "Available" ? (
-              <Link href={tool.href} className="block w-full">
-                <Button 
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white transition-all duration-200 group focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
-                  aria-label={`Open ${tool.name}`}
-                >
-                  Open Tool
-                  <ExternalLink className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
+                  {tool.status === "In Progress" && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}
                 </Button>
-              </Link>
-            ) : (
-              <Button disabled className="w-full bg-gray-700 text-gray-400 cursor-not-allowed">
-                {tool.status}
-                {tool.status === "In Progress" && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  ));
+              )
+              }
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  });
 
   ToolCard.displayName = "ToolCard";
 
@@ -421,7 +466,7 @@ export default function Page() {
       <div className="min-h-screen">
         <div className="container mx-auto px-4 py-8 max-w-7xl">
           {/* Header Section */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-8"
@@ -438,12 +483,12 @@ export default function Page() {
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
               Discover and explore cutting-edge AI tools designed to supercharge your productivity
             </p>
-            
+
             {/* Stats Bar removed as requested */}
           </motion.div>
 
           {/* Search and Controls */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -504,11 +549,10 @@ export default function Page() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className={`grid gap-6 ${
-                  viewMode === 'grid' 
-                    ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
-                    : 'grid-cols-1'
-                }`}
+                className={`grid gap-6 ${viewMode === 'grid'
+                  ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                  : 'grid-cols-1'
+                  }`}
               >
                 {[...Array(6)].map((_, i) => (
                   <Card key={i} className="bg-gray-800/30 border-gray-700/50">
@@ -557,24 +601,24 @@ export default function Page() {
                 <Tabs defaultValue="available" className="w-full" aria-labelledby="tools-section">
                   <h2 id="tools-section" className="sr-only">Tools Collection</h2>
                   <TabsList className="grid w-full grid-cols-3 bg-gray-800/50 border border-gray-700/50 rounded-lg p-1">
-                    <TabsTrigger 
-                      value="available" 
+                    <TabsTrigger
+                      value="available"
                       className="flex items-center gap-2 data-[state=active]:bg-blue-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:font-bold transition-all duration-200 focus:ring-2 focus:ring-blue-500/50"
                       aria-label={`${availableTools.length} available tools`}
                     >
                       <CheckCircle className="w-4 h-4" />
                       Available ({availableTools.length})
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="beta" 
+                    <TabsTrigger
+                      value="beta"
                       className="flex items-center gap-2 data-[state=active]:bg-blue-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:font-bold transition-all duration-200 focus:ring-2 focus:ring-blue-500/50"
                       aria-label={`${betaTools.length} beta tools`}
                     >
                       <Zap className="w-4 h-4" />
                       Beta ({betaTools.length})
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="upcoming" 
+                    <TabsTrigger
+                      value="upcoming"
                       className="flex items-center gap-2 data-[state=active]:bg-blue-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:font-bold transition-all duration-200 focus:ring-2 focus:ring-blue-500/50"
                       aria-label={`${inProgressTools.length} upcoming tools`}
                     >
@@ -591,14 +635,14 @@ export default function Page() {
                           <Rocket className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                           <h3 className="text-xl font-semibold text-gray-400 mb-2">No tools found</h3>
                           <p className="text-gray-500 mb-4">
-                            {debouncedSearch 
+                            {debouncedSearch
                               ? `No tools match "${debouncedSearch}". Try a different search term.`
                               : "No available tools at the moment. Check back later!"
                             }
                           </p>
                           {debouncedSearch && (
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               onClick={() => setSearch("")}
                               className="border-gray-600 text-gray-300 hover:bg-gray-800"
                             >
@@ -608,11 +652,10 @@ export default function Page() {
                         </div>
                       </div>
                     ) : (
-                      <div className={`grid gap-6 ${
-                        viewMode === 'grid'
-                          ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-                          : 'grid-cols-1'
-                      }`} style={viewMode === 'grid' ? { alignItems: 'stretch' } : {}}>
+                      <div className={`grid gap-6 ${viewMode === 'grid'
+                        ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                        : 'grid-cols-1'
+                        }`} style={viewMode === 'grid' ? { alignItems: 'stretch' } : {}}>
                         {availableTools.map((tool, index) => (
                           <ToolCard key={tool.id} tool={tool} index={index} />
                         ))}
@@ -628,11 +671,10 @@ export default function Page() {
                         <p className="text-gray-500">Try adjusting your search or filters</p>
                       </div>
                     ) : (
-                      <div className={`grid gap-6 ${
-                        viewMode === 'grid' 
-                          ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
-                          : 'grid-cols-1'
-                      }`}>
+                      <div className={`grid gap-6 ${viewMode === 'grid'
+                        ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                        : 'grid-cols-1'
+                        }`}>
                         {betaTools.map((tool, index) => (
                           <ToolCard key={tool.id} tool={tool} index={index} />
                         ))}
@@ -648,11 +690,10 @@ export default function Page() {
                         <p className="text-gray-500">Try adjusting your search or filters</p>
                       </div>
                     ) : (
-                      <div className={`grid gap-6 ${
-                        viewMode === 'grid' 
-                          ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
-                          : 'grid-cols-1'
-                      }`}>
+                      <div className={`grid gap-6 ${viewMode === 'grid'
+                        ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                        : 'grid-cols-1'
+                        }`}>
                         {inProgressTools.map((tool, index) => (
                           <ToolCard key={tool.id} tool={tool} index={index} />
                         ))}
