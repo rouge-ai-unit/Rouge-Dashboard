@@ -28,9 +28,9 @@ export const allowedEmailPatterns = envPatterns.map(p => {
 
 export function isAllowedEmail(email: string): boolean {
   const e = email.toLowerCase().trim();
-  // Special-case allow: emails whose local-part ends with '.rouge' at gmail and @rougevc.com
-  // Example: john.rouge@gmail.com, admin@rougevc.com
-  if (e.endsWith('.rouge@gmail.com') || e.endsWith('@rougevc.com')) return true;
+  // Special-case allow: emails whose local-part ends with '.rouge' or '.acp' at gmail and @rougevc.com
+  // Example: john.rouge@gmail.com, john.acp@gmail.com, admin@rougevc.com
+  if (e.endsWith('.rouge@gmail.com') || e.endsWith('.acp@gmail.com') || e.endsWith('@rougevc.com')) return true;
   // If no allowlist configured, allow any authenticated email (production will set envs)
   if (allowedEmails.length === 0 && allowedDomains.length === 0 && allowedEmailPatterns.length === 0) {
     return true;
@@ -204,10 +204,10 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account }) {
       // Dev bypass sign-in checks
       if (devBypass) return true;
-      
+
       const email = user.email?.toLowerCase().trim();
       if (!email) return "/unauthorized";
-      
+
       // Check if Rouge email
       if (!isRougeEmail(email)) {
         await logLoginAttempt({
@@ -217,16 +217,16 @@ export const authOptions: NextAuthOptions = {
         });
         return "/unauthorized";
       }
-      
+
       // For Google OAuth, create or update user in database
       if (account?.provider === "google") {
         try {
           let dbUser = await findUserByGoogleId(user.id);
-          
+
           if (!dbUser) {
             // Check if user exists by email
             dbUser = await findUserByEmail(email);
-            
+
             if (!dbUser) {
               // Create new user - automatically creates account for new Google sign-ins
               const nameParts = user.name?.split(" ") || [];
@@ -250,7 +250,7 @@ export const authOptions: NextAuthOptions = {
               });
             }
           }
-          
+
           // Check if user is approved
           if (!dbUser.isApproved) {
             console.log(`[Auth] User ${email} is not approved yet`);
@@ -262,14 +262,14 @@ export const authOptions: NextAuthOptions = {
             });
             return "/pending-approval";
           }
-          
+
           // Update last login - now dbUser is guaranteed to exist
           if (dbUser) {
             await updateLastLogin(dbUser.id);
-            
+
             // Update last active timestamp
             await updateLastActive(dbUser.id);
-            
+
             // Check approval expiry
             const expiryCheck = await checkApprovalExpiry(dbUser.id);
             if (expiryCheck.needsReapproval) {
@@ -277,7 +277,7 @@ export const authOptions: NextAuthOptions = {
               // Note: We don't block login, just flag for admin review
             }
           }
-          
+
           // Log successful login
           await logLoginAttempt({
             email,
@@ -293,7 +293,7 @@ export const authOptions: NextAuthOptions = {
           return "/unauthorized";
         }
       }
-      
+
       return true;
     },
     async jwt({ token, user, account }) {
@@ -301,7 +301,7 @@ export const authOptions: NextAuthOptions = {
       if (user?.id) {
         token.sub = user.id;
       }
-      
+
       // For Google OAuth or when we need to fetch user data, get from database
       if (token.email) {
         const dbUser = await findUserByEmail(token.email as string);
@@ -312,13 +312,13 @@ export const authOptions: NextAuthOptions = {
           token.isApproved = dbUser.isApproved ?? undefined;
         }
       }
-      
+
       return token;
     },
     async session({ session, token }) {
       if (session.user && token.sub) {
         (session.user as any).id = token.sub;
-        
+
         // Set session expiry based on role
         const userRole = token.role as string || 'member';
         const sessionDuration = getSessionDurationForRole(userRole);
@@ -334,16 +334,16 @@ export const authOptions: NextAuthOptions = {
       if (url.includes("/pending-approval")) {
         return url;
       }
-      
+
       // If redirecting to admin-choice, allow it
       if (url.includes("/admin-choice")) {
         return url;
       }
-      
+
       // Check if this is a post-login redirect
       // We need to check the user's role to decide where to send them
       // Since we can't access session here, we'll handle this in the pages
-      
+
       // Default redirect to home
       return baseUrl + "/home";
     },

@@ -129,6 +129,15 @@ export const StartupGenerationJobs = pgTable("startup_generation_jobs", {
   completedAt: date("completed_at"),
 });
 
+// Tool Usage Logs
+export const ToolUsageLogs = pgTable("tool_usage_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  toolName: varchar("tool_name").notNull(), // Using name or ID from href
+  userId: varchar("user_id").notNull(),
+  action: varchar("action").default("view"), // view, click, etc.
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
 // Contact Research Jobs
 export const ContactResearchJobs = pgTable("contact_research_jobs", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -947,13 +956,13 @@ export const AgTechEvents = pgTable("agtech_events", {
   description: text("description").notNull(),
   price: varchar("price").notNull(),
   registrationLink: varchar("registration_link").notNull(),
-  
+
   // Search metadata
   searchLocation: varchar("search_location").notNull(), // Original search query
-  
+
   // User tracking
   userId: varchar("user_id").notNull(),
-  
+
   // Timestamps
   createdAt: date("created_at").defaultNow(),
   updatedAt: date("updated_at").defaultNow(),
@@ -965,7 +974,7 @@ export const AgTechEventSearchHistory = pgTable("agtech_event_search_history", {
   userId: varchar("user_id").notNull(),
   location: varchar("location").notNull(),
   resultsCount: integer("results_count").notNull(),
-  
+
   // Timestamps
   searchedAt: date("searched_at").defaultNow(),
 });
@@ -975,10 +984,10 @@ export const AgTechEventFavorites = pgTable("agtech_event_favorites", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: varchar("user_id").notNull(),
   eventId: uuid("event_id").notNull().references(() => AgTechEvents.id),
-  
+
   // Notes
   notes: text("notes"),
-  
+
   // Timestamps
   createdAt: date("created_at").defaultNow(),
 });
