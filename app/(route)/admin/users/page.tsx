@@ -90,13 +90,13 @@ export default function UsersManagementPage() {
 
   // Filter users
   const filteredUsers = users.filter(user => {
-    const matchesSearch = 
+    const matchesSearch =
       user.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === "all" || user.role === roleFilter;
     const matchesUnit = unitFilter === "all" || user.unit === unitFilter;
     const matchesStatus = statusFilter === "all" || user.status === statusFilter;
-    
+
     return matchesSearch && matchesRole && matchesUnit && matchesStatus;
   });
 
@@ -142,23 +142,23 @@ export default function UsersManagementPage() {
   };
 
   const handleApprove = async (user: User) => {
-  try {
-    const response = await fetch("/api/admin/users/approve", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user.id }),
-    });
+    try {
+      const response = await fetch("/api/admin/users/approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+      });
 
-    if (!response.ok) {
-      throw new Error("Approval failed");
+      if (!response.ok) {
+        throw new Error("Approval failed");
+      }
+
+      toast.success(`${user.displayName} approved`);
+      fetchUsers();
+    } catch (error) {
+      toast.error("Failed to approve user");
     }
-
-    toast.success(`${user.displayName} approved`);
-    fetchUsers();
-  } catch (error) {
-    toast.error("Failed to approve user");
-  }
-};
+  };
 
 
   const handleDelete = (user: User) => {
@@ -176,7 +176,7 @@ export default function UsersManagementPage() {
 
   const confirmEdit = async () => {
     if (!selectedUser) return;
-    
+
     setProcessing(true);
     try {
       const response = await fetch("/api/admin/users/update", {
@@ -209,7 +209,7 @@ export default function UsersManagementPage() {
 
   const confirmDelete = async () => {
     if (!selectedUser) return;
-    
+
     setProcessing(true);
     try {
       const response = await fetch("/api/admin/users/delete", {
@@ -249,7 +249,7 @@ export default function UsersManagementPage() {
 
       const results = await Promise.allSettled(deletePromises);
       const successful = results.filter(r => r.status === 'fulfilled').length;
-      
+
       toast.success(`Deleted ${successful} of ${selectedUsers.size} users`);
       setShowBulkDeleteDialog(false);
       setSelectedUsers(new Set());
@@ -350,28 +350,28 @@ export default function UsersManagementPage() {
               const email = prompt("Enter the user's email:");
               if (!email) return;
               fetch("/api/admin/users/add-by-email", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email }),
-            })
-              .then((res) => res.json())
-              .then((data) => {
-                if (data.success) {
-                  toast.success(`User ${email} added successfully`);
-                  fetchUsers(); 
-                } else {
-                  toast.error(data.error || "Failed to add user");
-                }
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
               })
-              .catch((err) => {
-                console.error(err);
-                toast.error("Error adding user");
-              });
-          }}
-        >
-          <UserPlus className="w-4 h-4 mr-2" />
-          Add User
-        </Button>
+                .then((res) => res.json())
+                .then((data) => {
+                  if (data.success) {
+                    toast.success(`User ${email} added successfully`);
+                    fetchUsers();
+                  } else {
+                    toast.error(data.error || "Failed to add user");
+                  }
+                })
+                .catch((err) => {
+                  console.error(err);
+                  toast.error("Error adding user");
+                });
+            }}
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Add User
+          </Button>
 
         </div>
       </div>
@@ -523,10 +523,10 @@ export default function UsersManagementPage() {
                           </Link>
                           <Button variant="ghost" size="sm" onClick={() => handleEdit(user)}>
                             <Edit className="w-4 h-4" />
-
+                          </Button>
                           <Button variant="ghost" size="sm" onClick={() => handleApprove(user)}>
-                            <CheckSquare className="w-4 h-4 text-green-600" /> 
-                          
+                            <CheckSquare className="w-4 h-4 text-green-600" />
+                          </Button>
                           <Button variant="ghost" size="sm" onClick={() => handleDelete(user)}>
                             <Trash2 className="w-4 h-4 text-red-600" />
                           </Button>
