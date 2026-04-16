@@ -82,14 +82,14 @@ export async function findAgTechEvents(location: string): Promise<AgTechEvent[]>
     - Direct registration link
     
     Return a list of at least 5 upcoming events if available. If you cannot find events in the exact location, search in the surrounding region or state.
-    Current date context: We are in October 2025, so all events should be from October 2025 onwards.
+    Current date context: We are in April 2026, so all events should be from April 2026 onwards.
   `;
 
   try {
     console.log(`[AgTech Events] Searching for events near: ${location}`);
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-flash-latest",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
