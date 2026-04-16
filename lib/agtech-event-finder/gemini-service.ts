@@ -67,54 +67,54 @@ export async function findAgTechEvents(location: string): Promise<AgTechEvent[]>
     Find UPCOMING AgTech (Agriculture Technology) startup conventions, expos, and networking events located in or near "${location}".
     
     IMPORTANT REQUIREMENTS:
-    - Only include events from 2025 onwards (January 2025 and later)
+    - Only include events from 2026 onwards (January 2026 and later)
     - Events must be upcoming or scheduled in the future
-    - Do NOT include any events from 2024 or earlier
+    - Do NOT include any events from 2025 or earlier
     - Focus on events relevant to venture capital, startup scouting, and technology innovation in agriculture
     - Prioritize free events when possible, but include notable paid events as well
     
     For each event, provide:
     - Event name
-    - Date (must be 2025 or later)
+    - Date (must be 2026 or later)
     - Location (city and country/state)
     - Brief description (1-2 sentences)
     - Price (Free, $XX, or Varies)
     - Direct registration link
     
     Return a list of at least 5 upcoming events if available. If you cannot find events in the exact location, search in the surrounding region or state.
-    Current date context: We are in October 2025, so all events should be from October 2025 onwards.
+    Current date context: We are in April 2026, so all events should be from April 2026 onwards.
   `;
 
   try {
     console.log(`[AgTech Events] Searching for events near: ${location}`);
-    
+
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-flash-latest",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
         responseSchema: eventSchema,
       },
     });
-    
+
     const jsonText = response.text?.trim();
     if (!jsonText) {
       console.warn(`[AgTech Events] Empty response from Gemini API for location: ${location}`);
       return [];
     }
-    
+
     const parsedData = JSON.parse(jsonText);
     console.log(`[AgTech Events] Found ${parsedData.length} events for location: ${location}`);
-    
+
     return parsedData as AgTechEvent[];
 
   } catch (error) {
     console.error("[AgTech Events] Error fetching events from Gemini API:", error);
-    
+
     if (error instanceof Error) {
       throw new Error(`Failed to fetch event data: ${error.message}`);
     }
-    
+
     throw new Error("Failed to fetch event data from the AI model.");
   }
 }
