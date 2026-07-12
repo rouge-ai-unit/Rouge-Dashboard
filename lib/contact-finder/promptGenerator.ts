@@ -112,6 +112,7 @@ IMPORTANT RULES:
 5. If multiple people match the role, list ALL of them.
 6. Prioritize accuracy over completeness — it is better to say "Not found" than to guess.
 7. Active Search Rule: For each person identified, specifically search for their personal or official social media links (LinkedIn, Instagram, Facebook, and Twitter/X) using their name and company as keywords. Do not list "Not found" for social accounts if they are publicly indexed on major social platforms.
+8. Deep Social Search: Before declaring any social media profile (especially LinkedIn, Instagram, Facebook, Twitter/X) as "Not found", you MUST explicitly search for the combination of the person's name and the platform (e.g., search for "[Person Name] Instagram" and "[Person Name] Facebook"). If an account exists publicly, you must extract its handle or URL.
 
 Format each contact as a clearly separated block with labeled fields.
   `.trim();
