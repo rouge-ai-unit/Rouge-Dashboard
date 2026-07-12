@@ -129,8 +129,14 @@ function splitIntoPersonBlocks(rawText: string): string[] {
   // Strategy 2: Split by numbered list pattern (e.g., "1.", "2.", "**1.**")
   const numberedPattern = /(?:^|\n)(?:\*{0,2})?\s*\d+[\.\)]\s+/;
   if (numberedPattern.test(text)) {
-    const blocks = text.split(/(?:^|\n)(?:\*{0,2})?\s*\d+[\.\)]\s+/).filter(b => b.trim().length > 20);
-    if (blocks.length >= 1) return blocks;
+    // Check if the numbered list is listing fields of a single person rather than multiple people.
+    // If it's listing fields, we will find labels like "full name", "job title", "email", "phone" immediately following the number.
+    const isFieldList = /(?:^|\n)(?:\*{0,2})?\s*\d+[\.\)]\s+\*?(?:full\s*name|job\s*title|position|email|phone|whatsapp|linkedin|source|instagram|facebook|twitter|x\.com)\b/i.test(text);
+
+    if (!isFieldList) {
+      const blocks = text.split(/(?:^|\n)(?:\*{0,2})?\s*\d+[\.\)]\s+/).filter(b => b.trim().length > 20);
+      if (blocks.length >= 1) return blocks;
+    }
   }
 
   // Strategy 3: Split by horizontal rules or bold separators
@@ -631,6 +637,18 @@ export function parseEntities(rawText: string, citations: string[]): ContactEnti
     // Skip blocks that don't look like person entries
     if (name === 'Unknown' && title === 'Unknown' && !email && !linkedin) {
       console.log(`[EntityExtractor] Skipping block ${i + 1} — insufficient data`);
+      continue;
+    }
+
+    // Skip blocks that are actually just template labels (defense in depth)
+    const forbiddenNames = [
+      'full name', 'job title', 'position', 'email address', 
+      'phone number', 'whatsapp number', 'linkedin profile', 
+      'instagram handle', 'facebook profile', 'twitter/x', 
+      'source url'
+    ];
+    if (name && forbiddenNames.some(fn => name.toLowerCase().includes(fn))) {
+      console.log(`[EntityExtractor] Skipping block ${i + 1} — name matched forbidden template field: "${name}"`);
       continue;
     }
 
