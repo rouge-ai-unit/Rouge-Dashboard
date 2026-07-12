@@ -74,9 +74,12 @@ export default function ContactFinderTool() {
   const [expandedSearchId, setExpandedSearchId] = useState<string | null>(null);
   const [expandedContacts, setExpandedContacts] = useState<ContactFinderResult[]>([]);
   const [expandLoading, setExpandLoading] = useState(false);
+  const [expandedRawResponse, setExpandedRawResponse] = useState<string | null>(null);
 
   // UI state
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [showRawText, setShowRawText] = useState(false);
+  const [showExpandedRawText, setShowExpandedRawText] = useState(false);
 
   // ============================================================================
   // FETCH HISTORY
@@ -171,17 +174,21 @@ export default function ContactFinderTool() {
     if (expandedSearchId === searchId) {
       setExpandedSearchId(null);
       setExpandedContacts([]);
+      setExpandedRawResponse(null);
+      setShowExpandedRawText(false);
       return;
     }
 
     setExpandedSearchId(searchId);
     setExpandLoading(true);
+    setShowExpandedRawText(false);
 
     try {
       const response = await fetch(`/api/contact-finder/history/${searchId}`);
       const data = await response.json();
-      if (data.success && data.search?.contacts) {
-        setExpandedContacts(data.search.contacts);
+      if (data.success && data.search) {
+        setExpandedContacts(data.search.contacts || []);
+        setExpandedRawResponse(data.search.rawResponse || null);
       }
     } catch (error) {
       console.error('Error fetching search details:', error);
@@ -732,6 +739,31 @@ export default function ContactFinderTool() {
                 </CardContent>
               </Card>
 
+              {/* Raw Response Narrative Accordion */}
+              <Card className="bg-gray-800/10 border-gray-700/50">
+                <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2 text-gray-300">
+                    <Eye className="h-4 w-4 text-cyan-400" />
+                    Full AI Research Narrative & Details
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowRawText(!showRawText)}
+                    className="h-8 text-xs text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
+                  >
+                    {showRawText ? 'Hide Narrative' : 'View Full Narrative'}
+                  </Button>
+                </CardHeader>
+                {showRawText && (
+                  <CardContent className="pt-0">
+                    <pre className="text-xs text-gray-300 whitespace-pre-wrap font-sans bg-black/40 p-4 rounded-lg border border-gray-800 leading-relaxed max-h-96 overflow-y-auto">
+                      {searchMeta.rawResponse}
+                    </pre>
+                  </CardContent>
+                )}
+              </Card>
+
               {/* Citations */}
               {searchMeta.citations && searchMeta.citations.length > 0 && (
                 <Card>
@@ -927,6 +959,31 @@ export default function ContactFinderTool() {
                               </Button>
                             </div>
                             {renderContactTable(expandedContacts)}
+
+                            {/* Raw Response in History */}
+                            {expandedRawResponse && (
+                              <div className="mt-4 pt-3 border-t border-gray-800">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs font-semibold text-gray-400 flex items-center gap-1.5">
+                                    <Eye className="h-3.5 w-3.5 text-cyan-400" />
+                                    Full AI Research Narrative
+                                  </span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setShowExpandedRawText(!showExpandedRawText)}
+                                    className="h-6 text-[10px] text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
+                                  >
+                                    {showExpandedRawText ? 'Hide Narrative' : 'View Full Narrative'}
+                                  </Button>
+                                </div>
+                                {showExpandedRawText && (
+                                  <pre className="text-xs text-gray-400 whitespace-pre-wrap font-sans bg-black/40 p-3 rounded-lg border border-gray-800/80 leading-relaxed max-h-60 overflow-y-auto">
+                                    {expandedRawResponse}
+                                  </pre>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div className="py-6 text-center text-gray-500 text-sm">
