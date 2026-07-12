@@ -76,11 +76,19 @@ const ALL_TOOLS = [
     requiresPermission: true,
   },
   {
+    id: 'contact-finder',
+    title: 'Contact Finder',
+    href: '/tools/contact-finder',
+    icon: 'Target',
+    order: 9,
+    alwaysVisible: true,
+  },
+  {
     id: 'content-idea-automation',
     title: 'Content Idea Automation',
     href: '/tools/content-idea-automation',
     icon: 'BrainCircuit',
-    order: 9,
+    order: 10,
     alwaysVisible: true,
   },
   {
@@ -88,7 +96,7 @@ const ALL_TOOLS = [
     title: 'Cold Connect Automator',
     href: '/tools/cold-connect-automator',
     icon: 'Mail',
-    order: 10,
+    order: 11,
     requiresPermission: true,
   },
   {
@@ -96,7 +104,7 @@ const ALL_TOOLS = [
     title: 'AI Outreach Agent',
     href: '/tools/ai-outreach-agent',
     icon: 'Briefcase',
-    order: 11,
+    order: 12,
     requiresPermission: true,
   },
   {
@@ -104,7 +112,7 @@ const ALL_TOOLS = [
     title: 'Contact Us',
     href: '/tools/contact',
     icon: 'HelpCircle',
-    order: 12,
+    order: 13,
     alwaysVisible: true,
   },
   

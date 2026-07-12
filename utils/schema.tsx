@@ -1263,8 +1263,50 @@ export const outreachSessionSchema = z.object({
 });
 
 // ============================================================================
+// CONTACT FINDER TABLES
+// Tables for the Contact Finder feature — automated professional contact search
+// ============================================================================
+
+/**
+ * Contact Finder Search Sessions
+ * Stores each search request with the raw Perplexity AI response and citations.
+ */
+export const ContactFinderSearches = pgTable("contact_finder_searches", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: varchar("user_id").notNull(),
+  company: varchar("company").notNull(),
+  role: varchar("role").notNull(),
+  country: varchar("country").notNull(),
+  rawResponse: text("raw_response"),
+  citations: jsonb("citations").$type<string[]>(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+/**
+ * Contact Finder Results
+ * Stores extracted contact entities per search session.
+ * Each result is linked to a search via search_id with CASCADE delete.
+ */
+export const ContactFinderResults = pgTable("contact_finder_results", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  searchId: uuid("search_id").notNull().references(() => ContactFinderSearches.id, { onDelete: 'cascade' }),
+  name: varchar("name"),
+  title: varchar("title"),
+  email: varchar("email"),
+  phone: varchar("phone"),
+  linkedin: varchar("linkedin"),
+  instagram: varchar("instagram"),
+  facebook: varchar("facebook"),
+  twitter: varchar("twitter"),
+  source: text("source"),
+  confidence: varchar("confidence"), // 'high' | 'medium' | 'low'
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ============================================================================
 // AUTHENTICATION TABLES (Enterprise-Grade)
 // ============================================================================
 
 // Import from auth-schema
 export * from './auth-schema';
+

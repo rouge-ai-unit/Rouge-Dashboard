@@ -118,6 +118,13 @@ Rouge Dashboard is a production-ready, enterprise-grade internal operations plat
    - Ticket tracking and status updates
    - Team collaboration features
 
+9. **Contact Finder** 🔍
+   - Find professional contacts at any company using AI-powered search
+   - Multi-source search across LinkedIn, company websites, social media, and registries
+   - NLP-based entity extraction (Named Entity Recognition)
+   - Confidence scoring (High, Medium, Low) for contact data accuracy
+   - Export contacts to CSV, Clipboard copy functionality, search history management
+
 ---
 
 ## 🛠️ Tech Stack
@@ -146,6 +153,7 @@ Rouge Dashboard is a production-ready, enterprise-grade internal operations plat
 - **Primary:** Google Gemini AI
 - **Secondary:** DeepSeek AI
 - **Alternative:** OpenAI GPT-4
+- **Real-Time Search:** Perplexity AI (for Contact Finder)
 
 ### DevOps
 - **Version Control:** Git
@@ -229,6 +237,7 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 # AI Services (at least one required)
 GEMINI_API_KEY=your-gemini-api-key-here
 DEEPSEEK_API_KEY=sk-your-deepseek-api-key-here
+PERPLEXITY_API_KEY=your-perplexity-api-key-here
 ```
 
 ### Optional Variables
@@ -308,6 +317,7 @@ Rouge-Dashboard/
 │   ├── cold-outreach/            # Cold outreach services
 │   ├── startup_seeker/           # Startup seeker services
 │   ├── university_scraping/      # University scraper
+│   ├── contact-finder/           # Contact finder services
 │   ├── validations/              # Validation schemas
 │   ├── auth.ts                   # Authentication logic
 │   ├── ai-service.ts             # AI service wrapper
@@ -318,6 +328,7 @@ Rouge-Dashboard/
 │   └── use-toast.ts              # Toast notifications
 ├── types/                        # TypeScript types
 │   ├── agtech-event-finder.ts    # Event finder types
+│   ├── contact-finder.ts         # Contact finder types
 │   ├── index.ts                  # Global types
 │   └── ...                       # Other type definitions
 ├── utils/                        # Utility functions
@@ -483,6 +494,22 @@ Submit requests for custom AI tools.
 
 ---
 
+### 9. Contact Finder
+**Route:** `/tools/contact-finder`
+
+Find professional contacts at any company using AI-powered search.
+
+**Features:**
+- AI-powered real-time contact discovery using Perplexity AI (`llama-3.1-sonar-large-128k-online`)
+- Search by company name, target role, and country with localized registry routing
+- NLP pipeline (Named Entity Recognition) for extracting name, title, email, phone, and social URLs (LinkedIn, Facebook, Instagram, Twitter/X, GitHub)
+- Confidence level classification (`high`, `medium`, `low`) based on data completeness
+- Smart deduplication using Dice's Coefficient (threshold: 0.7)
+- Export search results to CSV and click-to-copy utility
+- Persistent search history with collapsible dropdown detail view and batch deletion
+
+---
+
 ## 📡 API Documentation
 
 ### Authentication
@@ -614,6 +641,66 @@ Create a new company.
 
 ---
 
+#### Contact Finder
+
+**POST** `/api/contact-finder/search`
+
+Search for contact details for a specific role and company.
+
+**Request:**
+```json
+{
+  "company": "Gojek",
+  "role": "CTO",
+  "country": "Indonesia"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "searchId": "d3b07384-d113-4ec6-a579-4d6484e56588",
+  "company": "Gojek",
+  "role": "CTO",
+  "country": "Indonesia",
+  "contacts": [
+    {
+      "id": "e2a12903-8822-4bb3-b541-69273c52e46b",
+      "searchId": "d3b07384-d113-4ec6-a579-4d6484e56588",
+      "name": "Dito",
+      "title": "VP of Technology / CTO",
+      "email": "dito@gojek.com",
+      "phone": "+628123456789",
+      "linkedin": "linkedin.com/in/dito-example",
+      "instagram": null,
+      "facebook": null,
+      "twitter": null,
+      "source": "https://linkedin.com/in/dito-example",
+      "confidence": "high",
+      "createdAt": "2026-07-10T11:34:15.000Z"
+    }
+  ],
+  "rawResponse": "...raw text...",
+  "citations": ["https://linkedin.com/in/dito-example"],
+  "createdAt": "2026-07-10T11:34:15.000Z"
+}
+```
+
+**GET** `/api/contact-finder/history`
+
+Retrieve the authenticated user's search history.
+
+**Query Parameters:**
+- `limit` (default: 20, max: 100)
+- `offset` (default: 0)
+
+**DELETE** `/api/contact-finder/history`
+
+Delete all search history for the authenticated user.
+
+---
+
 ## 🗄️ Database Schema
 
 ### Core Tables
@@ -706,6 +793,43 @@ CREATE TABLE tickets (
   expected_outcome VARCHAR,
   due_date VARCHAR,
   impact VARCHAR
+);
+```
+
+#### `contact_finder_searches`
+Saves search sessions.
+
+```sql
+CREATE TABLE contact_finder_searches (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id VARCHAR NOT NULL,
+  company VARCHAR NOT NULL,
+  role VARCHAR NOT NULL,
+  country VARCHAR NOT NULL,
+  raw_response TEXT,
+  citations JSONB,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+#### `contact_finder_results`
+Stores extracted contact details linked to search sessions.
+
+```sql
+CREATE TABLE contact_finder_results (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  search_id UUID NOT NULL REFERENCES contact_finder_searches(id) ON DELETE CASCADE,
+  name VARCHAR,
+  title VARCHAR,
+  email VARCHAR,
+  phone VARCHAR,
+  linkedin VARCHAR,
+  instagram VARCHAR,
+  facebook VARCHAR,
+  twitter VARCHAR,
+  source TEXT,
+  confidence VARCHAR, -- 'high' | 'medium' | 'low'
+  created_at TIMESTAMP DEFAULT NOW()
 );
 ```
 
@@ -1076,6 +1200,7 @@ NODE_ENV=development
 - [Google Gemini AI](https://ai.google.dev/docs)
 - [DeepSeek AI](https://platform.deepseek.com/docs)
 - [OpenAI API](https://platform.openai.com/docs)
+- [Perplexity AI API](https://docs.perplexity.ai)
 - [SendGrid API](https://docs.sendgrid.com)
 
 ---
@@ -1171,6 +1296,7 @@ The Rouge Dashboard is **fully complete and production-ready** with all features
 - ✅ Content Idea Automation - LinkedIn content generation
 - ✅ Cold Connect Automator - Personalized outreach campaigns
 - ✅ Agritech Universities - Research institution database
+- ✅ Contact Finder - AI & NLP-powered professional contact search
 
 **Core Features**
 - ✅ Dashboard hub with search and favorites
