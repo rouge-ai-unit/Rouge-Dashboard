@@ -111,6 +111,7 @@ IMPORTANT RULES:
 4. Include the source/citation for each piece of information.
 5. If multiple people match the role, list ALL of them.
 6. Prioritize accuracy over completeness — it is better to say "Not found" than to guess.
+7. Active Search Rule: For each person identified, specifically search for their personal or official social media links (LinkedIn, Instagram, Facebook, and Twitter/X) using their name and company as keywords. Do not list "Not found" for social accounts if they are publicly indexed on major social platforms.
 
 Format each contact as a clearly separated block with labeled fields.
   `.trim();
