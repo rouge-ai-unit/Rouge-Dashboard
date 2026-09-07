@@ -124,6 +124,10 @@ Rouge Dashboard is a production-ready, enterprise-grade internal operations plat
    - Search by Job Title + Company → company contacts filtered by role (Domain Search)
    - Deliverability check on results via Hunter.io Email Verifier
 
+10. **AI List** 🤖
+   - Directory of the team's external ChatGPT GPTs and Gemini Gems
+   - Static list, no API or persistence — each entry opens in a new tab
+
 ---
 
 ## 🛠️ Tech Stack
@@ -504,6 +508,18 @@ A stateless client for the Hunter.io API with two independent modes.
 - Company input auto-detected as a domain when it looks like one (`acme.com`), otherwise sent as a company name for Hunter to resolve
 - Deliverability check via Hunter.io Email Verifier (always for name search; up to 10 matched rows for job-title search)
 - No database, no history, no export — results render straight to a table
+
+---
+
+### 10. AI List
+**Route:** `/tools/ai-list`
+
+A maintained directory of the team's external AI assistants (ChatGPT GPTs and Gemini Gems) used for VC work.
+
+**Features:**
+- Static list of Gems/GPTs with title, platform badge, and description
+- Each entry links out to the assistant in a new tab
+- No API, no database, no persistence — kept in sync manually
 
 ---
 
@@ -1262,6 +1278,7 @@ The Rouge Dashboard is **fully complete and production-ready** with all features
 - ✅ Cold Connect Automator - Personalized outreach campaigns
 - ✅ Agritech Universities - Research institution database
 - ✅ Contact Finder - Hunter.io-powered professional contact search
+- ✅ AI List - Directory of the team's external GPTs and Gems
 
 **Core Features**
 - ✅ Dashboard hub with search and favorites
