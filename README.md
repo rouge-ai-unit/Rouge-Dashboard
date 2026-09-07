@@ -119,11 +119,10 @@ Rouge Dashboard is a production-ready, enterprise-grade internal operations plat
    - Team collaboration features
 
 9. **Contact Finder** 🔍
-   - Find professional contacts at any company using AI-powered search
-   - Multi-source search across LinkedIn, company websites, social media, and registries
-   - NLP-based entity extraction (Named Entity Recognition)
-   - Confidence scoring (High, Medium, Low) for contact data accuracy
-   - Export contacts to CSV, Clipboard copy functionality, search history management
+   - Two lookup modes over the Hunter.io API
+   - Search by Name + Company → single best email (Email Finder)
+   - Search by Job Title + Company → company contacts filtered by role (Domain Search)
+   - Deliverability check on results via Hunter.io Email Verifier
 
 ---
 
@@ -153,7 +152,7 @@ Rouge Dashboard is a production-ready, enterprise-grade internal operations plat
 - **Primary:** Google Gemini AI
 - **Secondary:** DeepSeek AI
 - **Alternative:** OpenAI GPT-4
-- **Real-Time Search:** Perplexity AI (for Contact Finder)
+- **Contact Data:** Hunter.io API — Email Finder, Domain Search, Email Verifier (for Contact Finder)
 
 ### DevOps
 - **Version Control:** Git
@@ -237,7 +236,7 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 # AI Services (at least one required)
 GEMINI_API_KEY=your-gemini-api-key-here
 DEEPSEEK_API_KEY=sk-your-deepseek-api-key-here
-PERPLEXITY_API_KEY=your-perplexity-api-key-here
+HUNTER_API_KEY=your-hunter-io-api-key
 ```
 
 ### Optional Variables
@@ -497,16 +496,14 @@ Submit requests for custom AI tools.
 ### 9. Contact Finder
 **Route:** `/tools/contact-finder`
 
-Find professional contacts at any company using AI-powered search.
+A stateless client for the Hunter.io API with two independent modes.
 
 **Features:**
-- AI-powered real-time contact discovery using Perplexity AI (`llama-3.1-sonar-large-128k-online`)
-- Search by company name, target role, and country with localized registry routing
-- NLP pipeline (Named Entity Recognition) for extracting name, title, email, phone, and social URLs (LinkedIn, Facebook, Instagram, Twitter/X, GitHub)
-- Confidence level classification (`high`, `medium`, `low`) based on data completeness
-- Smart deduplication using Dice's Coefficient (threshold: 0.7)
-- Export search results to CSV and click-to-copy utility
-- Persistent search history with collapsible dropdown detail view and batch deletion
+- **Search by Name** — full name + company/domain → Hunter.io Email Finder returns the single most likely email with a confidence score, position, and sources
+- **Search by Job Title** — job title + company/domain → Hunter.io Domain Search pulls every company contact (`limit=100`), then filters client-side by a case-insensitive match on `position`; a "Show all contacts" toggle falls back to the unfiltered list
+- Company input auto-detected as a domain when it looks like one (`acme.com`), otherwise sent as a company name for Hunter to resolve
+- Deliverability check via Hunter.io Email Verifier (always for name search; up to 10 matched rows for job-title search)
+- No database, no history, no export — results render straight to a table
 
 ---
 
@@ -643,61 +640,64 @@ Create a new company.
 
 #### Contact Finder
 
-**POST** `/api/contact-finder/search`
+Stateless proxy over the Hunter.io API. Both endpoints require an authenticated session; nothing is persisted.
 
-Search for contact details for a specific role and company.
+**POST** `/api/contact-finder/email-finder`
+
+Search by name — proxies Hunter.io Email Finder, then runs Email Verifier on the result.
 
 **Request:**
 ```json
-{
-  "company": "Gojek",
-  "role": "CTO",
-  "country": "Indonesia"
-}
+{ "fullName": "Patrick Collison", "company": "stripe.com" }
 ```
 
 **Response:**
 ```json
 {
   "success": true,
-  "searchId": "d3b07384-d113-4ec6-a579-4d6484e56588",
-  "company": "Gojek",
-  "role": "CTO",
-  "country": "Indonesia",
-  "contacts": [
-    {
-      "id": "e2a12903-8822-4bb3-b541-69273c52e46b",
-      "searchId": "d3b07384-d113-4ec6-a579-4d6484e56588",
-      "name": "Dito",
-      "title": "VP of Technology / CTO",
-      "email": "dito@gojek.com",
-      "phone": "+628123456789",
-      "linkedin": "linkedin.com/in/dito-example",
-      "instagram": null,
-      "facebook": null,
-      "twitter": null,
-      "source": "https://linkedin.com/in/dito-example",
-      "confidence": "high",
-      "createdAt": "2026-07-10T11:34:15.000Z"
-    }
-  ],
-  "rawResponse": "...raw text...",
-  "citations": ["https://linkedin.com/in/dito-example"],
-  "createdAt": "2026-07-10T11:34:15.000Z"
+  "email": "patrick@stripe.com",
+  "score": 97,
+  "position": "Chief Executive Officer",
+  "company": "Stripe",
+  "domain": "stripe.com",
+  "sources": [{ "uri": "https://stripe.com/about" }],
+  "verification": { "status": "valid", "score": 100 }
 }
 ```
+(`{ "success": true, "email": null, "message": "No email found..." }` when nothing is found.)
 
-**GET** `/api/contact-finder/history`
+**POST** `/api/contact-finder/domain-search`
 
-Retrieve the authenticated user's search history.
+Search by job title — fetches every contact Hunter.io has for the company (`limit=100`), filters client-side by a case-insensitive match on `position`, and verifies up to 10 matched rows.
 
-**Query Parameters:**
-- `limit` (default: 20, max: 100)
-- `offset` (default: 0)
+**Request:**
+```json
+{ "jobTitle": "Engineer", "company": "stripe.com", "showAll": false }
+```
 
-**DELETE** `/api/contact-finder/history`
-
-Delete all search history for the authenticated user.
+**Response:**
+```json
+{
+  "success": true,
+  "company": "stripe.com",
+  "domain": "stripe.com",
+  "jobTitle": "Engineer",
+  "matchedCount": 3,
+  "totalCount": 42,
+  "showingAll": false,
+  "contacts": [
+    {
+      "name": "Jane Roe",
+      "position": "Senior Software Engineer",
+      "email": "jane@stripe.com",
+      "confidence": 89,
+      "department": "it",
+      "seniority": "senior",
+      "verification": { "status": "valid", "score": 95 }
+    }
+  ]
+}
+```
 
 ---
 
@@ -796,42 +796,7 @@ CREATE TABLE tickets (
 );
 ```
 
-#### `contact_finder_searches`
-Saves search sessions.
-
-```sql
-CREATE TABLE contact_finder_searches (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id VARCHAR NOT NULL,
-  company VARCHAR NOT NULL,
-  role VARCHAR NOT NULL,
-  country VARCHAR NOT NULL,
-  raw_response TEXT,
-  citations JSONB,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-```
-
-#### `contact_finder_results`
-Stores extracted contact details linked to search sessions.
-
-```sql
-CREATE TABLE contact_finder_results (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  search_id UUID NOT NULL REFERENCES contact_finder_searches(id) ON DELETE CASCADE,
-  name VARCHAR,
-  title VARCHAR,
-  email VARCHAR,
-  phone VARCHAR,
-  linkedin VARCHAR,
-  instagram VARCHAR,
-  facebook VARCHAR,
-  twitter VARCHAR,
-  source TEXT,
-  confidence VARCHAR, -- 'high' | 'medium' | 'low'
-  created_at TIMESTAMP DEFAULT NOW()
-);
-```
+> **Contact Finder** has no tables — it is a stateless proxy over the Hunter.io API.
 
 ### Cold Outreach Tables
 
@@ -1200,7 +1165,7 @@ NODE_ENV=development
 - [Google Gemini AI](https://ai.google.dev/docs)
 - [DeepSeek AI](https://platform.deepseek.com/docs)
 - [OpenAI API](https://platform.openai.com/docs)
-- [Perplexity AI API](https://docs.perplexity.ai)
+- [Hunter.io API](https://hunter.io/api-documentation/v2)
 - [SendGrid API](https://docs.sendgrid.com)
 
 ---
@@ -1296,7 +1261,7 @@ The Rouge Dashboard is **fully complete and production-ready** with all features
 - ✅ Content Idea Automation - LinkedIn content generation
 - ✅ Cold Connect Automator - Personalized outreach campaigns
 - ✅ Agritech Universities - Research institution database
-- ✅ Contact Finder - AI & NLP-powered professional contact search
+- ✅ Contact Finder - Hunter.io-powered professional contact search
 
 **Core Features**
 - ✅ Dashboard hub with search and favorites

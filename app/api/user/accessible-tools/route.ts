@@ -9,7 +9,19 @@ import { authOptions } from '@/lib/auth';
 import { getAccessibleTools } from '@/lib/permissions';
 
 // Tool definitions with metadata
-const ALL_TOOLS = [
+type ToolDef = {
+  id: string;
+  title: string;
+  href: string;
+  icon: string;
+  order: number;
+  alwaysVisible?: boolean;
+  requiresPermission?: boolean;
+  adminOnly?: boolean;
+  status?: string;
+};
+
+const ALL_TOOLS: ToolDef[] = [
   // Normal Dashboard Tools
   {
     id: 'home',
@@ -108,14 +120,23 @@ const ALL_TOOLS = [
     requiresPermission: true,
   },
   {
+    id: 'ai-list',
+    title: 'AI List',
+    href: '/tools/ai-list',
+    icon: 'Bot',
+    order: 13,
+    alwaysVisible: true,
+    status: 'Beta',
+  },
+  {
     id: 'contact',
     title: 'Contact Us',
     href: '/tools/contact',
     icon: 'HelpCircle',
-    order: 13,
+    order: 14,
     alwaysVisible: true,
   },
-  
+
   // Admin-Only Tools (ordered logically)
   {
     id: 'admin-dashboard',

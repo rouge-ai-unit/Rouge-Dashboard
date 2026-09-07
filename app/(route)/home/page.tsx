@@ -103,7 +103,7 @@ export default function Page() {
                 name: tool.title,
                 href: tool.href,
                 description: getToolDescription(tool.href),
-                status: "Available",
+                status: tool.status ?? "Available",
               }));
             setTools(apiTools);
             setError(null);
@@ -137,8 +137,9 @@ export default function Page() {
       "/tools/ai-outreach-agent": "Generate personalized outreach lists with strategic leads and tailored messaging for your business development. Create comprehensive lead portfolios with AI-powered analysis, advanced filtering, export capabilities, and lead management features. Features include real-time statistics, progress tracking, and enterprise-grade lead organization.",
       "/tools/agtech-events": "Discover upcoming AgTech startup conventions, expos, and networking events powered by AI. Search by location, filter by price, export results to CSV, and never miss an opportunity to connect with the agricultural technology ecosystem. Features advanced filters, multiple view modes, and real-time event discovery.",
       "/tools/sentiment-analyzer": "Analyze public sentiment about companies using AI-powered news analysis. Search recent articles, get sentiment insights (positive, negative, neutral), and understand public perception. Features include real-time analysis, search history, usage tracking, and detailed reasoning for each sentiment classification.",
-      "/tools/contact-finder": "Find professional contacts at any company using AI-powered search across LinkedIn, company websites, social media, and government registries. Extract structured contact data including email, phone, LinkedIn, and social media profiles with confidence scoring. Features NLP-based entity extraction and multi-source citation tracking.",
+      "/tools/contact-finder": "Look up work emails via the Hunter.io API. Search by a person's name and company to get their most likely email, or by job title and company to list matching contacts. Every result is checked for deliverability with Hunter.io's email verifier.",
       "/tools/contact": "Get in touch with our team for support, feedback, or inquiries. We're here to help you make the most of Rouge Dashboard tools and services.",
+      "/tools/ai-list": "A maintained list of the team's external AI assistants (ChatGPT GPTs and Gemini Gems) for VC work — lead finding, portfolio screening, valuation and more. Each opens in a new tab.",
     };
     return descriptions[href] || "Powerful tool to enhance your productivity and workflow.";
   };
@@ -413,7 +414,7 @@ export default function Page() {
 
             {/* Action Buttons */}
             <div className="mt-4 pt-3 border-t border-gray-700/50 flex gap-2">
-              {tool.status === "Available" ? (
+              {tool.status === "Available" || tool.status === "Beta" ? (
                 <>
                   <Button
                     asChild

@@ -20,6 +20,7 @@ import {
   Sparkles,
   TrendingUp,
   Shield,
+  Bot,
   Menu,
   X,
 } from "lucide-react";
@@ -51,6 +52,7 @@ const iconMap: Record<string, any> = {
   Mail,
   Briefcase,
   HelpCircle,
+  Bot,
 };
 
 interface AppSidebarProps {
