@@ -69,16 +69,11 @@ export default function PermissionsPage() {
         
         // Build tool permissions matrix
         const tools = [
-          { name: "AI Tools Request Form", path: "/tools/ai-tools-request-form" },
-          { name: "Work Tracker", path: "/tools/work-tracker" },
           { name: "AI News Daily", path: "/tools/ai-news-daily" },
           { name: "Agritech Startup Seeker", path: "/tools/startup-seeker" },
-          { name: "AgTech Event Finder", path: "/tools/agtech-events" },
-          { name: "Agritech Universities", path: "/tools/agritech-universities" },
           { name: "Sentiment Analyzer", path: "/tools/sentiment-analyzer" },
-          { name: "Content Idea Automation", path: "/tools/content-idea-automation" },
-          { name: "Cold Connect Automator", path: "/tools/cold-connect-automator" },
-          { name: "AI Outreach Agent", path: "/tools/ai-outreach-agent" },
+          { name: "Contact Finder", path: "/tools/contact-finder" },
+          { name: "AI List", path: "/tools/ai-list" },
           { name: "Contact Us", path: "/tools/contact" },
         ];
         
