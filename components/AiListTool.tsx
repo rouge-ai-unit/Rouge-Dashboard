@@ -2,7 +2,7 @@
 
 // ============================================================================
 // AI LIST — a maintained directory of the team's external AI assistants.
-// Static list (kept in sync with `ai list.txt`). No API, no persistence.
+// Data lives in lib/ai-list.ts (kept in sync with `ai list.txt`).
 // ============================================================================
 
 import { Button } from '@/components/ui/button';
@@ -14,47 +14,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Bot, ExternalLink } from 'lucide-react';
-
-type Platform = 'ChatGPT' | 'Gemini';
-
-interface AiEntry {
-  title: string;
-  platform: Platform;
-  url: string;
-  description?: string;
-}
-
-const AI_LIST: AiEntry[] = [
-  {
-    title: 'VC Associate',
-    platform: 'ChatGPT',
-    description: 'Lead finding & LinkedIn drafting',
-    url: 'https://chatgpt.com/g/g-6a442a58cbcc8191baf5d6cbff6e3179-vc-associate',
-  },
-  {
-    title: 'Agtech Company Finder',
-    platform: 'Gemini',
-    description: 'Finding AgTech VCs and startups',
-    url: 'https://gemini.google.com/gem/1pZJnDqtA9h0QGH7dKvoyxlO1NKtbsDUW?usp=sharing',
-  },
-  {
-    title: 'Leads Company Filter',
-    platform: 'Gemini',
-    description:
-      'Portfolio screening — built by Henry during the recent AI class; Supratik plans to develop this further',
-    url: 'https://gemini.google.com/gem/95013d6db181?usp=sharing',
-  },
-  {
-    title: 'valuation tool',
-    platform: 'Gemini',
-    url: 'https://gemini.google.com/gem/0897810011d0?usp=sharing',
-  },
-  {
-    title: 'Prompt Generator',
-    platform: 'Gemini',
-    url: 'https://gemini.google.com/gem/1iSM1UEd4gGPFlBlUXXXmXUE0Zq5p_3mD?usp=sharing',
-  },
-];
+import { AI_LIST } from '@/lib/ai-list';
 
 export default function AiListTool() {
   return (
@@ -63,7 +23,6 @@ export default function AiListTool() {
         <h1 className="flex items-center gap-2 text-2xl font-bold">
           <Bot className="h-6 w-6 text-primary" />
           AI List
-          <Badge variant="secondary" className="ml-1">Beta</Badge>
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Active Gems &amp; GPTs the team maintains for VC work. Each one opens in a new tab.
