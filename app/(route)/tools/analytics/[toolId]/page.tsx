@@ -21,17 +21,11 @@ type AnalyticsData = {
 
 // Tool titles map for display
 const toolTitles: Record<string, string> = {
-    "work-tracker": "Work Tracker",
     "ai-news-daily": "AI News Daily",
     "startup-seeker": "Startup Seeker",
-    "agritech-universities": "Agritech Universities",
-    "content-idea-automation": "Content Idea Automation",
-    "cold-connect-automator": "Cold Connect Automator",
-    "ai-outreach-agent": "AI Outreach Agent",
-    "agtech-events": "AgTech Events",
     "sentiment-analyzer": "Sentiment Analyzer",
-    "ai-tools-request-form": "AI Tools Request Form",
-    "agtech-company-automation": "AgTech Company Automation",
+    "contact-finder": "Contact Finder",
+    "ai-list": "AI List",
 };
 
 // Custom Tooltip component for Recharts to fix type compatibility
