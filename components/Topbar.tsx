@@ -27,6 +27,7 @@ import {
   Settings,
   Shield,
   LayoutDashboard,
+  Mail,
 } from "lucide-react";
 
 // dialogs are client components; direct import is fine
@@ -146,6 +147,9 @@ export default function Topbar({ title }: Props) {
               </DropdownMenuItem>
               <DropdownMenuItem className="data-[highlighted]:bg-gray-800/50 data-[highlighted]:text-gray-100" title="View help & docs" onClick={() => setHelpOpen(true)}>
                 <HelpCircle className="size-4 mr-2" /> Help
+              </DropdownMenuItem>
+              <DropdownMenuItem className="data-[highlighted]:bg-gray-800/50 data-[highlighted]:text-gray-100" title="Contact the admin team" onClick={() => router.push('/tools/contact')}>
+                <Mail className="size-4 mr-2" /> Contact admin
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="data-[highlighted]:bg-gray-800/50 data-[highlighted]:text-gray-100" title="Sign out of your account" onClick={async () => {
