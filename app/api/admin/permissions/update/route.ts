@@ -13,16 +13,11 @@ import { logAdminActivity, logPermissionChange } from '@/lib/auth/auth-service';
 // Valid tool paths for validation
 const VALID_TOOL_PATHS = [
   '/home',
-  '/tools/ai-tools-request-form',
-  '/tools/work-tracker',
   '/tools/ai-news-daily',
   '/tools/startup-seeker',
-  '/tools/agtech-events',
-  '/tools/agritech-universities',
   '/tools/sentiment-analyzer',
-  '/tools/content-idea-automation',
-  '/tools/cold-connect-automator',
-  '/tools/ai-outreach-agent',
+  '/tools/contact-finder',
+  '/tools/ai-list',
   '/tools/contact',
   '/admin/dashboard',
 ] as const;
