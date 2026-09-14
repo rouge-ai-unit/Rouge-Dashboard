@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { logger } from './lib/client-utils';
 import { checkRoleBasedRateLimit, getRateLimitHeaders } from './lib/security/role-based-rate-limiter';
+import { isRetiredToolPath } from './lib/tool-registry';
 
 const devBypass = process.env.NODE_ENV === "development" || process.env.NEXT_PUBLIC_DISABLE_AUTH === "true";
 
@@ -26,6 +27,11 @@ function withProductionMiddleware(handler: any) {
     const url = request.url;
     const method = request.method;
     const userAgent = request.headers.get('user-agent') || 'unknown';
+
+    // Retired tools: code kept in repo, but routes send users back home
+    if (isRetiredToolPath(request.nextUrl.pathname)) {
+      return NextResponse.redirect(new URL('/home', request.url));
+    }
 
     // Log incoming requests in production
     if (process.env.NODE_ENV === 'production') {
@@ -151,10 +157,7 @@ const authMiddleware = withAuth({
       // Define restricted routes for members
       const restrictedForMembers = [
         "/tools/startup-seeker",
-        "/tools/agritech-universities",
         "/tools/sentiment-analyzer",
-        "/tools/cold-connect-automator",
-        "/tools/ai-outreach-agent"
       ];
 
       // Check if member is trying to access restricted tool
