@@ -254,16 +254,11 @@ export async function getAccessibleTools(userId: string): Promise<string[]> {
  * Tool definitions with paths
  */
 export const TOOLS = {
-  AI_TOOLS_REQUEST: '/tools/ai-tools-request-form',
-  WORK_TRACKER: '/tools/work-tracker',
   AI_NEWS_DAILY: '/tools/ai-news-daily',
   STARTUP_SEEKER: '/tools/startup-seeker',
-  AGTECH_EVENTS: '/tools/agtech-events',
-  AGRITECH_UNIVERSITIES: '/tools/agritech-universities',
   SENTIMENT_ANALYZER: '/tools/sentiment-analyzer',
-  CONTENT_IDEA_AUTOMATION: '/tools/content-idea-automation',
-  COLD_CONNECT_AUTOMATOR: '/tools/cold-connect-automator',
-  AI_OUTREACH_AGENT: '/tools/ai-outreach-agent',
+  CONTACT_FINDER: '/tools/contact-finder',
+  AI_LIST: '/tools/ai-list',
   CONTACT: '/tools/contact',
 } as const;
 
