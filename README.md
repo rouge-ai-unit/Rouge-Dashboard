@@ -65,68 +65,31 @@ Rouge Dashboard is a production-ready, enterprise-grade internal operations plat
 
 ### AI-Powered Tools
 
-1. **AgTech Event Finder** 🌾
-   - Discover upcoming AgTech conventions and expos
-   - AI-powered search with location-based filtering
-   - Export to CSV, multiple view modes
-   - Real-time event discovery with caching
+1. **Contact Finder** 🔍
+   - Hunter.io lookups by name + company or job title + company, with deliverability checks
 
-2. **Agritech Startup Seeker** 🚀
-   - Find and analyze agritech startups
-   - Scoring system for investment readiness
-   - Contact research and CRM integration
-   - Batch processing with job queue
+2. **AI List** 🤖
+   - The team's Gemini Gems and ChatGPT GPTs (lead finding, portfolio screening, Company Valuation Tool, prompt generator)
 
-3. **Sentiment Analyzer** 📊
-   - Analyze public sentiment about companies using AI-powered news analysis
-   - Real-time news article search via Google Custom Search API
-   - AI sentiment classification with Gemini or DeepSeek models
-   - Sentiment types: Positive, Negative, Neutral with detailed reasoning
-   - Advanced filtering, sorting, and export to CSV
-   - Search history tracking with clear functionality
-   - Country-specific search (US, UK, CA, AU, IN) or worldwide
-   - Usage monitoring with 100 searches per day limit per user
-   - Automatic data cleanup (90+ days old articles removed)
+3. **AI News Daily** 📰
+   - A ready-made daily AI & AgTech news prompt with Open in Grok / Gemini / ChatGPT buttons
 
-4. **AI News Daily** 📰
-   - Curated daily AI news and insights
-   - Smart filtering and bookmarking
-   - Article preview and summarization
-   - Share and export capabilities
+4. **Agritech Startup Seeker** 🚀 *(under usage review)*
+   - Find and score agritech startups
 
-5. **Content Idea Automation** 💡
-   - AI-powered content calendar generation
-   - LinkedIn post ideas and captions
-   - Hashtag suggestions
-   - Editorial calendar management
+5. **Sentiment Analyzer** 📊 *(under usage review)*
+   - AI sentiment analysis of company news (Google Custom Search + Gemini/DeepSeek), 100 searches/day per user
 
-6. **Cold Connect Automator** 📧
-   - Personalized cold outreach campaigns
-   - Notion and Google Sheets integration
-   - AI message generation
-   - Campaign analytics and tracking
+**Contact admin** is a link in the account menu (Topbar avatar and sidebar user menu), not a tool.
 
-7. **Agritech Universities** 🎓
-   - Database of agritech research institutions
-   - TTO (Technology Transfer Office) information
-   - Incubation records and LinkedIn profiles
-   - Export and filtering capabilities
+### Retired from the UI
 
-8. **AI Tools Request Form** 📋
-   - Submit custom AI tool requests
-   - Structured requirement gathering
-   - Ticket tracking and status updates
-   - Team collaboration features
+These tools were removed from the sidebar and Home page. Their code is still in the repo, but their routes redirect to `/home` (see `lib/tool-registry.ts` and `middleware.ts`):
 
-9. **Contact Finder** 🔍
-   - Two lookup modes over the Hunter.io API
-   - Search by Name + Company → single best email (Email Finder)
-   - Search by Job Title + Company → company contacts filtered by role (Domain Search)
-   - Deliverability check on results via Hunter.io Email Verifier
+- AI Tools Request Form, Work Tracker (use Asana), AgTech Event Finder (use a public LLM), Agritech Universities, Cold Connect Automator, AI Outreach Agent, Content Idea Automation (use an LLM), AgTech Company Automation, About page
+- The old AI News feed (`components/ai-news-daily/LegacyNewsFeed.tsx`) — replaced by a prompt page
 
-10. **AI List** 🤖
-   - Directory of the team's external ChatGPT GPTs and Gemini Gems
-   - Static list, no API or persistence — each entry opens in a new tab
+To retire another tool: add its path to `RETIRED_TOOL_PATHS` and remove its entry from `ALL_TOOLS` in `app/api/user/accessible-tools/route.ts`.
 
 ---
 
@@ -352,26 +315,16 @@ Rouge-Dashboard/
 
 ## 🔧 Available Tools
 
-### 1. AgTech Event Finder
-**Route:** `/agtech-events`
+### 1. AI News Daily
+**Route:** `/tools/ai-news-daily`
 
-Discover and track AgTech startup events worldwide.
+A prompt page instead of a custom news feed (`components/PromptLauncher.tsx`).
 
 **Features:**
-- AI-powered event discovery
-- Location-based search with geolocation
-- Advanced filters (price, date, keyword)
-- Grid and list view modes
-- Export to CSV
-- Event caching for performance
-- Database persistence
-
-**Usage:**
-1. Enter a location or use geolocation
-2. Browse discovered events
-3. Apply filters to refine results
-4. Export filtered results to CSV
-5. Click "Register Now" to visit event pages
+- Daily briefing prompt (AI, AgTech, funding, Asia focus) with today's date filled in
+- **Open in Grok** / **Open in ChatGPT** — opens with the prompt pre-filled via `?q=`
+- **Open in Gemini** — Gemini has no prefill URL, so the prompt is copied to the clipboard and Gemini opens; paste and send
+- **Copy** button
 
 ---
 
@@ -379,14 +332,6 @@ Discover and track AgTech startup events worldwide.
 **Route:** `/tools/startup-seeker`
 
 Find and analyze agritech startups with AI-powered scoring.
-
-**Features:**
-- Generate startup profiles with AI
-- Multi-factor scoring system
-- Contact research automation
-- Export to CSV
-- Database persistence
-- Priority flagging
 
 **Scoring Criteria:**
 - Location Score (0-100)
@@ -396,108 +341,7 @@ Find and analyze agritech startups with AI-powered scoring.
 
 ---
 
-### 3. AI News Daily
-**Route:** `/tools/ai-news-daily`
-
-Stay updated with curated AI news and insights.
-
-**Features:**
-- Daily news aggregation
-- Article preview with OG images
-- Smart filtering and search
-- Bookmarking and sharing
-- Article summarization
-- Pagination
-
----
-
-### 4. Content Idea Automation
-**Route:** `/tools/content-idea-automation`
-
-Generate LinkedIn content calendars with AI.
-
-**Features:**
-- Monthly content planning
-- Post ideas and captions
-- Hashtag suggestions
-- Special occasion tracking
-- Export to CSV
-- Status management
-
----
-
-### 5. Cold Connect Automator
-**Route:** `/tools/cold-connect-automator`
-
-Automate personalized cold outreach campaigns.
-
-**Features:**
-- Contact management with CRM
-- AI message personalization
-- Campaign tracking
-- Template library
-- Notion and Google Sheets sync
-- Analytics dashboard
-- A/B testing
-- Sequence automation
-
-**Sub-pages:**
-- `/tools/cold-connect-automator/contacts` - Contact management
-- `/tools/cold-connect-automator/campaigns` - Campaign management
-- `/tools/cold-connect-automator/templates` - Template library
-- `/tools/cold-connect-automator/analytics` - Performance analytics
-- `/tools/cold-connect-automator/settings` - Integration settings
-
----
-
-### 6. Agritech Universities
-**Route:** `/tools/agritech-universities`
-
-Explore agritech research institutions worldwide.
-
-**Features:**
-- University database
-- TTO information
-- Incubation records
-- LinkedIn profile links
-- Export to CSV
-- Filtering by country/region
-
----
-
-### 7. Work Tracker
-**Route:** `/tools/work-tracker`
-
-Comprehensive project and task management.
-
-**Features:**
-- Task creation and editing
-- Status tracking
-- Deadline management
-- Team assignment
-- Progress monitoring
-- Filtering and search
-- Export capabilities
-- Real-time updates
-
----
-
-### 8. AI Tools Request Form
-**Route:** `/tools/ai-tools-request-form`
-
-Submit requests for custom AI tools.
-
-**Features:**
-- Structured requirement gathering
-- Ticket creation
-- Status tracking
-- Team collaboration
-- Email notifications
-- Slack integration
-
----
-
-### 9. Contact Finder
+### 3. Contact Finder
 **Route:** `/tools/contact-finder`
 
 A stateless client for the Hunter.io API with two independent modes.
@@ -511,15 +355,15 @@ A stateless client for the Hunter.io API with two independent modes.
 
 ---
 
-### 10. AI List
+### 4. AI List
 **Route:** `/tools/ai-list`
 
 A maintained directory of the team's external AI assistants (ChatGPT GPTs and Gemini Gems) used for VC work.
 
 **Features:**
-- Static list of Gems/GPTs with title, platform badge, and description
+- Data lives in `lib/ai-list.ts` (kept in sync with `ai list.txt`); shown on the AI List page and in the Home page's AI List section
 - Each entry links out to the assistant in a new tab
-- No API, no database, no persistence — kept in sync manually
+- No API, no database, no persistence
 
 ---
 
@@ -1271,18 +1115,14 @@ The Rouge Dashboard is **fully complete and production-ready** with all features
 - ✅ Protected routes and API endpoints
 
 **AI-Powered Tools**
-- ✅ AgTech Event Finder - AI-powered event discovery
-- ✅ Agritech Startup Seeker - Startup analysis and scoring
-- ✅ AI News Daily - Curated AI news feed
-- ✅ Content Idea Automation - LinkedIn content generation
-- ✅ Cold Connect Automator - Personalized outreach campaigns
-- ✅ Agritech Universities - Research institution database
 - ✅ Contact Finder - Hunter.io-powered professional contact search
 - ✅ AI List - Directory of the team's external GPTs and Gems
+- ✅ AI News Daily - Prompt launcher for Grok, Gemini and ChatGPT
+- ✅ Agritech Startup Seeker - Startup analysis and scoring
+- ✅ Sentiment Analyzer - Company news sentiment
 
 **Core Features**
 - ✅ Dashboard hub with search and favorites
-- ✅ Work tracker with project management
 - ✅ Ticketing system with Slack notifications
 - ✅ User management and settings
 - ✅ Real-time analytics with Google Analytics 4
