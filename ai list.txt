@@ -12,6 +12,8 @@ Leads Company Filter (Portfolio screening - built by Henry during the recent AI 
 
 https://gemini.google.com/gem/95013d6db181?usp=sharing
 
-valuation tool (https://gemini.google.com/gem/0897810011d0?usp=sharing)
+Company Valuation Tool (https://gemini.google.com/gem/1psP1rnFUGtqp-dVB1oTgyq9HBRuaj6C4?usp=sharing)
+
+valuation tool - legacy (https://gemini.google.com/gem/0897810011d0?usp=sharing)
 
 prompt generator (https://gemini.google.com/gem/1iSM1UEd4gGPFlBlUXXXmXUE0Zq5p_3mD?usp=sharing)
