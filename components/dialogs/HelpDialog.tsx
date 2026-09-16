@@ -8,10 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import {
   ExternalLink,
   Mail,
-  Newspaper,
   Settings,
   Sparkles,
-  Target,
   Search,
   Zap,
   MessageSquare,
@@ -19,8 +17,7 @@ import {
   Rocket,
   Globe,
   Lock,
-  Bot,
-  Download
+  Bot
 } from "lucide-react";
 
 export type HelpDialogProps = { open: boolean; onOpenChangeAction: (open: boolean) => void };
@@ -102,7 +99,7 @@ export default function HelpDialog({ open, onOpenChangeAction }: HelpDialogProps
                   </h4>
                   <ul className="space-y-1 text-xs">
                     <li>• Google Gemini AI, DeepSeek, and OpenAI support</li>
-                    <li>• Ready-made prompts for public LLMs (Grok, Gemini, ChatGPT)</li>
+                    <li>• Use public LLMs (Gemini, ChatGPT, Claude, Grok) directly for research and news</li>
                     <li>• Team Gems and GPTs in one list</li>
                     <li>• Enterprise-grade AI safety and compliance</li>
                   </ul>
@@ -152,54 +149,6 @@ export default function HelpDialog({ open, onOpenChangeAction }: HelpDialogProps
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="ai-news" className="border-gray-700/50">
-                  <AccordionTrigger className="text-blue-400 hover:text-blue-300">
-                    <div className="flex items-center gap-2">
-                      <Newspaper className="w-4 h-4" />
-                      AI News Daily
-                      <Badge variant="outline" className="border-blue-500/30 text-blue-400">Prompt</Badge>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-gray-300 space-y-2">
-                    <p><strong>Purpose:</strong> A ready-made prompt for today&apos;s AI and AgTech news briefing</p>
-                    <p><strong>Usage:</strong> Click Open in Grok or ChatGPT to run it directly, or Open in Gemini (the prompt is copied — just paste)</p>
-                    <p><strong>Route:</strong> <code className="bg-gray-700/50 px-2 py-1 rounded">/tools/ai-news-daily</code></p>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="startup-seeker" className="border-gray-700/50">
-                  <AccordionTrigger className="text-blue-400 hover:text-blue-300">
-                    <div className="flex items-center gap-2">
-                      <Target className="w-4 h-4" />
-                      Agritech Startup Seeker
-                      <Badge variant="outline" className="border-orange-500/30 text-orange-400">AI Scoring</Badge>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-gray-300 space-y-2">
-                    <p><strong>Purpose:</strong> Find and analyze agritech startups with multi-factor AI scoring system</p>
-                    <p><strong>Scoring:</strong> Location Score (0-100), Readiness Score (0-100), Feasibility Score (0-100), Rouge Score (weighted)</p>
-                    <p><strong>Features:</strong> Contact research automation, priority flagging, export capabilities, database persistence</p>
-                    <p><strong>Route:</strong> <code className="bg-gray-700/50 px-2 py-1 rounded">/tools/startup-seeker</code></p>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="sentiment-analyzer" className="border-gray-700/50">
-                  <AccordionTrigger className="text-blue-400 hover:text-blue-300">
-                    <div className="flex items-center gap-2">
-                      <BarChart3 className="w-4 h-4" />
-                      Sentiment Analyzer
-                      <Badge variant="outline" className="border-pink-500/30 text-pink-400">AI Analysis</Badge>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-gray-300 space-y-2">
-                    <p><strong>Purpose:</strong> Analyze public sentiment about companies using AI-powered news analysis</p>
-                    <p><strong>Features:</strong> Real-time news search, AI sentiment classification (Positive/Negative/Neutral), detailed reasoning, country-specific search, CSV export, search history</p>
-                    <p><strong>AI Models:</strong> Gemini (fast, accurate) or DeepSeek (cost-effective)</p>
-                    <p><strong>Usage:</strong> Enter company name → Select country (optional) → Choose AI model → Analyze sentiment → Filter/sort results → Export data</p>
-                    <p><strong>Limits:</strong> 100 searches per day per user (resets at midnight)</p>
-                    <p><strong>Route:</strong> <code className="bg-gray-700/50 px-2 py-1 rounded">/tools/sentiment-analyzer</code></p>
-                  </AccordionContent>
-                </AccordionItem>
               </Accordion>
             </CardContent>
           </Card>
@@ -259,15 +208,8 @@ export default function HelpDialog({ open, onOpenChangeAction }: HelpDialogProps
                     <ul className="space-y-1">
                       <li>• <strong>Finding emails:</strong> Contact Finder</li>
                       <li>• <strong>Lead finding, screening, valuation:</strong> the Gems and GPTs in AI List</li>
-                      <li>• <strong>Daily news:</strong> AI News Daily prompt</li>
-                      <li>• <strong>Events and anything else:</strong> ask a public LLM (Gemini, Grok, ChatGPT) directly</li>
+                      <li>• <strong>News, events and anything else:</strong> ask a public LLM (Gemini, ChatGPT, Claude, Grok) directly</li>
                     </ul>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="export" className="border-gray-700/50">
-                  <AccordionTrigger className="text-orange-400">Can I export data from the tools?</AccordionTrigger>
-                  <AccordionContent className="text-gray-300">
-                    Startup Seeker and Sentiment Analyzer support CSV export. Look for the <Download className="w-4 h-4 inline" /> export button in each tool.
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="support" className="border-gray-700/50">
@@ -301,10 +243,6 @@ export default function HelpDialog({ open, onOpenChangeAction }: HelpDialogProps
               <Link className="flex items-center gap-2 text-purple-400 hover:text-purple-300 hover:underline transition-colors p-2 rounded-lg hover:bg-gray-700/30" href="/tools/ai-list">
                 <Bot className="w-4 h-4"/>
                 AI List
-              </Link>
-              <Link className="flex items-center gap-2 text-yellow-400 hover:text-yellow-300 hover:underline transition-colors p-2 rounded-lg hover:bg-gray-700/30" href="/tools/ai-news-daily">
-                <Newspaper className="w-4 h-4"/>
-                AI News Daily
               </Link>
               <a className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 hover:underline transition-colors p-2 rounded-lg hover:bg-gray-700/30" target="_blank" rel="noreferrer" href="https://analytics.google.com/">
                 <BarChart3 className="w-4 h-4"/>
