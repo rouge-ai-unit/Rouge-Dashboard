@@ -16,7 +16,6 @@ export default function RouteGroupLayout({
   const getTitle = (path: string) => {
     if (path === "/home") return "Home";
     if (path === "/tools/ai-list") return "AI List";
-    if (path === "/tools/ai-news-daily") return "AI News Daily";
     const title = path.split("/").pop()?.replace(/-/g, " ") ?? "";
     return title.charAt(0).toUpperCase() + title.slice(1);
   };

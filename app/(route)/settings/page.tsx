@@ -18,8 +18,7 @@ import {
   Save,
   RefreshCw,
   AlertCircle,
-  Check,
-  Settings as SettingsIcon
+  Check
 } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 import { toast } from "sonner";
@@ -30,7 +29,6 @@ import NotificationSettings from "../../../components/settings/NotificationSetti
 import SecuritySettings from "../../../components/settings/SecuritySettings";
 import IntegrationSettings from "../../../components/settings/IntegrationSettings";
 import SystemSettings from "../../../components/settings/SystemSettings";
-import ColdOutreachSettings from "../../../components/settings/ColdOutreachSettings";
 
 export default function SettingsPage() {
   const { data: session, status } = useSession();
@@ -164,7 +162,7 @@ export default function SettingsPage() {
 
       {/* Settings Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 bg-gray-800/50 border border-gray-700/50">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 bg-gray-800/50 border border-gray-700/50">
           <TabsTrigger value="profile" className="data-[state=active]:bg-blue-600">
             <User className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Profile</span>
@@ -180,10 +178,6 @@ export default function SettingsPage() {
           <TabsTrigger value="integrations" className="data-[state=active]:bg-blue-600">
             <Globe className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Integrations</span>
-          </TabsTrigger>
-          <TabsTrigger value="cold-outreach" className="data-[state=active]:bg-blue-600">
-            <SettingsIcon className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Cold Outreach</span>
           </TabsTrigger>
           <TabsTrigger value="system" className="data-[state=active]:bg-blue-600">
             <Palette className="w-4 h-4 mr-2" />
@@ -205,10 +199,6 @@ export default function SettingsPage() {
 
         <TabsContent value="integrations" className="space-y-4">
           <IntegrationSettings />
-        </TabsContent>
-
-        <TabsContent value="cold-outreach" className="space-y-4">
-          <ColdOutreachSettings />
         </TabsContent>
 
         <TabsContent value="system" className="space-y-4">
