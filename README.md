@@ -55,13 +55,11 @@ Rouge Dashboard is a production-ready, enterprise-grade internal operations plat
 ### Core Features
 
 - **🏠 Dashboard Hub** - Centralized access to all tools with search and favorites
-- **📝 Work Tracker** - Comprehensive project management with task tracking
 - **🎫 Ticketing System** - Support request management with Slack notifications
 - **👥 User Management** - Role-based access control with email allowlists
 - **🌓 Dark Mode** - System-aware theme switching
 - **📊 Analytics** - Real-time usage tracking and reporting
 - **🔔 Notifications** - Email and Slack integration for alerts
-- **💬 AI Chatbot** - Floating assistant on all pages
 
 ### AI-Powered Tools
 
@@ -71,15 +69,6 @@ Rouge Dashboard is a production-ready, enterprise-grade internal operations plat
 2. **AI List** 🤖
    - The team's Gemini Gems and ChatGPT GPTs (lead finding, portfolio screening, Company Valuation Tool, prompt generator)
 
-3. **AI News Daily** 📰
-   - A ready-made daily AI & AgTech news prompt with Open in Grok / Gemini / ChatGPT buttons
-
-4. **Agritech Startup Seeker** 🚀 *(under usage review)*
-   - Find and score agritech startups
-
-5. **Sentiment Analyzer** 📊 *(under usage review)*
-   - AI sentiment analysis of company news (Google Custom Search + Gemini/DeepSeek), 100 searches/day per user
-
 **Contact admin** is a link in the account menu (Topbar avatar and sidebar user menu), not a tool.
 
 ### Retired from the UI
@@ -87,7 +76,8 @@ Rouge Dashboard is a production-ready, enterprise-grade internal operations plat
 These tools were removed from the sidebar and Home page. Their code is still in the repo, but their routes redirect to `/home` (see `lib/tool-registry.ts` and `middleware.ts`):
 
 - AI Tools Request Form, Work Tracker (use Asana), AgTech Event Finder (use a public LLM), Agritech Universities, Cold Connect Automator, AI Outreach Agent, Content Idea Automation (use an LLM), AgTech Company Automation, About page
-- The old AI News feed (`components/ai-news-daily/LegacyNewsFeed.tsx`) — replaced by a prompt page
+- AI News Daily (prompt page `components/PromptLauncher.tsx` and old feed `components/ai-news-daily/LegacyNewsFeed.tsx`), Agritech Startup Seeker, Sentiment Analyzer — not in use
+- The floating chatbot widget (`components/ChatbotWidget.tsx`) and the Cold Outreach tab in Settings (`components/settings/ColdOutreachSettings.tsx`)
 
 To retire another tool: add its path to `RETIRED_TOOL_PATHS` and remove its entry from `ALL_TOOLS` in `app/api/user/accessible-tools/route.ts`.
 
@@ -315,33 +305,7 @@ Rouge-Dashboard/
 
 ## 🔧 Available Tools
 
-### 1. AI News Daily
-**Route:** `/tools/ai-news-daily`
-
-A prompt page instead of a custom news feed (`components/PromptLauncher.tsx`).
-
-**Features:**
-- Daily briefing prompt (AI, AgTech, funding, Asia focus) with today's date filled in
-- **Open in Grok** / **Open in ChatGPT** — opens with the prompt pre-filled via `?q=`
-- **Open in Gemini** — Gemini has no prefill URL, so the prompt is copied to the clipboard and Gemini opens; paste and send
-- **Copy** button
-
----
-
-### 2. Agritech Startup Seeker
-**Route:** `/tools/startup-seeker`
-
-Find and analyze agritech startups with AI-powered scoring.
-
-**Scoring Criteria:**
-- Location Score (0-100)
-- Readiness Score (0-100)
-- Feasibility Score (0-100)
-- Rouge Score (weighted average)
-
----
-
-### 3. Contact Finder
+### 1. Contact Finder
 **Route:** `/tools/contact-finder`
 
 A stateless client for the Hunter.io API with two independent modes.
@@ -355,7 +319,7 @@ A stateless client for the Hunter.io API with two independent modes.
 
 ---
 
-### 4. AI List
+### 2. AI List
 **Route:** `/tools/ai-list`
 
 A maintained directory of the team's external AI assistants (ChatGPT GPTs and Gemini Gems) used for VC work.
@@ -1117,9 +1081,6 @@ The Rouge Dashboard is **fully complete and production-ready** with all features
 **AI-Powered Tools**
 - ✅ Contact Finder - Hunter.io-powered professional contact search
 - ✅ AI List - Directory of the team's external GPTs and Gems
-- ✅ AI News Daily - Prompt launcher for Grok, Gemini and ChatGPT
-- ✅ Agritech Startup Seeker - Startup analysis and scoring
-- ✅ Sentiment Analyzer - Company news sentiment
 
 **Core Features**
 - ✅ Dashboard hub with search and favorites
