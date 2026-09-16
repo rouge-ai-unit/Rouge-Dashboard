@@ -9,7 +9,7 @@ import Link from "next/link";
 import { Input } from "../../../components/ui/input";
 import { Skeleton } from "../../../components/ui/skeleton";
 import {
-  Search, X, BarChart2, Newspaper, Target, TrendingUp, Bot, Rocket, ExternalLink, AlertCircle,
+  Search, X, BarChart2, Bot, Rocket, ExternalLink, AlertCircle,
 } from "lucide-react";
 import { AI_LIST } from "@/lib/ai-list";
 
@@ -23,17 +23,11 @@ type Tool = {
 const TOOL_DESCRIPTIONS: Record<string, string> = {
   "/tools/contact-finder": "Look up work emails via Hunter.io — by name and company, or by job title and company. Results are checked for deliverability.",
   "/tools/ai-list": "The team's Gems and GPTs for VC work — lead finding, portfolio screening, valuation and more.",
-  "/tools/ai-news-daily": "A ready-made daily AI & AgTech news prompt. Open it in Grok, Gemini or ChatGPT with one click.",
-  "/tools/startup-seeker": "Find and score agritech startups by location, readiness and feasibility.",
-  "/tools/sentiment-analyzer": "Analyze public sentiment about a company from recent news articles.",
 };
 
 const TOOL_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/tools/contact-finder": Search,
   "/tools/ai-list": Bot,
-  "/tools/ai-news-daily": Newspaper,
-  "/tools/startup-seeker": Target,
-  "/tools/sentiment-analyzer": TrendingUp,
 };
 
 const trackToolOpen = (href: string) => {
