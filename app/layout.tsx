@@ -8,16 +8,10 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import GlobalDialogProvider from "@/components/GlobalDialog";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import dynamic from "next/dynamic";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster as ToastToaster } from "@/components/ui/toaster";
 
 const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
-
-// Dynamically import ChatbotWidget to prevent SSR issues
-const ChatbotWidget = dynamic(() => import("../components/ChatbotWidget"), {
-  ssr: false,
-});
 
 // Create a client
 const queryClient = new QueryClient({
@@ -85,7 +79,6 @@ export default function RootLayout({
             </ThemeProvider>
             <Toaster richColors theme="dark" />
             <ToastToaster />
-            <ChatbotWidget />
           </QueryClientProvider>
         </SessionProvider>
       </body>
