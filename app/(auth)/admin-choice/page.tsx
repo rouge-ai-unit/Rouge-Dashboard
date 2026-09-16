@@ -84,7 +84,7 @@ export default function AdminChoicePage() {
                     Dashboard
                   </h2>
                   <p className="text-gray-600 dark:text-gray-300 mb-6">
-                    Access all tools, work tracker, analytics, and your daily workflow
+                    Access the team&apos;s tools and AI assistants
                   </p>
                   <div className="flex items-center text-blue-600 dark:text-blue-400 font-semibold group-hover:gap-3 gap-2 transition-all">
                     Enter Dashboard

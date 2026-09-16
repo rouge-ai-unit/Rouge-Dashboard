@@ -69,9 +69,6 @@ export default function PermissionsPage() {
         
         // Build tool permissions matrix
         const tools = [
-          { name: "AI News Daily", path: "/tools/ai-news-daily" },
-          { name: "Agritech Startup Seeker", path: "/tools/startup-seeker" },
-          { name: "Sentiment Analyzer", path: "/tools/sentiment-analyzer" },
           { name: "Contact Finder", path: "/tools/contact-finder" },
           { name: "AI List", path: "/tools/ai-list" },
           { name: "Contact Us", path: "/tools/contact" },
