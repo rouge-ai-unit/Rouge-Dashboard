@@ -48,30 +48,6 @@ const ALL_TOOLS: ToolDef[] = [
     order: 2,
     alwaysVisible: true,
   },
-  {
-    id: 'ai-news-daily',
-    title: 'AI News Daily',
-    href: '/tools/ai-news-daily',
-    icon: 'Newspaper',
-    order: 3,
-    alwaysVisible: true,
-  },
-  {
-    id: 'startup-seeker',
-    title: 'Agritech Startup Seeker',
-    href: '/tools/startup-seeker',
-    icon: 'Target',
-    order: 4,
-    requiresPermission: true,
-  },
-  {
-    id: 'sentiment-analyzer',
-    title: 'Sentiment Analyzer',
-    href: '/tools/sentiment-analyzer',
-    icon: 'TrendingUp',
-    order: 5,
-    requiresPermission: true,
-  },
 
   // Admin-Only Tools (ordered logically)
   {
