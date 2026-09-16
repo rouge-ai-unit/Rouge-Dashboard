@@ -141,52 +141,8 @@ export default function SignIn() {
             Welcome back
           </h1>
           <p className="mt-4 text-lg text-gray-400 leading-relaxed">
-            Your comprehensive AI-powered platform for AgTech innovation, research, and business automation.
+            Sign in to access the Rouge team&apos;s tools and AI assistants.
           </p>
-          <div className="mt-8 hidden md:block">
-            <div className="space-y-2">
-              <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 hover:border-blue-500/30 transition-colors group">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 group-hover:scale-125 transition-transform flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <span className="text-gray-200 font-medium text-sm">AgTech Event Finder & Startup Seeker</span>
-                  <p className="text-xs text-gray-500 mt-0.5">Discover events, analyze startups with AI scoring</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 hover:border-purple-500/30 transition-colors group">
-                <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 group-hover:scale-125 transition-transform flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <span className="text-gray-200 font-medium text-sm">AI Content & Outreach Automation</span>
-                  <p className="text-xs text-gray-500 mt-0.5">LinkedIn content, cold outreach, AI personalization</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 hover:border-cyan-500/30 transition-colors group">
-                <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 mt-1.5 group-hover:scale-125 transition-transform flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <span className="text-gray-200 font-medium text-sm">Research & Intelligence Tools</span>
-                  <p className="text-xs text-gray-500 mt-0.5">Universities database, sentiment analyzer, AI news</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 hover:border-green-500/30 transition-colors group">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 group-hover:scale-125 transition-transform flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <span className="text-gray-200 font-medium text-sm">Project Management Suite</span>
-                  <p className="text-xs text-gray-500 mt-0.5">Work tracker, ticketing system, team collaboration</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 hover:border-orange-500/30 transition-colors group">
-                <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-1.5 group-hover:scale-125 transition-transform flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <span className="text-gray-200 font-medium text-sm">Enterprise Features</span>
-                  <p className="text-xs text-gray-500 mt-0.5">Role-based access, admin controls, audit logging</p>
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 p-3 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20">
-              <p className="text-xs text-gray-400 text-center">
-                <span className="text-blue-400 font-semibold">11+ AI-powered tools</span> • Secure authentication • Real-time collaboration
-              </p>
-            </div>
-          </div>
         </motion.div>
 
         {/* Auth card */}

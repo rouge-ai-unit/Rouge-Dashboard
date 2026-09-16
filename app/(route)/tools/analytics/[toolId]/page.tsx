@@ -21,9 +21,6 @@ type AnalyticsData = {
 
 // Tool titles map for display
 const toolTitles: Record<string, string> = {
-    "ai-news-daily": "AI News Daily",
-    "startup-seeker": "Startup Seeker",
-    "sentiment-analyzer": "Sentiment Analyzer",
     "contact-finder": "Contact Finder",
     "ai-list": "AI List",
 };
