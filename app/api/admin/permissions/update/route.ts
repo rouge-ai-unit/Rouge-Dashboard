@@ -13,9 +13,6 @@ import { logAdminActivity, logPermissionChange } from '@/lib/auth/auth-service';
 // Valid tool paths for validation
 const VALID_TOOL_PATHS = [
   '/home',
-  '/tools/ai-news-daily',
-  '/tools/startup-seeker',
-  '/tools/sentiment-analyzer',
   '/tools/contact-finder',
   '/tools/ai-list',
   '/tools/contact',
