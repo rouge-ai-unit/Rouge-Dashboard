@@ -254,9 +254,6 @@ export async function getAccessibleTools(userId: string): Promise<string[]> {
  * Tool definitions with paths
  */
 export const TOOLS = {
-  AI_NEWS_DAILY: '/tools/ai-news-daily',
-  STARTUP_SEEKER: '/tools/startup-seeker',
-  SENTIMENT_ANALYZER: '/tools/sentiment-analyzer',
   CONTACT_FINDER: '/tools/contact-finder',
   AI_LIST: '/tools/ai-list',
   CONTACT: '/tools/contact',
