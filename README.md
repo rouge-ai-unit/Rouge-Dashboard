@@ -325,7 +325,7 @@ A stateless client for the Hunter.io API with two independent modes.
 A maintained directory of the team's external AI assistants (ChatGPT GPTs and Gemini Gems) used for VC work.
 
 **Features:**
-- Data lives in `lib/ai-list.ts` (kept in sync with `ai list.txt`); shown on the AI List page and in the Home page's AI List section
+- Data lives in `lib/ai-list.ts`; shown on the AI List page and in the Home page's AI List section
 - Each entry links out to the assistant in a new tab
 - No API, no database, no persistence
 

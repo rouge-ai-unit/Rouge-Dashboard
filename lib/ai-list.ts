@@ -1,6 +1,6 @@
 // ============================================================================
 // AI LIST — the team's external AI assistants (ChatGPT GPTs and Gemini Gems).
-// Kept in sync with `ai list.txt`. Used by the AI List page and the Home page.
+// Used by the AI List page and the Home page.
 // ============================================================================
 
 export type AiPlatform = 'ChatGPT' | 'Gemini';
@@ -38,11 +38,6 @@ export const AI_LIST: AiEntry[] = [
     platform: 'Gemini',
     description: 'Company valuation analysis',
     url: 'https://gemini.google.com/gem/1psP1rnFUGtqp-dVB1oTgyq9HBRuaj6C4?usp=sharing',
-  },
-  {
-    title: 'Valuation Tool (legacy)',
-    platform: 'Gemini',
-    url: 'https://gemini.google.com/gem/0897810011d0?usp=sharing',
   },
   {
     title: 'Prompt Generator',

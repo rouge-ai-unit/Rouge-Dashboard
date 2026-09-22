@@ -2,7 +2,7 @@
 
 // ============================================================================
 // AI LIST — a maintained directory of the team's external AI assistants.
-// Data lives in lib/ai-list.ts (kept in sync with `ai list.txt`).
+// Data lives in lib/ai-list.ts.
 // ============================================================================
 
 import { Button } from '@/components/ui/button';
